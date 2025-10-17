@@ -15,7 +15,7 @@ class TestInitialScreen extends StatefulWidget {
   State<TestInitialScreen> createState() => _TestInitialScreenState();
 }
 
-class _TestInitialScreenState extends State<TestInitialScreen> {|
+class _TestInitialScreenState extends State<TestInitialScreen> {
   // 1) Estado de navegación
   int _currentStep = 1; // Inicia en el paso 1.
   final int _totalSteps = 4; // Total de pasos.
@@ -349,44 +349,69 @@ final List<Map<String, dynamic>> _avatarOptions = [
     );
   }
 
-  // Tarjeta de progreso (1/4)
-  Widget _buildProgressCard() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        // Color primario con opacidad de 0.15.
-        color: Theme.of(context).colorScheme.primary.withOpacity(0.15),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Test inicial (rápido)',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
+  // lib/screens/test_initial_screen.dart (reemplaza el método existente)
+
+// Tarjeta de progreso (1/4) - ¡VERSIÓN MEJORADA!
+Widget _buildProgressCard() {
+  return Container(
+    // Padding: Espacio interno para que el contenido no esté pegado a los bordes.
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    
+    // Decoration: Aquí definimos la apariencia de la tarjeta.
+    decoration: BoxDecoration(
+      // Usamos un color azul claro, similar al mockup.
+      color: const Color(0xFFE3F2FD), // Un tono de azul muy claro
+      // Bordes redondeados para la tarjeta.
+      borderRadius: BorderRadius.circular(12),
+    ),
+    
+    child: Column(
+      // Alinea todo el contenido a la izquierda.
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Título de la tarjeta.
+        const Text(
+          'Test inicial (rápido)',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold, // Letra en negrita como en el mockup
+            color: Colors.black87,
           ),
-          const SizedBox(height: 4),
-          Text(
-            'Paso $_currentStep de $_totalSteps - 1-2 minutos.',
-            style: const TextStyle(fontSize: 14, color: Colors.black54),
-          ),
-          const SizedBox(height: 8),
-          // Barra de progreso.
-          LinearProgressIndicator(
-            value: _currentStep / _totalSteps, // Cálculo: 1/4 = 0.25
-            backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-            color: Theme.of(context).colorScheme.primary,
-            minHeight: 8,
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+        
+        // Espacio vertical pequeño.
+        const SizedBox(height: 4),
+        
+        // Texto de ayuda.
+        const Text(
+          'Ayúdanos a adaptar la app a tu estilo. 1-2 minutos.',
+          style: TextStyle(fontSize: 14, color: Colors.black54),
+        ),
+
+        // Espacio vertical más grande antes de la barra.
+        const SizedBox(height: 8),
+
+        // Barra de progreso.
+        LinearProgressIndicator(
+          // El valor se calcula dinámicamente: paso_actual / total_pasos.
+          value: _currentStep / _totalSteps,
+          
+          // Color de fondo de la barra (la parte "vacía").
+          backgroundColor: Colors.blue.withOpacity(0.2),
+          
+          // Color principal de la barra (la parte "llena").
+          color: Colors.blue, // Un azul más vibrante
+          
+          // Grosor de la barra.
+          minHeight: 8,
+          
+          // Hacemos que la barra de progreso también tenga bordes redondeados.
+          borderRadius: BorderRadius.circular(4),
+        ),
+      ],
+    ),
+  );
+}
 
   // Botoneras reutilizables (Atrás/Siguiente/Listo)
   Row _buildBackNextRow() {
