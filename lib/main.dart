@@ -3,18 +3,24 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'package:organizate/screens/onboarding_screen.dart'; // Tu pantalla de inicio
 
-// --- ¡CAMBIO AQUÍ! ---
-// 1. Importamos la nueva pantalla de bienvenida.
-import 'package:organizate/screens/onboarding_screen.dart';
-// (Ya no necesitamos importar test_initial_screen.dart aquí)
+// --- ¡NUEVO! Importa el paquete intl ---
+import 'package:intl/date_symbol_data_local.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const MyApp());
+
+  // --- ¡NUEVO! Inicializa el formato de fecha para español ---
+  // El 'es' es suficiente si tu sistema operativo ya maneja 'es_ES'
+  // Si no, puedes probar con 'es_ES'.
+  await initializeDateFormatting('es', null);
+  // --- FIN NUEVO ---
+
+  runApp(const MyApp()); // Ejecuta la app DESPUÉS de inicializar
 }
 
 class MyApp extends StatelessWidget {
@@ -29,9 +35,6 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      
-      // --- ¡CAMBIO AQUÍ! ---
-      // 2. Esta es ahora la primera pantalla que verá el usuario.
       home: const OnboardingScreen(),
     );
   }
