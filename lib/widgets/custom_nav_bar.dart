@@ -7,50 +7,55 @@ class CustomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
-      // Colores para los íconos
-      unselectedItemColor: Colors.grey.shade400,
-      selectedItemColor: Colors.blueAccent,
+      // Hacemos que "Inicio" aparezca seleccionado por defecto.
+      currentIndex: 0,
       
-      // Muestra solo el texto del ícono activo
-      showUnselectedLabels: false,
-      
-      // Esto asegura que los colores que definimos en cada ícono se respeten
+      // Esto es crucial para que se vean más de 3 íconos con sus colores.
       type: BottomNavigationBarType.fixed,
       
+      // Color del texto cuando un ícono está seleccionado.
+      selectedItemColor: Colors.blue.shade700,
+      
+      // Color del texto cuando un ícono NO está seleccionado.
+      unselectedItemColor: Colors.grey.shade600,
+      
+      // Tamaño del texto.
       selectedFontSize: 12,
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined), 
-          label: 'Inicio',
-          // Este es el ícono que se muestra cuando está activo, ¡con su color!
-          activeIcon: Icon(Icons.home, color: Colors.blueAccent),
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.school_outlined), 
-          label: 'Estudios',
-          activeIcon: Icon(Icons.school, color: Colors.orange),
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.cottage_outlined), 
-          label: 'Hogar',
-          activeIcon: Icon(Icons.cottage, color: Colors.green),
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.medication_outlined), 
-          label: 'Meds',
-          activeIcon: Icon(Icons.medication, color: Colors.redAccent),
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.center_focus_strong_outlined), 
-          label: 'Foco',
-          activeIcon: Icon(Icons.center_focus_strong, color: Colors.purple),
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.star_outline), 
-          label: 'Progreso',
-          activeIcon: Icon(Icons.star, color: Colors.amber),
-        ),
+      unselectedFontSize: 12,
+      
+      // Fondo blanco para la barra.
+      backgroundColor: Colors.white,
+      
+      // Quitamos la sombra superior por defecto para un look más limpio.
+      elevation: 0, 
+
+      // La lista de nuestros botones, ahora construidos con un método auxiliar.
+      items: [
+        // ¡Estos nombres de archivo coinciden con tu captura de pantalla!
+        _buildNavItem('Inicio', 'assets/icons/Inicio.png'),
+        _buildNavItem('Estudios', 'assets/icons/Estudios.png'),
+        _buildNavItem('Hogar', 'assets/icons/Hogar.png'),
+        _buildNavItem('Meds', 'assets/icons/Meds.png'),
+        _buildNavItem('Foco', 'assets/icons/Foco.png'),
+        _buildNavItem('Progreso', 'assets/icons/Progreso.png'),
       ],
+    );
+  }
+
+  // --- MÉTODO AUXILIAR ---
+  // Esta función nos ayuda a no repetir el mismo código 6 veces.
+  BottomNavigationBarItem _buildNavItem(String label, String imagePath) {
+    return BottomNavigationBarItem(
+      label: label,
+      // Usamos Image.asset para cargar tu archivo de imagen.
+      icon: Padding(
+        padding: const EdgeInsets.only(bottom: 4.0, top: 4.0), // Espacio vertical
+        child: Image.asset(
+          imagePath,
+          width: 28,  // Ancho deseado para el ícono
+          height: 28, // Alto deseado para el ícono
+        ),
+      ),
     );
   }
 }

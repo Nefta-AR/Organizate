@@ -25,6 +25,8 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  # ✅ Asegúrate de que esta línea esté descomentada y con la indentación correcta.
   assets:
     - assets/avatars/
+    - assets/icons/
+    - assets/images/Logo.png   # <-- ¡AÑADE ESTA LÍNEA!
+                             # (Asegúrate de que el nombre sea exacto)
