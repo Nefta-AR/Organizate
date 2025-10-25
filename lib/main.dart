@@ -1,11 +1,10 @@
 // lib/main.dart
-
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // <-- Añade Firestore aquí
 import 'firebase_options.dart';
-import 'package:organizate/screens/onboarding_screen.dart'; // Tu pantalla de inicio
-
-// --- ¡NUEVO! Importa el paquete intl ---
+import 'package:organizate/screens/onboarding_screen.dart';
+import 'package:organizate/screens/home_screen.dart'; // <-- Añade HomeScreen aquí
 import 'package:intl/date_symbol_data_local.dart';
 
 Future<void> main() async {
@@ -13,29 +12,52 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
-  // --- ¡NUEVO! Inicializa el formato de fecha para español ---
-  // El 'es' es suficiente si tu sistema operativo ya maneja 'es_ES'
-  // Si no, puedes probar con 'es_ES'.
   await initializeDateFormatting('es', null);
-  // --- FIN NUEVO ---
 
-  runApp(const MyApp()); // Ejecuta la app DESPUÉS de inicializar
+  // --- ¡NUEVA LÓGICA DE INICIO! ---
+  Widget initialScreen; // Variable para decidir qué pantalla mostrar
+
+  try {
+    // Referencia a tu documento de usuario
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc('neftali_user')
+        .get();
+
+    // Revisa si el documento existe y si has completado el onboarding
+    if (userDoc.exists && (userDoc.data() as Map<String, dynamic>?)?['hasCompletedOnboarding'] == true) {
+      // Si ya completaste, ve directo al HomeScreen
+      initialScreen = const HomeScreen();
+    } else {
+      // Si no, empieza por el Onboarding
+      initialScreen = const OnboardingScreen();
+    }
+  } catch (e) {
+    // Si hay error leyendo Firestore (ej. sin conexión la primera vez),
+    // muestra el Onboarding por seguridad.
+    print("Error al verificar onboarding: $e");
+    initialScreen = const OnboardingScreen();
+  }
+  // --- FIN NUEVA LÓGICA ---
+
+  // Ejecuta la app con la pantalla inicial decidida
+  runApp(MyApp(initialScreen: initialScreen)); // <-- Pasa la pantalla inicial a MyApp
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  // --- NUEVO: Recibe la pantalla inicial ---
+  final Widget initialScreen;
+  const MyApp({super.key, required this.initialScreen});
+  // --- FIN NUEVO ---
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Organízate',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      home: const OnboardingScreen(),
+      theme: ThemeData( /* ... tu tema ... */ ),
+      // --- ¡CAMBIO! Usa la pantalla inicial que decidimos en main() ---
+      home: initialScreen,
     );
   }
 }

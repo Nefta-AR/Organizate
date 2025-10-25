@@ -1,0 +1,229 @@
+// lib/screens/estudios_screen.dart
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
+import 'package:organizate/widgets/custom_nav_bar.dart';
+// Importa TODAS las pantallas para que la barra de navegación funcione
+import 'package:organizate/screens/home_screen.dart';
+import 'package:organizate/screens/hogar_screen.dart';
+import 'package:organizate/screens/meds_screen.dart';
+import 'package:organizate/screens/foco_screen.dart';
+import 'package:organizate/screens/progreso_screen.dart';
+
+// --- Convertido a StatefulWidget (para manejar la lógica) ---
+class EstudiosScreen extends StatefulWidget {
+  const EstudiosScreen({super.key});
+
+  @override
+  State<EstudiosScreen> createState() => _EstudiosScreenState();
+}
+
+class _EstudiosScreenState extends State<EstudiosScreen> {
+  // --- Referencias a Firestore (igual que en HomeScreen) ---
+  final CollectionReference tasksCollection =
+      FirebaseFirestore.instance.collection('users').doc('neftali_user').collection('tasks');
+  final DocumentReference userDocRef =
+      FirebaseFirestore.instance.collection('users').doc('neftali_user');
+  
+  // --- Formateador de Fecha (igual que en HomeScreen) ---
+  late final DateFormat _dateFormatter;
+
+  @override
+  void initState() {
+    super.initState();
+    try { _dateFormatter = DateFormat('dd MMM', 'es_ES'); } 
+    catch (e) { _dateFormatter = DateFormat('dd MMM'); }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const int screenIndex = 1; // Índice 1 para "Estudios" en la barra
+
+    return Scaffold(
+      bottomNavigationBar: const CustomNavBar(initialIndex: screenIndex), // Pasa el índice
+      appBar: AppBar(
+        title: const Text('Estudios'), // Título de la pantalla
+        elevation: 0, backgroundColor: Colors.transparent, foregroundColor: Colors.black,
+        automaticallyImplyLeading: false, // Quita la flecha de "atrás"
+        actions: [ // Muestra Puntos/Racha/Avatar (igual que en HomeScreen)
+          StreamBuilder<DocumentSnapshot>(
+            stream: userDocRef.snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData || snapshot.hasError) { return const Row(children: [Icon(Icons.star, color: Colors.grey), SizedBox(width: 20)]); }
+              final userData = snapshot.data!.data() as Map<String, dynamic>? ?? {};
+              final int points = (userData['points'] as num?)?.toInt() ?? 0;
+              final int streak = (userData['streak'] as num?)?.toInt() ?? 0;
+              final String? avatarName = userData['avatar'] as String?;
+              return Row( children: [ Padding( padding: const EdgeInsets.only(left: 8.0), child: Row( children: [ const Icon(Icons.star, color: Colors.amber, size: 20), const SizedBox(width: 4), Text('$points', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)), ], ), ), Padding( padding: const EdgeInsets.symmetric(horizontal: 16.0), child: Row(children: [ Icon(Icons.local_fire_department, color: Colors.deepOrange, size: 20), const SizedBox(width: 4), Text('$streak', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)), ]), ), if (avatarName != null) Padding( padding: const EdgeInsets.only(right: 12.0), child: CircleAvatar( radius: 15, backgroundImage: AssetImage('assets/avatars/$avatarName.png'), onBackgroundImageError: (e,s){}, ), ), if (avatarName == null) const Padding( padding: EdgeInsets.only(right: 12.0), child: CircleAvatar(radius: 15, backgroundColor: Colors.grey),), ], );
+            },
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAddTaskDialog(context), // Llama al diálogo de ESTA pantalla
+        backgroundColor: Colors.orange, // Color Naranja de Estudios
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+      // --- Cuerpo con StreamBuilder FILTRADO ---
+      body: StreamBuilder<QuerySnapshot>(
+        // --- ¡¡¡LA MAGIA ESTÁ AQUÍ!!! ---
+        // 1. Filtra por categoría 'Estudios'
+        // 2. Ordena por 'done' (para mostrar pendientes primero)
+        // 3. Luego ordena por fecha de creación
+        stream: tasksCollection
+                  .where('category', isEqualTo: 'Estudios')
+                  .orderBy('done') // Pendientes (false) primero
+                  .orderBy('createdAt', descending: true) // Luego las más nuevas
+                  .snapshots(),
+        // --- FIN DE LA MAGIA ---
+        builder: (context, snapshot) {
+           if (snapshot.connectionState == ConnectionState.waiting) { return const Center(child: CircularProgressIndicator()); }
+           if (snapshot.hasError) { return const Center(child: Text('Error al cargar tareas')); }
+           // Mensaje específico si no hay tareas de ESTUDIOS
+           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) { 
+             return const Center(child: Padding( 
+               padding: EdgeInsets.all(32.0), 
+               child: Text('No tienes tareas de estudios.\n¡Añade una con el botón +!', 
+                 textAlign: TextAlign.center, 
+                 style: TextStyle(fontSize: 16, color: Colors.grey)),
+             )); 
+           }
+
+          final tasks = snapshot.data!.docs;
+          // Usamos ListView.builder para mostrar la lista
+          return ListView.builder(
+            padding: const EdgeInsets.all(20.0), // Padding para la lista
+            itemCount: tasks.length,
+            itemBuilder: (context, index) {
+              final taskData = tasks[index].data() as Map<String, dynamic>;
+              final taskId = tasks[index].id;
+              final String currentText = taskData['text'] ?? '';
+              final Timestamp? currentDueDate = taskData['dueDate'] as Timestamp?;
+              final bool isCurrentlyDone = taskData['done'] ?? false;
+
+              // Reutiliza los mismos widgets de `HomeScreen`
+              return GestureDetector(
+                onLongPress: () => _showTaskOptionsDialog(context, taskId, currentText, 'Estudios', currentDueDate),
+                child: _buildGoalItem(
+                  icon: Icons.menu_book, // Ícono fijo de Estudios
+                  iconColor: Colors.orange, // Color fijo de Estudios
+                  text: currentText,
+                  isDone: isCurrentlyDone,
+                  dueDate: currentDueDate,
+                  onDonePressed: () {
+                     // Lógica para actualizar puntos (igual que en HomeScreen)
+                     final pointsChange = isCurrentlyDone ? -10 : 10;
+                     WriteBatch batch = FirebaseFirestore.instance.batch();
+                     batch.update(tasksCollection.doc(taskId), {'done': !isCurrentlyDone});
+                     batch.update(userDocRef, {'points': FieldValue.increment(pointsChange)});
+                     batch.commit().catchError((error) { print("Error al actualizar: $error"); });
+                  },
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  // --- MÉTODOS AUXILIARES (Copiados de HomeScreen, con ligeros cambios) ---
+  // Estos son los métodos que faltaban y causaban errores
+
+  // Diálogo para AÑADIR una nueva tarea (¡GUARDANDO "Estudios"!)
+  void _showAddTaskDialog(BuildContext context) {
+    final TextEditingController taskController = TextEditingController();
+    DateTime? selectedDueDate;
+    const String fixedCategory = 'Estudios'; // <-- Categoría fija
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Nueva Tarea de Estudios'), // Título específico
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: taskController,
+                      decoration: const InputDecoration(hintText: "Descripción"),
+                      autofocus: true,
+                    ),
+                    const SizedBox(height: 20),
+                    // No necesitamos selector de categoría, ya es 'Estudios'
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            selectedDueDate == null
+                                ? 'Sin fecha de entrega'
+                                : 'Entrega: ${_dateFormatter.format(selectedDueDate!)}',
+                            style: TextStyle(color: Colors.grey.shade600),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.calendar_today, color: Colors.orange), // Color de Estudios
+                          onPressed: () async {
+                            final DateTime? picked = await showDatePicker(
+                              context: context,
+                              initialDate: selectedDueDate ?? DateTime.now(),
+                              firstDate: DateTime(DateTime.now().year - 1),
+                              lastDate: DateTime(DateTime.now().year + 5),
+                            );
+                            if (picked != null) setDialogState(() => selectedDueDate = picked);
+                          },
+                        ),
+                        if (selectedDueDate != null)
+                          IconButton(
+                            icon: const Icon(Icons.clear, size: 18, color: Colors.grey),
+                            tooltip: 'Quitar fecha',
+                            onPressed: () => setDialogState(() => selectedDueDate = null),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(child: const Text('Cancelar'), onPressed: () => Navigator.of(context).pop()),
+                TextButton(
+                  child: const Text('Añadir'),
+                  onPressed: () {
+                    if (taskController.text.isNotEmpty) {
+                      String iconName = _getIconNameFromCategory(fixedCategory);
+                      String colorName = _getColorNameFromCategory(fixedCategory);
+                      Map<String, dynamic> taskData = {
+                        'text': taskController.text,
+                        'category': fixedCategory, // <-- Guarda "Estudios"
+                        'iconName': iconName,
+                        'colorName': colorName,
+                        'done': false,
+                        'createdAt': Timestamp.now(),
+                        if (selectedDueDate != null) 'dueDate': Timestamp.fromDate(selectedDueDate!),
+                      };
+                      tasksCollection.add(taskData);
+                      Navigator.of(context).pop();
+                    }
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // --- Resto de Métodos Auxiliares (Copiados EXACTOS de HomeScreen) ---
+  Widget _buildGoalItem({ required IconData icon, required Color iconColor, required String text, required bool isDone, required VoidCallback onDonePressed, Timestamp? dueDate, }) { return Padding( padding: const EdgeInsets.symmetric(vertical: 8.0), child: Row( children: [ Icon(icon, color: iconColor, size: 28), const SizedBox(width: 16), Expanded( child: Column( crossAxisAlignment: CrossAxisAlignment.start, children: [ Text( text, style: TextStyle( fontSize: 16, color: isDone ? Colors.grey : Colors.black87, decoration: isDone ? TextDecoration.lineThrough : TextDecoration.none, ), ), if (dueDate != null) ...[ const SizedBox(height: 4), Text( 'Entrega: ${_dateFormatter.format(dueDate.toDate())}', style: TextStyle(fontSize: 12, color: Colors.grey.shade600), ), ], ], ), ), const SizedBox(width: 16), ElevatedButton( onPressed: onDonePressed, style: ElevatedButton.styleFrom( backgroundColor: isDone ? Colors.grey.shade300 : Colors.blue.withAlpha(25), foregroundColor: isDone ? Colors.grey.shade600 : Colors.blue.shade800, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), ), child: Text(isDone ? 'Deshacer' : 'Hecho'), ), ], ), ); }
+  void _showTaskOptionsDialog(BuildContext context, String taskId, String currentText, String? currentCategory, Timestamp? currentDueDate) { showDialog( context: context, builder: (BuildContext context) { return AlertDialog( title: Text('Opciones:\n"$currentText"'), content: Column( mainAxisSize: MainAxisSize.min, children: <Widget>[ ListTile( leading: const Icon(Icons.edit), title: const Text('Editar'), onTap: () { if (mounted) Navigator.of(context).pop(); _showEditTaskDialog(context, taskId, currentText, currentCategory, currentDueDate); }, ), ListTile( leading: const Icon(Icons.delete), title: const Text('Eliminar'), onTap: () async { try { await tasksCollection.doc(taskId).delete(); if (!mounted) return; Navigator.of(context).pop(); ScaffoldMessenger.of(context).showSnackBar( SnackBar(content: Text('"$currentText" eliminada')) ); } catch (error) { if (!mounted) return; Navigator.of(context).pop(); ScaffoldMessenger.of(context).showSnackBar( const SnackBar(content: Text('Error al eliminar')) ); } }, ), ], ), actions: <Widget>[ TextButton(child: const Text('Cancelar'), onPressed: () => Navigator.of(context).pop()), ], ); }, ); }
+  void _showEditTaskDialog(BuildContext context, String taskId, String currentText, String? currentCategory, Timestamp? currentDueDate) { final TextEditingController taskController = TextEditingController(text: currentText); final List<String> categories = ['General', 'Estudios', 'Hogar', 'Meds']; String? selectedCategory = categories.contains(currentCategory) ? currentCategory : 'Estudios'; DateTime? selectedDueDate = currentDueDate?.toDate(); showDialog( context: context, builder: (BuildContext context) { return StatefulBuilder( builder: (context, setDialogState) { return AlertDialog( title: const Text('Editar Tarea'), content: SingleChildScrollView( child: Column( mainAxisSize: MainAxisSize.min, children: [ TextField( controller: taskController, decoration: const InputDecoration(hintText: "Nuevo texto"), autofocus: true, ), const SizedBox(height: 20), DropdownButtonFormField<String>( initialValue: selectedCategory, decoration: const InputDecoration(labelText: 'Categoría'), items: categories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(), onChanged: (val) => setDialogState(() => selectedCategory = val), ), const SizedBox(height: 20), Row( children: [ Expanded( child: Text( selectedDueDate == null ? 'Sin fecha' : 'Entrega: ${_dateFormatter.format(selectedDueDate!)}', style: TextStyle(color: Colors.grey.shade600), ), ), IconButton( icon: const Icon(Icons.calendar_today), onPressed: () async { final DateTime? picked = await showDatePicker( context: context, initialDate: selectedDueDate ?? DateTime.now(), firstDate: DateTime(DateTime.now().year - 1), lastDate: DateTime(DateTime.now().year + 5) ); if (picked != null) setDialogState(() => selectedDueDate = picked); }, ), if (selectedDueDate != null) IconButton( icon: const Icon(Icons.clear, size: 18), onPressed: () => setDialogState(() => selectedDueDate = null), ), ], ), ], ), ), actions: <Widget>[ TextButton(child: const Text('Cancelar'), onPressed: () => Navigator.of(context).pop()), TextButton( child: const Text('Guardar'), onPressed: () async { if (taskController.text.isNotEmpty && selectedCategory != null) { String iconName = _getIconNameFromCategory(selectedCategory!); String colorName = _getColorNameFromCategory(selectedCategory!); Map<String, dynamic> updatedData = { 'text': taskController.text, 'category': selectedCategory, 'iconName': iconName, 'colorName': colorName, 'dueDate': selectedDueDate == null ? FieldValue.delete() : Timestamp.fromDate(selectedDueDate!), }; try { await tasksCollection.doc(taskId).update(updatedData); if (!mounted) return; Navigator.of(context).pop(); } catch (error) { print("Error: $error"); if (!mounted) return; Navigator.of(context).pop(); } } else { if (mounted) Navigator.of(context).pop(); } }, ), ], ); }, ); }, ); }
+  IconData _getIconFromString(String iconName) { switch (iconName) { case 'menu_book': return Icons.menu_book; case 'cleaning_services': return Icons.cleaning_services; case 'medication': return Icons.medication; case 'task_alt': return Icons.task_alt; default: return Icons.task; } }
+  Color _getColorFromString(String colorName) { switch (colorName) { case 'orange': return Colors.orange; case 'green': return Colors.green; case 'red': return Colors.red; case 'grey': return Colors.grey; default: return Colors.blue; } }
+  String _getIconNameFromCategory(String category) { switch (category) { case 'Estudios': return 'menu_book'; case 'Hogar': return 'cleaning_services'; case 'Meds': return 'medication'; case 'General': default: return 'task_alt'; } }
+  String _getColorNameFromCategory(String category) { switch (category) { case 'Estudios': return 'orange'; case 'Hogar': return 'green'; case 'Meds': return 'red'; case 'General': default: return 'grey'; } }
+
+} // ¡FIN DE LA CLASE _EstudGiosScreenState!
