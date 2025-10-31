@@ -4,7 +4,8 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.9.2
+  # Rango de SDK de Dart seguro y moderno
+  sdk: '>=3.3.0 <4.0.0'
 
 dependencies:
   flutter:
@@ -14,20 +15,24 @@ dependencies:
   shared_preferences: ^2.2.2
   material_design_icons_flutter: ^7.0.7296
   flutter_svg: ^2.0.9
-  firebase_core: ^4.2.0
-  cloud_firestore: ^6.0.3
-  intl: ^0.20.2
+  intl: ^0.19.0 # VERSIÓN CORREGIDA
+
+  # Versiones de Firebase actualizadas (esto corrige el error de Gradle)
+  firebase_core: ^2.31.0
+  cloud_firestore: ^4.17.3
+  fl_chart: ^1.1.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
+  
+  flutter_lints: ^4.0.0 # VERSIÓN CORREGIDA
 
 flutter:
   uses-material-design: true
 
+  # Rutas de assets corregidas con la indentación correcta
   assets:
     - assets/avatars/
     - assets/icons/
-    - assets/images/Logo.png   # <-- ¡AÑADE ESTA LÍNEA!
-                             # (Asegúrate de que el nombre sea exacto)
+    - assets/images/Logo.png
