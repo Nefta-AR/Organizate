@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:organizate/widgets/custom_nav_bar.dart';
 import 'package:fl_chart/fl_chart.dart'; // <-- ¡PAQUETE DE GRÁFICOS!
 
@@ -15,10 +16,10 @@ class ProgresoScreen extends StatefulWidget {
 
 class _ProgresoScreenState extends State<ProgresoScreen> {
   // Referencias a Firestore
-  final DocumentReference userDocRef =
-      FirebaseFirestore.instance.collection('users').doc('neftali_user');
-  final CollectionReference tasksCollection =
-      FirebaseFirestore.instance.collection('users').doc('neftali_user').collection('tasks');
+  final DocumentReference<Map<String, dynamic>> userDocRef =
+      FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser!.uid);
+  final CollectionReference<Map<String, dynamic>> tasksCollection =
+      FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser!.uid).collection('tasks');
 
   @override
   Widget build(BuildContext context) {
@@ -34,12 +35,11 @@ class _ProgresoScreenState extends State<ProgresoScreen> {
         automaticallyImplyLeading: false,
         actions: [
           // AppBar con Puntos/Racha/Avatar
-          StreamBuilder<DocumentSnapshot>(
+          StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
             stream: userDocRef.snapshots(),
             builder: (context, snapshot) {
               if (!snapshot.hasData) return const SizedBox();
-              final userData =
-                  snapshot.data!.data() as Map<String, dynamic>? ?? {};
+              final userData = snapshot.data?.data() ?? {};
               final int points = (userData['points'] as num?)?.toInt() ?? 0;
               final int streak = (userData['streak'] as num?)?.toInt() ?? 0;
               final String? avatarName = userData['avatar'] as String?;
@@ -56,7 +56,7 @@ class _ProgresoScreenState extends State<ProgresoScreen> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Row(children: [
-                      Icon(Icons.local_fire_department, color: Colors.deepOrange, size: 20),
+                      const Icon(Icons.local_fire_department, color: Colors.deepOrange, size: 20),
                       const SizedBox(width: 4),
                       Text('$streak', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
                     ]),
@@ -82,7 +82,7 @@ class _ProgresoScreenState extends State<ProgresoScreen> {
         ],
       ),
       // --- CUERPO CON EL GRÁFICO ---
-      body: StreamBuilder<QuerySnapshot>(
+      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         // 1. Obtenemos TODAS las tareas que estén COMPLETADAS (done == true)
         stream: tasksCollection.where('done', isEqualTo: true).snapshots(),
         builder: (context, snapshot) {
@@ -91,7 +91,7 @@ class _ProgresoScreenState extends State<ProgresoScreen> {
           }
           if (snapshot.hasError) {
             // ¡¡¡AQUÍ IMPRIMIMOS EL ERROR DE FIREBASE!!!
-            print('¡¡¡ERROR EN FIREBASE (PROGRESO): ${snapshot.error}!!!');
+            debugPrint('¡¡¡ERROR EN FIREBASE (PROGRESO): ${snapshot.error}!!!');
             return const Center(child: Text('Error al cargar datos del progreso'));
           }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
@@ -118,7 +118,7 @@ class _ProgresoScreenState extends State<ProgresoScreen> {
 
           // Contamos las tareas completadas por categoría
           for (var task in tasks) {
-            final data = task.data() as Map<String, dynamic>;
+            final data = task.data();
             final category = data['category'] as String?;
             if (category != null && categoryCounts.containsKey(category)) {
               categoryCounts[category] = categoryCounts[category]! + 1.0;

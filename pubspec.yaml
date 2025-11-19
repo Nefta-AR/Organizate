@@ -1,38 +1,57 @@
 name: organizate
 description: "A new Flutter project."
 publish_to: 'none'
+
 version: 1.0.0+1
 
 environment:
-  # Rango de SDK de Dart seguro y moderno
   sdk: '>=3.3.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
 
+  # Íconos
   cupertino_icons: ^1.0.8
-  shared_preferences: ^2.2.2
   material_design_icons_flutter: ^7.0.7296
   flutter_svg: ^2.0.9
-  intl: ^0.19.0 # VERSIÓN CORREGIDA
 
-  # Versiones de Firebase actualizadas (esto corrige el error de Gradle)
+  # Fechas y localización en español
+  intl: ^0.19.0
+
+  # Guardar datos locales (tema, notificaciones activas, etc.)
+  shared_preferences: ^2.2.2
+
+  # Firebase
   firebase_core: ^2.31.0
+  firebase_auth: ^4.17.4        # LOGIN
   cloud_firestore: ^4.17.3
+  firebase_storage: ^11.7.2     # Para subir fotos en el futuro
+
+  # UI / Gráficos
   fl_chart: ^1.1.1
+
+  # Notificaciones locales
+  flutter_local_notifications: ^17.1.0
+
+  # Manejo de estado (útil para avatar, usuario, settings)
+  provider: ^6.1.2
+
+  # 🔊 AUDIO PARA POMODORO Y EJERCICIOS DE RELAJACIÓN
+  audioplayers: ^6.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  
-  flutter_lints: ^4.0.0 # VERSIÓN CORREGIDA
+  flutter_lints: ^4.0.0
 
 flutter:
   uses-material-design: true
 
-  # Rutas de assets corregidas con la indentación correcta
   assets:
     - assets/avatars/
     - assets/icons/
     - assets/images/Logo.png
+    - assets/sounds/           # <--- NUEVO (carpeta donde estará bell.mp3)
+
+

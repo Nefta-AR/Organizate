@@ -1,11 +1,14 @@
 // lib/main.dart
-import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // <-- Añade Firestore aquí
-import 'firebase_options.dart';
-import 'package:organizate/screens/onboarding_screen.dart';
-import 'package:organizate/screens/home_screen.dart'; // <-- Añade HomeScreen aquí
+import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
+
+import 'firebase_options.dart';
+import 'screens/home_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/onboarding_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,51 +16,86 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   await initializeDateFormatting('es', null);
-
-  // --- ¡NUEVA LÓGICA DE INICIO! ---
-  Widget initialScreen; // Variable para decidir qué pantalla mostrar
-
-  try {
-    // Referencia a tu documento de usuario
-    DocumentSnapshot userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc('neftali_user')
-        .get();
-
-    // Revisa si el documento existe y si has completado el onboarding
-    if (userDoc.exists && (userDoc.data() as Map<String, dynamic>?)?['hasCompletedOnboarding'] == true) {
-      // Si ya completaste, ve directo al HomeScreen
-      initialScreen = const HomeScreen();
-    } else {
-      // Si no, empieza por el Onboarding
-      initialScreen = const OnboardingScreen();
-    }
-  } catch (e) {
-    // Si hay error leyendo Firestore (ej. sin conexión la primera vez),
-    // muestra el Onboarding por seguridad.
-    print("Error al verificar onboarding: $e");
-    initialScreen = const OnboardingScreen();
-  }
-  // --- FIN NUEVA LÓGICA ---
-
-  // Ejecuta la app con la pantalla inicial decidida
-  runApp(MyApp(initialScreen: initialScreen)); // <-- Pasa la pantalla inicial a MyApp
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  // --- NUEVO: Recibe la pantalla inicial ---
-  final Widget initialScreen;
-  const MyApp({super.key, required this.initialScreen});
-  // --- FIN NUEVO ---
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Organízate',
-      theme: ThemeData( /* ... tu tema ... */ ),
-      // --- ¡CAMBIO! Usa la pantalla inicial que decidimos en main() ---
-      home: initialScreen,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0099FF)),
+        useMaterial3: true,
+      ),
+      home: const AuthGate(),
+    );
+  }
+}
+
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snapshot.hasError) {
+          return const Scaffold(
+            body: Center(child: Text('Error de autenticación')),
+          );
+        }
+        final user = snapshot.data;
+        if (user == null) {
+          return const LoginScreen();
+        }
+        return UserOnboardingGate(user: user);
+      },
+    );
+  }
+}
+
+class UserOnboardingGate extends StatelessWidget {
+  const UserOnboardingGate({super.key, required this.user});
+
+  final User user;
+
+  @override
+  Widget build(BuildContext context) {
+    final userDoc =
+        FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: userDoc.snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snapshot.hasError) {
+          return const Scaffold(
+            body: Center(child: Text('Error al cargar usuario')),
+          );
+        }
+
+        final data = snapshot.data?.data();
+        final hasCompleted = data?['hasCompletedOnboarding'] == true;
+
+        if (hasCompleted) {
+          return const HomeScreen();
+        }
+        return const OnboardingScreen();
+      },
     );
   }
 }

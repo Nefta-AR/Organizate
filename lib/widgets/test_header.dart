@@ -41,8 +41,8 @@ class TestHeader extends StatelessWidget {
             // Icono de Avatar.
             CircleAvatar(
               radius: 14,
-              // CORRECCIÓN: Usamos .withOpacity(0.15) para la opacidad.
-              backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+              // CORRECCIÓN: Usamos .withValues(alpha: 0.15) para la opacidad.
+              backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
               child: const Icon(Icons.sentiment_satisfied_alt, size: 18, color: Colors.black87),
             ),
           ],

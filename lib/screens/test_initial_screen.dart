@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/custom_nav_bar.dart'; // Asegúrate que la ruta sea correcta
 import '../widgets/test_header.dart'; // Asegúrate que la ruta sea correcta
 import 'welcome_reward_screen.dart'; // Importamos la pantalla de bienvenida
@@ -23,16 +24,16 @@ class _TestInitialScreenState extends State<TestInitialScreen> {
   String _selectedGoalLength = 'Cortas (25-30 min)';
   final List<String> _goalOptions = ['Cortas (25-30 min)', 'Más largas (45-60 min)'];
   final List<Map<String, String>> _avatarOptions = [
-    {'name': 'Emoticon', 'image': 'assets/avatars/emoticon.png'},
-    {'name': 'Zorro',    'image': 'assets/avatars/zorro.png'},
-    {'name': 'Koala',    'image': 'assets/avatars/koala.png'},
-    {'name': 'Panda',    'image': 'assets/avatars/panda.png'},
-    {'name': 'Tigre',    'image': 'assets/avatars/tigre.png'},
-    {'name': 'Rana',     'image': 'assets/avatars/rana.png'},
-    {'name': 'Pinguino', 'image': 'assets/avatars/pinguino.png'},
-    {'name': 'Unicornio','image': 'assets/avatars/unicornio.png'},
+    {'label': 'Emoticon', 'value': 'emoticon', 'image': 'assets/avatars/emoticon.png'},
+    {'label': 'Zorro', 'value': 'zorro', 'image': 'assets/avatars/zorro.png'},
+    {'label': 'Koala', 'value': 'koala', 'image': 'assets/avatars/koala.png'},
+    {'label': 'Panda', 'value': 'panda', 'image': 'assets/avatars/panda.png'},
+    {'label': 'Tigre', 'value': 'tigre', 'image': 'assets/avatars/tigre.png'},
+    {'label': 'Rana', 'value': 'rana', 'image': 'assets/avatars/rana.png'},
+    {'label': 'Pinguino', 'value': 'pinguino', 'image': 'assets/avatars/pinguino.png'},
+    {'label': 'Unicornio', 'value': 'unicornio', 'image': 'assets/avatars/unicornio.png'},
   ];
-  String _selectedAvatar = 'Emoticon';
+  String _selectedAvatar = 'emoticon';
 
   // --- Funciones de Navegación y Guardado (CORRECTAS para ESTA pantalla) ---
   void _goToNextStep() async {
@@ -41,7 +42,7 @@ class _TestInitialScreenState extends State<TestInitialScreen> {
     } else {
       showDialog( context: context, barrierDismissible: false, builder: (context) => const Center(child: CircularProgressIndicator()), );
       try {
-        final userDocRef = FirebaseFirestore.instance.collection('users').doc('neftali_user');
+        final userDocRef = FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser!.uid);
         List<String> selectedReminderNames = [];
         for (int i = 0; i < _selectedReminders.length; i++) {
           if (_selectedReminders[i]) selectedReminderNames.add(_reminderOptions[i]);
@@ -53,14 +54,14 @@ class _TestInitialScreenState extends State<TestInitialScreen> {
           'points': 1200, // Puntos iniciales
         };
         await userDocRef.set(testResults, SetOptions(merge: true));
-        print('Resultados del test guardados!');
+        debugPrint('Resultados del test guardados!');
 
         if (mounted) {
            Navigator.of(context).pop(); // Cierra loading
            Navigator.pushReplacement( context, MaterialPageRoute(builder: (_) => const WelcomeRewardScreen()), ); // Navega a Bienvenida
         }
       } catch (e) {
-        print('Error al guardar: $e');
+        debugPrint('Error al guardar: $e');
         if (mounted) {
             Navigator.of(context).pop(); // Cierra loading
             ScaffoldMessenger.of(context).showSnackBar( const SnackBar(content: Text('Error al guardar. Intenta de nuevo.')) );
@@ -88,7 +89,7 @@ class _TestInitialScreenState extends State<TestInitialScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar( title: TestHeader(tokens: 1200, rewards: 5), leading: IconButton( icon: const Icon(Icons.close), onPressed: () => Navigator.maybePop(context), ), ),
+      appBar: AppBar( title: const TestHeader(tokens: 1200, rewards: 5), leading: IconButton( icon: const Icon(Icons.close), onPressed: () => Navigator.maybePop(context), ), ),
       bottomNavigationBar: const CustomNavBar(),
       body: Padding( // <-- Padding CORRECTO
         padding: const EdgeInsets.all(20.0), // <-- Con 'padding:'
@@ -135,9 +136,9 @@ class _TestInitialScreenState extends State<TestInitialScreen> {
      // --- CORREGIDO ---
      itemBuilder: (context, index) {
        final option = _avatarOptions[index]; // No necesita '!' si la lista está bien definida
-       final isSelected = _selectedAvatar == option['name'];
+       final isSelected = _selectedAvatar == option['value'];
        return GestureDetector(
-         onTap: () => _selectAvatar(option['name']!), // '!' aquí es seguro si name siempre existe
+         onTap: () => _selectAvatar(option['value']!), // '!' aquí es seguro si name siempre existe
          child: Container(
            padding: const EdgeInsets.all(8),
            decoration: _cardDeco().copyWith(
