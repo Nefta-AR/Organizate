@@ -147,7 +147,8 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
     }
     if (_pomodoroVibrationEnabled) {
       try {
-        if (await Vibration.hasVibrator() ?? false) {
+        final hasVibrator = await Vibration.hasVibrator();
+        if (hasVibrator == true) {
           Vibration.vibrate(duration: 800);
         }
       } catch (_) {

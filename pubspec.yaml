@@ -35,7 +35,8 @@ dependencies:
 
   # Notificaciones locales
   flutter_local_notifications: ^17.1.0
-  flutter_native_timezone: ^2.0.0
+  flutter_native_timezone:
+    path: packages/flutter_native_timezone
   timezone: ^0.9.4
 
   # Manejo de estado (útil para avatar, usuario, settings)
@@ -43,7 +44,7 @@ dependencies:
 
   # 🔊 AUDIO PARA POMODORO Y EJERCICIOS DE RELAJACIÓN
   audioplayers: ^6.0.0
-  vibration: ^1.8.4
+  vibration: ^3.1.4
 
 dev_dependencies:
   flutter_test:
