@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,6 +17,13 @@ class _LoginScreenState extends State<LoginScreen> {
   final _nameController = TextEditingController();
   bool _isLogin = true;
   bool _isLoading = false;
+  bool _obscurePassword = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials();
+  }
 
   @override
   void dispose() {
@@ -35,6 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       if (_isLogin) {
         await auth.signInWithEmailAndPassword(email: email, password: password);
+        await _saveCredentials(email, password);
       } else {
         final credential = await auth.createUserWithEmailAndPassword(
           email: email,
@@ -54,6 +63,7 @@ class _LoginScreenState extends State<LoginScreen> {
             'hasCompletedOnboarding': false,
             'createdAt': FieldValue.serverTimestamp(),
           }, SetOptions(merge: true));
+          await _saveCredentials(email, password);
         }
       }
     } on FirebaseAuthException catch (e) {
@@ -72,6 +82,45 @@ class _LoginScreenState extends State<LoginScreen> {
         .showSnackBar(SnackBar(content: Text(message)));
   }
 
+  Future<void> _loadSavedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedEmail = prefs.getString('saved_email');
+    final savedPassword = prefs.getString('saved_password');
+    if (!mounted) return;
+    setState(() {
+      if (savedEmail != null) _emailController.text = savedEmail;
+      if (savedPassword != null) _passwordController.text = savedPassword;
+    });
+  }
+
+  Future<void> _saveCredentials(String email, String password) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('saved_email', email);
+    await prefs.setString('saved_password', password);
+  }
+
+  Future<void> _sendPasswordReset() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      _showError('Ingresa tu correo para recuperar la contraseña');
+      return;
+    }
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Revisa tu correo para restablecer la contraseña'),
+          ),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      _showError(e.message ?? 'No se pudo enviar el correo');
+    } catch (_) {
+      _showError('No se pudo enviar el correo');
+    }
+  }
+
 @override
 Widget build(BuildContext context) {
   return Scaffold(
@@ -84,10 +133,10 @@ Widget build(BuildContext context) {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // ⭐ LOGO MÁS ARRIBA ⭐
-              const SizedBox(height: 40), // <-- ajusta este valor para subirlo más
+              const SizedBox(height: 16),
               Image.asset(
                 'assets/images/logo.png',
-                height: 120,
+                height: 110,
               ),
 
               const SizedBox(height: 16),
@@ -143,11 +192,23 @@ Widget build(BuildContext context) {
 
                     TextFormField(
                       controller: _passwordController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Contraseña',
-                        border: OutlineInputBorder(),
+                        border: const OutlineInputBorder(),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                        ),
                       ),
-                      obscureText: true,
+                      obscureText: _obscurePassword,
                       validator: (value) {
                         if (value == null || value.length < 6) {
                           return 'La contraseña debe tener al menos 6 caracteres';
@@ -156,7 +217,15 @@ Widget build(BuildContext context) {
                       },
                     ),
 
-                    const SizedBox(height: 24),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: _isLoading ? null : _sendPasswordReset,
+                        child: const Text('¿Olvidaste la contraseña?'),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
 
                     FilledButton(
                       onPressed: _isLoading ? null : _submit,

@@ -1,23 +1,36 @@
-// lib/screens/home_screen.dart
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:intl/intl.dart'; // Asegúrate que flutter pub add intl funcionó
-import 'package:organizate/widgets/custom_nav_bar.dart'; // Verifica ruta
-import 'package:organizate/screens/estudios_screen.dart'; // Importa para navegación
-import 'package:organizate/screens/hogar_screen.dart';    // Importa para navegación
-import 'package:organizate/screens/meds_screen.dart';     // Importa para navegación
-import 'package:organizate/screens/foco_screen.dart';     // Importa para navegación
-// No necesita importar ProgresoScreen si solo navega a ella desde la barra
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
+import 'package:organizate/screens/estudios_screen.dart';
+import 'package:organizate/screens/foco_screen.dart';
+import 'package:organizate/screens/hogar_screen.dart';
+import 'package:organizate/screens/meds_screen.dart';
+import 'package:organizate/screens/settings_screen.dart';
+import 'package:organizate/services/notification_service.dart';
+import 'package:organizate/services/streak_service.dart';
+import 'package:organizate/utils/date_time_helper.dart';
+import 'package:organizate/utils/reminder_options.dart';
+import 'package:organizate/widgets/custom_nav_bar.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
   User? get _currentUser => FirebaseAuth.instance.currentUser;
+  static const List<String> _motivationalPhrases = [
+    'Paso pequeño también es progreso.',
+    'Tu valor no depende de cuántas tareas terminas.',
+    'Divide las tareas en pasos pequeños y respira.',
+    'Celebra cada avance, por mínimo que parezca.',
+    'Puedes pausar, pero no te rindas.',
+    'Organizarte es un acto de cuidado propio.',
+  ];
 
   DocumentReference<Map<String, dynamic>> get userDocRef =>
       FirebaseFirestore.instance.collection('users').doc(_currentUser!.uid);
@@ -25,7 +38,14 @@ class _HomeScreenState extends State<HomeScreen> {
   CollectionReference<Map<String, dynamic>> get tasksCollection =>
       userDocRef.collection('tasks');
 
-  final DateFormat _dateFormatter = DateFormat('dd MMM', 'es_ES'); // Formato fecha
+  final DateFormat _dateTimeFormatter = DateFormat('dd MMM, HH:mm', 'es_ES');
+
+  String get _motivationLine {
+    const phrases = _motivationalPhrases;
+    if (phrases.isEmpty) return '';
+    final index = DateTime.now().day % phrases.length;
+    return phrases[index];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,183 +55,747 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
     return Scaffold(
-      bottomNavigationBar: const CustomNavBar(initialIndex: 0), // Indica que esta es la pantalla de Inicio (índice 0)
-      appBar: AppBar(
-        title: const Text('Organízate'),
-        elevation: 0, backgroundColor: Colors.transparent, foregroundColor: Colors.black, automaticallyImplyLeading: false, // Quita flecha atrás
-        actions: [
-          // StreamBuilder para Puntos, Racha y Avatar
-          StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-            stream: userDocRef.snapshots(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting ||
-                  !snapshot.hasData ||
-                  snapshot.hasError) {
-              return Row(
-                children: [
-                    const Icon(Icons.star, color: Colors.grey, size: 20),
-                    const SizedBox(width: 4),
-                    const Text(
-                      '...',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Row(
-                        children: const [
-                          Icon(Icons.local_fire_department, color: Colors.grey, size: 20),
-                          SizedBox(width: 4),
-                          Text('...'),
-                        ],
-                      ),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.only(right: 12.0),
-                      child: CircleAvatar(radius: 15, backgroundColor: Colors.grey),
-                    ),
-                  ],
-                );
-              }
-
-              final userData = snapshot.data?.data() ?? {};
-              final int points = (userData['points'] as num?)?.toInt() ?? 0;
-              final int streak = (userData['streak'] as num?)?.toInt() ?? 0;
-              final String? avatarName = userData['avatar'] as String?;
-
-              return Row(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8.0),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.star, color: Colors.amber, size: 20),
-                        const SizedBox(width: 4),
-                        Text(
-                          '$points',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.local_fire_department, color: Colors.deepOrange, size: 20),
-                        const SizedBox(width: 4),
-                        Text(
-                          '$streak',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (avatarName != null)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 12.0),
-                      child: CircleAvatar(
-                        radius: 15,
-                        backgroundColor: Colors.grey.shade200,
-                        backgroundImage: AssetImage('assets/avatars/$avatarName.png'),
-                        onBackgroundImageError: (e, s) {
-                          debugPrint('Error avatar: $e');
-                        },
-                      ),
-                    ),
-                  if (avatarName == null)
-                    const Padding(
-                      padding: EdgeInsets.only(right: 12.0),
-                      child: CircleAvatar(radius: 15, backgroundColor: Colors.grey),
-                    ),
-                ],
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Cerrar sesión',
-            onPressed: () => FirebaseAuth.instance.signOut(),
-          ),
-        ],
+      bottomNavigationBar: const CustomNavBar(initialIndex: 0),
+      appBar: _buildAppBar(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAddTaskDialog(context),
+        backgroundColor: Colors.blueAccent,
+        child: const Icon(Icons.add, color: Colors.white),
       ),
-      floatingActionButton: FloatingActionButton( onPressed: () => _showAddTaskDialog(context), backgroundColor: Colors.blueAccent, child: const Icon(Icons.add, color: Colors.white), ),
-      body: SingleChildScrollView( child: Padding( padding: const EdgeInsets.all(20.0), child: Column( crossAxisAlignment: CrossAxisAlignment.start, children: [
-              _buildHeaderCard(), const SizedBox(height: 24), _buildCategoryGrid(), const SizedBox(height: 24), _buildTodayGoalsHeader(), const SizedBox(height: 16),
-              // StreamBuilder para la lista de tareas
-              StreamBuilder<QuerySnapshot>( stream: tasksCollection.orderBy('createdAt', descending: true).snapshots(), builder: (context, snapshot) {
-                   if (snapshot.connectionState == ConnectionState.waiting) { return const Center(child: CircularProgressIndicator()); }
-                   if (snapshot.hasError) { debugPrint('Error Firestore: ${snapshot.error}'); return const Center(child: Text('Error al cargar tareas')); }
-                   if (!snapshot.hasData || snapshot.data!.docs.isEmpty) { return const Center(child: Text('Añade tu primera tarea con el botón +')); }
-                  final tasks = snapshot.data!.docs;
-                  // Construye la lista
-                  return ListView.builder( shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), itemCount: tasks.length, itemBuilder: (context, index) {
-                      final taskData = tasks[index].data() as Map<String, dynamic>; final taskId = tasks[index].id;
-                      final String currentText = taskData['text'] ?? ''; final String? currentCategory = taskData['category'] as String?;
-                      final Timestamp? currentDueDate = taskData['dueDate'] as Timestamp?; final bool isCurrentlyDone = taskData['done'] ?? false;
-                      // GestureDetector para Long Press
-                      return GestureDetector( onLongPress: () => _showTaskOptionsDialog(context, taskId, currentText, currentCategory, currentDueDate),
-                        child: _buildGoalItem( // Dibuja cada tarea
-                          icon: _getIconFromString(taskData['iconName'] ?? 'task_alt'), iconColor: _getColorFromString(taskData['colorName'] ?? 'grey'),
-                          text: currentText, isDone: isCurrentlyDone, dueDate: currentDueDate,
-                          // --- ¡AQUÍ ESTÁ LA LÓGICA DE PUNTOS! ---
-                          onDonePressed: () {
-                             final pointsChange = isCurrentlyDone ? -10 : 10; // Suma 10 si no está hecha, resta 10 si sí
-                             WriteBatch batch = FirebaseFirestore.instance.batch(); // Prepara operaciones múltiples
-                             // Operación 1: Cambia el estado 'done' de la tarea
-                             batch.update(tasksCollection.doc(taskId), {'done': !isCurrentlyDone});
-                             // Operación 2: Incrementa/decrementa los puntos del usuario
-                             batch.update(userDocRef, {'points': FieldValue.increment(pointsChange)});
-                             // TODO: Actualizar racha aquí (lógica más compleja)
-                             // Ejecuta ambas operaciones juntas
-                              final messenger = ScaffoldMessenger.of(context);
-                              batch.commit().then((_){
-                               debugPrint('Tarea ${!isCurrentlyDone ? 'completada' : 'desmarcada'} y puntos actualizados.');
-                              }).catchError((error) {
-                               debugPrint('Error al actualizar tarea/puntos: $error');
-                               messenger.showSnackBar( const SnackBar(content: Text('Error al marcar tarea.')) );
-                              });
-                          },
-                          // --- FIN LÓGICA DE PUNTOS ---
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-            ],
-          ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildProgressHeader(),
+            const SizedBox(height: 24),
+            _buildCategoryGrid(),
+            const SizedBox(height: 24),
+            _buildTodayGoalsHeader(),
+            const SizedBox(height: 16),
+            _buildTasksStream(),
+          ],
         ),
       ),
     );
   }
 
-  // --- MÉTODOS AUXILIARES (Sin cambios, ya estaban bien) ---
-  Widget _buildHeaderCard() { return Container( padding: const EdgeInsets.all(20), decoration: BoxDecoration( color: Colors.blue.withAlpha(25), borderRadius: BorderRadius.circular(16), ), child: Row( mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [ const Column( crossAxisAlignment: CrossAxisAlignment.start, children: [ Text('Hola 👋', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)), SizedBox(height: 8), Text('Hoy, enfoquémonos en...', style: TextStyle(fontSize: 16, color: Colors.black54)), ], ), SizedBox( width: 70, height: 70, child: Stack( fit: StackFit.expand, children: [ CircularProgressIndicator( value: 0.60, strokeWidth: 8, backgroundColor: Colors.green.withAlpha(51), color: Colors.green, ), Center(child: Text('60%', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green.shade800))), ], ), ), ], ), ); }
-  Widget _buildCategoryGrid() { return GridView.count( crossAxisCount: 2, crossAxisSpacing: 16, mainAxisSpacing: 16, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), children: [
-        // --- NAVEGACIÓN AÑADIDA ---
-        _buildCategoryCard(title: 'Estudios', subtitle: 'Pomodoro + pendientes', icon: Icons.school, color: Colors.orange, onTap: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const EstudiosScreen()))),
-        _buildCategoryCard(title: 'Quehaceres', subtitle: 'Lista visual', icon: Icons.cottage, color: Colors.green, onTap: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HogarScreen()))),
-        _buildCategoryCard(title: 'Medicamentos', subtitle: 'Recordatorios', icon: Icons.medication, color: Colors.red, onTap: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MedsScreen()))),
-        _buildCategoryCard(title: 'Mindfulness', subtitle: 'Respira y enfoca', icon: Icons.self_improvement, color: Colors.purple, onTap: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const FocoScreen()))),
-      ], ); }
-  Widget _buildCategoryCard({required String title, required String subtitle, required IconData icon, required Color color, required VoidCallback onTap}) { return GestureDetector( onTap: onTap, child: Container( padding: const EdgeInsets.all(16), decoration: BoxDecoration( color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [ BoxShadow(color: Colors.grey.withAlpha(25), spreadRadius: 2, blurRadius: 5) ], ), child: Column( crossAxisAlignment: CrossAxisAlignment.start, children: [ Icon(icon, size: 32, color: color), const Spacer(), Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), const SizedBox(height: 4), Text(subtitle, style: const TextStyle(fontSize: 14, color: Colors.black54)), ], ), ), ); }
-  Widget _buildTodayGoalsHeader() { return const Text( 'Tus metas de hoy', style: TextStyle( fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87, ), ); }
-  Widget _buildGoalItem({ required IconData icon, required Color iconColor, required String text, required bool isDone, required VoidCallback onDonePressed, Timestamp? dueDate, }) { return Padding( padding: const EdgeInsets.symmetric(vertical: 8.0), child: Row( children: [ Icon(icon, color: iconColor, size: 28), const SizedBox(width: 16), Expanded( child: Column( crossAxisAlignment: CrossAxisAlignment.start, children: [ Text( text, style: TextStyle( fontSize: 16, color: isDone ? Colors.grey : Colors.black87, decoration: isDone ? TextDecoration.lineThrough : TextDecoration.none, ), ), if (dueDate != null) ...[ const SizedBox(height: 4), Text( 'Entrega: ${_dateFormatter.format(dueDate.toDate())}', style: TextStyle(fontSize: 12, color: Colors.grey.shade600), ), ], ], ), ), const SizedBox(width: 16), ElevatedButton( onPressed: onDonePressed, style: ElevatedButton.styleFrom( backgroundColor: isDone ? Colors.grey.shade300 : Colors.blue.withAlpha(25), foregroundColor: isDone ? Colors.grey.shade600 : Colors.blue.shade800, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), ), child: Text(isDone ? 'Deshacer' : 'Hecho'), ), ], ), ); }
-  void _showAddTaskDialog(BuildContext context) { final TextEditingController taskController = TextEditingController(); final List<String> categories = ['General', 'Estudios', 'Hogar', 'Meds']; String? selectedCategory = 'General'; DateTime? selectedDueDate; showDialog( context: context, builder: (BuildContext context) { return StatefulBuilder( builder: (context, setDialogState) { return AlertDialog( title: const Text('Nueva Tarea'), content: SingleChildScrollView( child: Column( mainAxisSize: MainAxisSize.min, children: [ TextField( controller: taskController, decoration: const InputDecoration(hintText: "Descripción"), autofocus: true, ), const SizedBox(height: 20), DropdownButtonFormField<String>( initialValue: selectedCategory, decoration: const InputDecoration(labelText: 'Categoría'), items: categories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(), onChanged: (val) => setDialogState(() => selectedCategory = val), validator: (v) => v == null ? 'Selecciona' : null, ), const SizedBox(height: 20), Row( children: [ Expanded( child: Text( selectedDueDate == null ? 'Sin fecha' : 'Entrega: ${_dateFormatter.format(selectedDueDate!)}', style: TextStyle(color: Colors.grey.shade600), ), ), IconButton( icon: const Icon(Icons.calendar_today), onPressed: () async { final DateTime? picked = await showDatePicker( context: context, initialDate: selectedDueDate ?? DateTime.now(), firstDate: DateTime(DateTime.now().year - 1), lastDate: DateTime(DateTime.now().year + 5), ); if (picked != null) setDialogState(() => selectedDueDate = picked); }, ), if (selectedDueDate != null) IconButton( icon: const Icon(Icons.clear, size: 18), onPressed: () => setDialogState(() => selectedDueDate = null), ), ], ), ], ), ), actions: <Widget>[ TextButton(child: const Text('Cancelar'), onPressed: () => Navigator.of(context).pop()), TextButton( child: const Text('Añadir'), onPressed: () { if (taskController.text.isNotEmpty && selectedCategory != null) { String iconName = _getIconNameFromCategory(selectedCategory!); String colorName = _getColorNameFromCategory(selectedCategory!); Map<String, dynamic> taskData = { 'text': taskController.text, 'category': selectedCategory, 'iconName': iconName, 'colorName': colorName, 'done': false, 'createdAt': Timestamp.now(), if (selectedDueDate != null) 'dueDate': Timestamp.fromDate(selectedDueDate!), }; tasksCollection.add(taskData); Navigator.of(context).pop(); } }, ), ], ); }, ); }, ); }
+  // AppBar con puntos, racha y acceso al perfil.
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      title: const Text('Organízate'),
+      elevation: 0,
+      backgroundColor: Colors.transparent,
+      foregroundColor: Colors.black,
+      automaticallyImplyLeading: false,
+      actions: [
+        StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+          stream: userDocRef.snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting ||
+                snapshot.hasError ||
+                !snapshot.hasData) {
+              return const Row(
+                children: [
+                  Icon(Icons.star, color: Colors.grey, size: 20),
+                  SizedBox(width: 4),
+                  Text('...', style: TextStyle(fontWeight: FontWeight.bold)),
+                  SizedBox(width: 16),
+                  Icon(Icons.local_fire_department, color: Colors.grey, size: 20),
+                  SizedBox(width: 4),
+                  Text('...'),
+                  SizedBox(width: 16),
+                  Padding(
+                    padding: EdgeInsets.only(right: 12),
+                    child: CircleAvatar(
+                      radius: 15,
+                      backgroundColor: Colors.grey,
+                    ),
+                  ),
+                ],
+              );
+            }
+            final userData = snapshot.data!.data() ?? {};
+            final int points = (userData['points'] as num?)?.toInt() ?? 0;
+            final int streak = (userData['streak'] as num?)?.toInt() ?? 0;
+            final String? avatarName = userData['avatar'] as String?;
+
+            return Row(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.star, color: Colors.amber, size: 20),
+                      const SizedBox(width: 4),
+                      Text(
+                        '$points',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.local_fire_department,
+                          color: Colors.deepOrange, size: 20),
+                      const SizedBox(width: 4),
+                      Text(
+                        '$streak',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const SettingsScreen(),
+                        ),
+                      );
+                    },
+                    child: CircleAvatar(
+                      radius: 15,
+                      backgroundColor: Colors.grey.shade200,
+                      backgroundImage: avatarName != null
+                          ? AssetImage('assets/avatars/$avatarName.png')
+                          : null,
+                      child: avatarName == null
+                          ? const Icon(Icons.person, size: 16)
+                          : null,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+        IconButton(
+          icon: const Icon(Icons.logout),
+          tooltip: 'Cerrar sesión',
+          onPressed: () => FirebaseAuth.instance.signOut(),
+        ),
+      ],
+    );
+  }
+
+  // Muestra el progreso del día calculando tareas completadas hoy.
+  Widget _buildProgressHeader() {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: tasksCollection.snapshots(),
+      builder: (context, snapshot) {
+        double progress = 0;
+        String percentText = '0%';
+        if (snapshot.hasData) {
+          final docs = snapshot.data!.docs;
+          final now = DateTime.now();
+          final startOfDay = DateTime(now.year, now.month, now.day);
+          final endOfDay = startOfDay.add(const Duration(days: 1));
+          int totalTasks = 0;
+          int completedTasks = 0;
+
+          for (final doc in docs) {
+            final data = doc.data();
+            final Timestamp? dueStamp = data['dueDate'] as Timestamp?;
+            final Timestamp? createdStamp = data['createdAt'] as Timestamp?;
+            final DateTime? referenceDate =
+                dueStamp?.toDate() ?? createdStamp?.toDate();
+            if (referenceDate == null) continue;
+            if (!referenceDate.isBefore(startOfDay) &&
+                referenceDate.isBefore(endOfDay)) {
+              totalTasks++;
+              if ((data['done'] as bool?) ?? false) {
+                completedTasks++;
+              }
+            }
+          }
+
+          if (totalTasks > 0) {
+            progress = completedTasks / totalTasks;
+            percentText = '${(progress * 100).round()}%';
+          }
+        }
+        return _buildHeaderCard(
+          progress.clamp(0.0, 1.0).toDouble(),
+          percentText,
+          _motivationLine,
+        );
+      },
+    );
+  }
+
+  // Tarjeta que enseña progreso y frase motivacional.
+  Widget _buildHeaderCard(
+      double progress, String percentText, String motivationalText) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.blue.withAlpha(25),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Hola 👋',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Hoy, enfoquémonos en...',
+                style: TextStyle(fontSize: 16, color: Colors.black54),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: 180,
+                child: Text(
+                  motivationalText,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Colors.black54,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(
+            width: 70,
+            height: 70,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                CircularProgressIndicator(
+                  value: progress,
+                  strokeWidth: 8,
+                  backgroundColor: Colors.green.withAlpha(50),
+                  color: Colors.green,
+                ),
+                Center(
+                  child: Text(
+                    percentText,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green.shade800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Resumen por categoría para saltar rápido a cada vista especializada.
+  Widget _buildCategoryGrid() {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: tasksCollection.snapshots(),
+      builder: (context, snapshot) {
+        final docs = snapshot.data?.docs ?? [];
+        final Map<String, List<Map<String, dynamic>>> pendingByCategory = {
+          'Estudios': [],
+          'Hogar': [],
+          'Meds': [],
+          'Foco': [],
+          'General': [],
+        };
+        for (final doc in docs) {
+          final data = doc.data();
+          final bool isDone = (data['done'] as bool?) ?? false;
+          if (isDone) continue;
+          final category = (data['category'] as String?) ?? 'General';
+          final normalized = pendingByCategory.containsKey(category)
+              ? category
+              : 'General';
+          final list = pendingByCategory[normalized];
+          if (list != null) {
+            list.add(data);
+          }
+        }
+
+        List<String> topTasksFor(String category) {
+          final entries =
+              pendingByCategory[category] ?? <Map<String, dynamic>>[];
+          return entries
+              .map((task) => (task['text'] as String?)?.trim())
+              .whereType<String>()
+              .where((text) => text.isNotEmpty)
+              .take(3)
+              .toList();
+        }
+
+        int countFor(String category) =>
+            pendingByCategory[category]?.length ?? 0;
+
+        return GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 2,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+          children: [
+            _buildCategoryCard(
+              title: 'Estudios',
+              subtitle: 'Organiza tus clases',
+              icon: Icons.menu_book,
+              color: Colors.orange,
+              pendingCount: countFor('Estudios'),
+              topTasks: topTasksFor('Estudios'),
+              onTap: () => Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const EstudiosScreen()),
+              ),
+            ),
+            _buildCategoryCard(
+              title: 'Hogar',
+              subtitle: 'Lista visual',
+              icon: Icons.cottage,
+              color: Colors.green,
+              pendingCount: countFor('Hogar'),
+              topTasks: topTasksFor('Hogar'),
+              onTap: () => Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const HogarScreen()),
+              ),
+            ),
+            _buildCategoryCard(
+              title: 'Medicamentos',
+              subtitle: 'Recordatorios',
+              icon: Icons.medication,
+              color: Colors.red,
+              pendingCount: countFor('Meds'),
+              topTasks: topTasksFor('Meds'),
+              onTap: () => Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const MedsScreen()),
+              ),
+            ),
+            _buildCategoryCard(
+              title: 'Foco',
+              subtitle: 'Respira y enfoca',
+              icon: Icons.self_improvement,
+              color: Colors.purple,
+              pendingCount: countFor('Foco'),
+              topTasks: topTasksFor('Foco'),
+              onTap: () => Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const FocoScreen()),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Widget reutilizable para dibujar cada tarjeta de categoría.
+  Widget _buildCategoryCard({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required int pendingCount,
+    required List<String> topTasks,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withAlpha(40),
+              spreadRadius: 2,
+              blurRadius: 5,
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 32, color: color),
+            const Spacer(),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: const TextStyle(fontSize: 14, color: Colors.black54),
+            ),
+            const SizedBox(height: 8),
+            if (pendingCount == 0)
+              const Text(
+                'Sin tareas pendientes',
+                style: TextStyle(fontSize: 12, color: Colors.black54),
+              )
+            else ...[
+              Text(
+                '$pendingCount pendientes',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              ...topTasks.map(
+                (task) => Text(
+                  '• $task',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 12, color: Colors.black87),
+                ),
+              ),
+              if (pendingCount > topTasks.length)
+                const Text(
+                  '…',
+                  style: TextStyle(fontSize: 12),
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Encabezado simple para la lista de tareas del día.
+  Widget _buildTodayGoalsHeader() {
+    return const Text(
+      'Tus metas de hoy',
+      style: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        color: Colors.black87,
+      ),
+    );
+  }
+
+  // Lista en vivo de tareas ordenadas por fecha de creación.
+  Widget _buildTasksStream() {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: tasksCollection.orderBy('createdAt', descending: true).snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return const Center(child: Text('Error al cargar tareas'));
+        }
+        final docs = snapshot.data?.docs ?? [];
+        if (docs.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 32),
+            child: Center(
+              child: Text('Añade tu primera tarea con el botón +'),
+            ),
+          );
+        }
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: docs.length,
+          itemBuilder: (context, index) {
+            final data = docs[index].data();
+            final taskId = docs[index].id;
+            final String text = data['text'] as String? ?? '';
+            final String? category = data['category'] as String?;
+            final Timestamp? dueDate = data['dueDate'] as Timestamp?;
+            final int reminderOffset =
+                (data['reminderOffsetMinutes'] as num?)?.toInt() ?? 0;
+            final bool isDone = data['done'] as bool? ?? false;
+            return GestureDetector(
+              onLongPress: () => _showTaskOptionsDialog(
+                context,
+                taskId,
+                text,
+                category,
+                dueDate,
+                reminderOffset,
+              ),
+              child: _buildGoalItem(
+                icon: _getIconFromString(data['iconName'] as String? ?? 'task_alt'),
+                iconColor:
+                    _getColorFromString(data['colorName'] as String? ?? 'grey'),
+                text: text,
+                isDone: isDone,
+                dueDate: dueDate,
+                onDonePressed: () => _toggleTaskCompletion(taskId, isDone),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // Tarjeta reutilizable que muestra una tarea cualquiera.
+  Widget _buildGoalItem({
+    required IconData icon,
+    required Color iconColor,
+    required String text,
+    required bool isDone,
+    required VoidCallback onDonePressed,
+    Timestamp? dueDate,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Icon(icon, color: iconColor, size: 28),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  text,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: isDone ? Colors.grey : Colors.black87,
+                    decoration: isDone
+                        ? TextDecoration.lineThrough
+                        : TextDecoration.none,
+                  ),
+                ),
+                if (dueDate != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Entrega: ${_dateTimeFormatter.format(dueDate.toDate())}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          ElevatedButton(
+            onPressed: onDonePressed,
+            style: ElevatedButton.styleFrom(
+              backgroundColor:
+                  isDone ? Colors.grey.shade300 : Colors.blue.withAlpha(30),
+              foregroundColor:
+                  isDone ? Colors.grey.shade600 : Colors.blue.shade800,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text(isDone ? 'Deshacer' : 'Hecho'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Cambia el estado de una tarea, actualiza puntos y, si aplica, la racha.
+  Future<void> _toggleTaskCompletion(String taskId, bool isDone) async {
+    final messenger = ScaffoldMessenger.of(context);
+    // Suma 10 puntos al completar y resta 10 al deshacer.
+    final pointsChange = isDone ? -10 : 10;
+    final batch = FirebaseFirestore.instance.batch();
+    // 1) Invierte el campo done.
+    batch.update(tasksCollection.doc(taskId), {'done': !isDone});
+    // 2) Ajusta los puntos del usuario.
+    batch.update(userDocRef, {'points': FieldValue.increment(pointsChange)});
+    try {
+      // 3) Ejecuta ambas operaciones juntas para mantener consistencia.
+      await batch.commit();
+    } catch (error) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Error al actualizar la tarea.')),
+      );
+      return;
+    }
+
+    // Solo al pasar de pendiente -> completada evaluamos la racha.
+    if (!isDone) {
+      try {
+        await StreakService.updateStreakOnTaskCompletion(userDocRef);
+      } catch (error) {
+        debugPrint('No se pudo actualizar la racha: $error');
+      }
+    }
+  }
+
+  // Diálogo para crear una tarea con categoría, fecha y recordatorio.
+  void _showAddTaskDialog(BuildContext context) {
+    final TextEditingController taskController = TextEditingController();
+    final List<String> categories = ['General', 'Estudios', 'Hogar', 'Meds'];
+    String? selectedCategory = 'General';
+    DateTime? selectedDueDate;
+    int selectedReminderMinutes = 0;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Nueva tarea'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: taskController,
+                      decoration: const InputDecoration(hintText: 'Descripción'),
+                      autofocus: true,
+                    ),
+                    const SizedBox(height: 20),
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedCategory,
+                      decoration: const InputDecoration(labelText: 'Categoría'),
+                      items: categories
+                          .map(
+                            (cat) => DropdownMenuItem(
+                              value: cat,
+                              child: Text(cat),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) =>
+                          setDialogState(() => selectedCategory = value),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            selectedDueDate == null
+                                ? 'Sin fecha'
+                                : 'Entrega: ${_dateTimeFormatter.format(selectedDueDate!)}',
+                            style: TextStyle(color: Colors.grey.shade600),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.calendar_today),
+                          onPressed: () async {
+                            final picked = await pickDateTime(
+                              context: context,
+                              initialDate: selectedDueDate,
+                            );
+                            if (picked != null) {
+                              setDialogState(() => selectedDueDate = picked);
+                            }
+                          },
+                        ),
+                        if (selectedDueDate != null)
+                          IconButton(
+                            icon: const Icon(Icons.clear, size: 18),
+                            onPressed: () =>
+                                setDialogState(() => selectedDueDate = null),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<int>(
+                      decoration: const InputDecoration(
+                        labelText: 'Recordatorio',
+                        border: OutlineInputBorder(),
+                      ),
+                      initialValue: selectedReminderMinutes,
+                      items: kReminderOptions
+                          .map(
+                            (option) => DropdownMenuItem<int>(
+                              value: option['minutes'] as int,
+                              child: Text(option['label'] as String),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setDialogState(() => selectedReminderMinutes = value);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Cancelar'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    if (taskController.text.isEmpty || selectedCategory == null) {
+                      return;
+                    }
+                    final navigator = Navigator.of(dialogContext);
+                    final iconName =
+                        _getIconNameFromCategory(selectedCategory!);
+                    final colorName =
+                        _getColorNameFromCategory(selectedCategory!);
+                    final data = <String, dynamic>{
+                      'text': taskController.text,
+                      'category': selectedCategory,
+                      'iconName': iconName,
+                      'colorName': colorName,
+                      'done': false,
+                      'createdAt': Timestamp.now(),
+                      'reminderOffsetMinutes': selectedReminderMinutes,
+                      if (selectedDueDate != null)
+                        'dueDate': Timestamp.fromDate(selectedDueDate!),
+                    };
+                    try {
+                      final docRef = await tasksCollection.add(data);
+                      await NotificationService.scheduleReminderIfNeeded(
+                        userDocRef: userDocRef,
+                        taskId: docRef.id,
+                        taskTitle: taskController.text,
+                        dueDate: selectedDueDate,
+                        reminderOffsetMinutes: selectedReminderMinutes,
+                      );
+                    } finally {
+                      if (navigator.mounted && navigator.canPop()) {
+                        navigator.pop();
+                      }
+                    }
+                  },
+                  child: const Text('Añadir'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // Menú contextual que permite editar o eliminar una tarea.
   void _showTaskOptionsDialog(
     BuildContext context,
     String taskId,
     String currentText,
     String? currentCategory,
     Timestamp? currentDueDate,
+    int? reminderOffsetMinutes,
   ) {
     showDialog(
       context: context,
@@ -226,7 +810,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 title: const Text('Editar'),
                 onTap: () {
                   Navigator.of(dialogContext).pop();
-                  _showEditTaskDialog(context, taskId, currentText, currentCategory, currentDueDate);
+                  _showEditTaskDialog(
+                    context,
+                    taskId,
+                    currentText,
+                    currentCategory,
+                    currentDueDate,
+                    reminderOffsetMinutes,
+                  );
                 },
               ),
               ListTile(
@@ -236,14 +827,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   final navigator = Navigator.of(dialogContext);
                   final messenger = ScaffoldMessenger.of(dialogContext);
                   try {
+                    await NotificationService.cancelTaskNotification(taskId);
                     await tasksCollection.doc(taskId).delete();
-                    debugPrint('Eliminada');
                     navigator.pop();
                     messenger.showSnackBar(
                       SnackBar(content: Text('"$currentText" eliminada')),
                     );
-                  } catch (error) {
-                    debugPrint('Error: $error');
+                  } catch (_) {
                     navigator.pop();
                     messenger.showSnackBar(
                       const SnackBar(content: Text('Error al eliminar')),
@@ -264,17 +854,28 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // Diálogo de edición reutilizable con mismos campos que el alta.
   void _showEditTaskDialog(
     BuildContext context,
     String taskId,
     String currentText,
     String? currentCategory,
     Timestamp? currentDueDate,
+    int? currentReminderOffset,
   ) {
-    final TextEditingController taskController = TextEditingController(text: currentText);
-    final List<String> categories = ['General', 'Estudios', 'Hogar', 'Meds'];
-    String? selectedCategory = categories.contains(currentCategory) ? currentCategory : 'General';
+    final TextEditingController taskController =
+        TextEditingController(text: currentText);
+    final List<String> categories = [
+      'General',
+      'Estudios',
+      'Hogar',
+      'Meds',
+      'Foco',
+    ];
+    String? selectedCategory =
+        categories.contains(currentCategory) ? currentCategory : 'General';
     DateTime? selectedDueDate = currentDueDate?.toDate();
+    int selectedReminderMinutes = currentReminderOffset ?? 0;
 
     showDialog(
       context: context,
@@ -282,14 +883,15 @@ class _HomeScreenState extends State<HomeScreen> {
         return StatefulBuilder(
           builder: (statefulContext, setDialogState) {
             return AlertDialog(
-              title: const Text('Editar Tarea'),
+              title: const Text('Editar tarea'),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     TextField(
                       controller: taskController,
-                      decoration: const InputDecoration(hintText: 'Nuevo texto'),
+                      decoration:
+                          const InputDecoration(hintText: 'Nuevo texto'),
                       autofocus: true,
                     ),
                     const SizedBox(height: 20),
@@ -297,9 +899,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       initialValue: selectedCategory,
                       decoration: const InputDecoration(labelText: 'Categoría'),
                       items: categories
-                          .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
+                          .map(
+                            (cat) => DropdownMenuItem(
+                              value: cat,
+                              child: Text(cat),
+                            ),
+                          )
                           .toList(),
-                      onChanged: (val) => setDialogState(() => selectedCategory = val),
+                      onChanged: (value) =>
+                          setDialogState(() => selectedCategory = value),
                     ),
                     const SizedBox(height: 20),
                     Row(
@@ -308,18 +916,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: Text(
                             selectedDueDate == null
                                 ? 'Sin fecha'
-                                : 'Entrega: ${_dateFormatter.format(selectedDueDate!)}',
+                                : 'Entrega: ${_dateTimeFormatter.format(selectedDueDate!)}',
                             style: TextStyle(color: Colors.grey.shade600),
                           ),
                         ),
                         IconButton(
                           icon: const Icon(Icons.calendar_today),
                           onPressed: () async {
-                            final DateTime? picked = await showDatePicker(
+                            final picked = await pickDateTime(
                               context: statefulContext,
-                              initialDate: selectedDueDate ?? DateTime.now(),
-                              firstDate: DateTime(DateTime.now().year - 1),
-                              lastDate: DateTime(DateTime.now().year + 5),
+                              initialDate: selectedDueDate,
                             );
                             if (picked != null) {
                               setDialogState(() => selectedDueDate = picked);
@@ -329,9 +935,31 @@ class _HomeScreenState extends State<HomeScreen> {
                         if (selectedDueDate != null)
                           IconButton(
                             icon: const Icon(Icons.clear, size: 18),
-                            onPressed: () => setDialogState(() => selectedDueDate = null),
+                            onPressed: () =>
+                                setDialogState(() => selectedDueDate = null),
                           ),
                       ],
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<int>(
+                      decoration: const InputDecoration(
+                        labelText: 'Recordatorio',
+                        border: OutlineInputBorder(),
+                      ),
+                      initialValue: selectedReminderMinutes,
+                      items: kReminderOptions
+                          .map(
+                            (option) => DropdownMenuItem<int>(
+                              value: option['minutes'] as int,
+                              child: Text(option['label'] as String),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setDialogState(() => selectedReminderMinutes = value);
+                        }
+                      },
                     ),
                   ],
                 ),
@@ -343,31 +971,39 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 TextButton(
                   onPressed: () async {
-                    final navigator = Navigator.of(dialogContext);
-                    if (taskController.text.isEmpty || selectedCategory == null) {
-                      navigator.pop();
+                    if (taskController.text.isEmpty ||
+                        selectedCategory == null) {
                       return;
                     }
-
-                    final String iconName = _getIconNameFromCategory(selectedCategory!);
-                    final String colorName = _getColorNameFromCategory(selectedCategory!);
-                    final Map<String, dynamic> updatedData = {
+                    final navigator = Navigator.of(dialogContext);
+                    final iconName =
+                        _getIconNameFromCategory(selectedCategory!);
+                    final colorName =
+                        _getColorNameFromCategory(selectedCategory!);
+                    final updatedData = <String, dynamic>{
                       'text': taskController.text,
                       'category': selectedCategory,
                       'iconName': iconName,
                       'colorName': colorName,
+                      'reminderOffsetMinutes': selectedReminderMinutes,
                       'dueDate': selectedDueDate == null
                           ? FieldValue.delete()
                           : Timestamp.fromDate(selectedDueDate!),
                     };
-
                     try {
                       await tasksCollection.doc(taskId).update(updatedData);
-                      debugPrint('Actualizada');
-                    } catch (error) {
-                      debugPrint('Error: $error');
+                      await NotificationService.cancelTaskNotification(taskId);
+                      await NotificationService.scheduleReminderIfNeeded(
+                        userDocRef: userDocRef,
+                        taskId: taskId,
+                        taskTitle: taskController.text,
+                        dueDate: selectedDueDate,
+                        reminderOffsetMinutes: selectedReminderMinutes,
+                      );
                     } finally {
-                      navigator.pop();
+                      if (navigator.mounted && navigator.canPop()) {
+                        navigator.pop();
+                      }
                     }
                   },
                   child: const Text('Guardar'),
@@ -379,9 +1015,73 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     );
   }
-  IconData _getIconFromString(String iconName) { switch (iconName) { case 'menu_book': return Icons.menu_book; case 'cleaning_services': return Icons.cleaning_services; case 'medication': return Icons.medication; case 'task_alt': return Icons.task_alt; default: return Icons.task; } }
-  Color _getColorFromString(String colorName) { switch (colorName) { case 'orange': return Colors.orange; case 'green': return Colors.green; case 'red': return Colors.red; case 'grey': return Colors.grey; default: return Colors.blue; } }
-  String _getIconNameFromCategory(String category) { switch (category) { case 'Estudios': return 'menu_book'; case 'Hogar': return 'cleaning_services'; case 'Meds': return 'medication'; case 'General': default: return 'task_alt'; } }
-  String _getColorNameFromCategory(String category) { switch (category) { case 'Estudios': return 'orange'; case 'Hogar': return 'green'; case 'Meds': return 'red'; case 'General': default: return 'grey'; } }
 
-} // ¡FIN DE LA CLASE _HomeScreenState!
+  // Convierte el nombre guardado en Firestore al IconData correspondiente.
+  IconData _getIconFromString(String iconName) {
+    switch (iconName) {
+      case 'menu_book':
+        return Icons.menu_book;
+      case 'cleaning_services':
+        return Icons.cleaning_services;
+      case 'medication':
+        return Icons.medication;
+      case 'psychology':
+        return Icons.psychology;
+      case 'task_alt':
+      default:
+        return Icons.task_alt;
+    }
+  }
+
+  // Convierte el identificador textual al color usado en la tarjeta.
+  Color _getColorFromString(String colorName) {
+    switch (colorName) {
+      case 'orange':
+        return Colors.orange;
+      case 'green':
+        return Colors.green;
+      case 'red':
+        return Colors.red;
+      case 'purple':
+        return Colors.purple;
+      case 'grey':
+        return Colors.grey;
+      default:
+        return Colors.blue;
+    }
+  }
+
+  // Helpers de selección inversa: dado una categoría, devuelve nombre de icono.
+  String _getIconNameFromCategory(String category) {
+    switch (category) {
+      case 'Estudios':
+        return 'menu_book';
+      case 'Hogar':
+        return 'cleaning_services';
+      case 'Meds':
+        return 'medication';
+      case 'Foco':
+        return 'psychology';
+      case 'General':
+      default:
+        return 'task_alt';
+    }
+  }
+
+  // Y en este helper lo mismo pero para el color.
+  String _getColorNameFromCategory(String category) {
+    switch (category) {
+      case 'Estudios':
+        return 'orange';
+      case 'Hogar':
+        return 'green';
+      case 'Meds':
+        return 'red';
+      case 'Foco':
+        return 'purple';
+      case 'General':
+      default:
+        return 'grey';
+    }
+  }
+}

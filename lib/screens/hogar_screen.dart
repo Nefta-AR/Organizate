@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:organizate/services/notification_service.dart';
+import 'package:organizate/services/streak_service.dart';
+import 'package:organizate/utils/date_time_helper.dart';
+import 'package:organizate/utils/reminder_options.dart';
 import 'package:organizate/widgets/custom_nav_bar.dart';
 
 
@@ -14,9 +18,12 @@ class HogarScreen extends StatefulWidget {
 
 class _HogarScreenState extends State<HogarScreen> {
   // --- Referencias a Firestore (igual que en HomeScreen) ---
-  final CollectionReference tasksCollection =
-      FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser!.uid).collection('tasks');
-  final DocumentReference userDocRef =
+  final CollectionReference<Map<String, dynamic>> tasksCollection =
+      FirebaseFirestore.instance
+          .collection('users')
+          .doc(FirebaseAuth.instance.currentUser!.uid)
+          .collection('tasks');
+  final DocumentReference<Map<String, dynamic>> userDocRef =
       FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser!.uid);
   
   // --- Formateador de Fecha (igual que en HomeScreen) ---
@@ -25,8 +32,8 @@ class _HogarScreenState extends State<HogarScreen> {
   @override
   void initState() {
     super.initState();
-    try { _dateFormatter = DateFormat('dd MMM', 'es_ES'); } 
-    catch (e) { _dateFormatter = DateFormat('dd MMM'); }
+    try { _dateFormatter = DateFormat('dd MMM, HH:mm', 'es_ES'); } 
+    catch (e) { _dateFormatter = DateFormat('dd MMM, HH:mm'); }
   }
 
   @override
@@ -148,23 +155,33 @@ class _HogarScreenState extends State<HogarScreen> {
               final String currentText = taskData['text'] ?? '';
               final Timestamp? currentDueDate = taskData['dueDate'] as Timestamp?;
               final bool isCurrentlyDone = taskData['done'] ?? false;
+              final int reminderOffset =
+                  (taskData['reminderOffsetMinutes'] as num?)?.toInt() ?? 0;
 
               // Reutiliza los mismos widgets de `HomeScreen`
               return GestureDetector(
-                onLongPress: () => _showTaskOptionsDialog(context, taskId, currentText, 'Hogar', currentDueDate), // <-- CAMBIADO
+                onLongPress: () => _showTaskOptionsDialog(
+                    context, taskId, currentText, 'Hogar', currentDueDate, reminderOffset), // <-- CAMBIADO
                 child: _buildGoalItem(
                   icon: Icons.cleaning_services, // <-- CAMBIADO: Ícono de Hogar
                   iconColor: Colors.green, // <-- CAMBIADO: Color de Hogar
                   text: currentText,
                   isDone: isCurrentlyDone,
                   dueDate: currentDueDate,
-                  onDonePressed: () {
-                      // Lógica para actualizar puntos (igual que en HomeScreen)
+                  onDonePressed: () async {
+                      // Igual que HomeScreen: puntos y posible actualización de racha.
                       final pointsChange = isCurrentlyDone ? -10 : 10;
-                      WriteBatch batch = FirebaseFirestore.instance.batch();
+                      final batch = FirebaseFirestore.instance.batch();
                       batch.update(tasksCollection.doc(taskId), {'done': !isCurrentlyDone});
                       batch.update(userDocRef, {'points': FieldValue.increment(pointsChange)});
-                      batch.commit().catchError((error) { debugPrint("Error al actualizar: $error"); });
+                      try {
+                        await batch.commit();
+                        if (!isCurrentlyDone) {
+                          await StreakService.updateStreakOnTaskCompletion(userDocRef);
+                        }
+                      } catch (error) {
+                        debugPrint("Error al actualizar: $error");
+                      }
                   },
                 ),
               );
@@ -182,6 +199,7 @@ class _HogarScreenState extends State<HogarScreen> {
     final TextEditingController taskController = TextEditingController();
     DateTime? selectedDueDate;
     const String fixedCategory = 'Hogar'; // <-- CAMBIADO: Categoría fija
+    int selectedReminderMinutes = 0;
 
     showDialog(
       context: context,
@@ -212,15 +230,15 @@ class _HogarScreenState extends State<HogarScreen> {
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.calendar_today, color: Colors.green), // <-- CAMBIADO: Color de Hogar
+                          icon: const Icon(Icons.calendar_today, color: Colors.green),
                           onPressed: () async {
-                            final DateTime? picked = await showDatePicker(
+                            final picked = await pickDateTime(
                               context: context,
-                              initialDate: selectedDueDate ?? DateTime.now(),
-                              firstDate: DateTime(DateTime.now().year - 1),
-                              lastDate: DateTime(DateTime.now().year + 5),
+                              initialDate: selectedDueDate,
                             );
-                            if (picked != null) setDialogState(() => selectedDueDate = picked);
+                            if (picked != null) {
+                              setDialogState(() => selectedDueDate = picked);
+                            }
                           },
                         ),
                         if (selectedDueDate != null)
@@ -231,27 +249,61 @@ class _HogarScreenState extends State<HogarScreen> {
                           ),
                       ],
                     ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<int>(
+                      decoration: const InputDecoration(
+                        labelText: 'Recordatorio',
+                        border: OutlineInputBorder(),
+                      ),
+                      initialValue: selectedReminderMinutes,
+                      items: kReminderOptions
+                          .map(
+                            (option) => DropdownMenuItem<int>(
+                              value: option['minutes'] as int,
+                              child: Text(option['label'] as String),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setDialogState(() => selectedReminderMinutes = value);
+                        }
+                      },
+                    ),
                   ],
                 ),
               ),
               actions: <Widget>[
-                TextButton(child: const Text('Cancelar'), onPressed: () => Navigator.of(context).pop()),
+                TextButton(
+                  child: const Text('Cancelar'),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
                 TextButton(
                   child: const Text('Añadir'),
-                  onPressed: () {
-                    if (taskController.text.isNotEmpty) {
-                      String iconName = _getIconNameFromCategory(fixedCategory);
-                      String colorName = _getColorNameFromCategory(fixedCategory);
-                      Map<String, dynamic> taskData = {
-                        'text': taskController.text,
-                        'category': fixedCategory, // <-- Guarda "Hogar"
-                        'iconName': iconName,
-                        'colorName': colorName,
-                        'done': false,
-                        'createdAt': Timestamp.now(),
-                        if (selectedDueDate != null) 'dueDate': Timestamp.fromDate(selectedDueDate!),
-                      };
-                      tasksCollection.add(taskData);
+                  onPressed: () async {
+                    if (taskController.text.isEmpty) return;
+                    final iconName = _getIconNameFromCategory(fixedCategory);
+                    final colorName = _getColorNameFromCategory(fixedCategory);
+                    final data = <String, dynamic>{
+                      'text': taskController.text,
+                      'category': fixedCategory,
+                      'iconName': iconName,
+                      'colorName': colorName,
+                      'done': false,
+                      'createdAt': Timestamp.now(),
+                      'reminderOffsetMinutes': selectedReminderMinutes,
+                      if (selectedDueDate != null)
+                        'dueDate': Timestamp.fromDate(selectedDueDate!),
+                    };
+                    final docRef = await tasksCollection.add(data);
+                    await NotificationService.scheduleReminderIfNeeded(
+                      userDocRef: userDocRef,
+                      taskId: docRef.id,
+                      taskTitle: taskController.text,
+                      dueDate: selectedDueDate,
+                      reminderOffsetMinutes: selectedReminderMinutes,
+                    );
+                    if (context.mounted) {
                       Navigator.of(context).pop();
                     }
                   },
@@ -272,6 +324,7 @@ class _HogarScreenState extends State<HogarScreen> {
     String currentText,
     String? currentCategory,
     Timestamp? currentDueDate,
+    int? reminderOffsetMinutes,
   ) {
     showDialog(
       context: context,
@@ -286,7 +339,8 @@ class _HogarScreenState extends State<HogarScreen> {
                 title: const Text('Editar'),
                 onTap: () {
                   Navigator.of(dialogContext).pop();
-                  _showEditTaskDialog(context, taskId, currentText, currentCategory, currentDueDate);
+                  _showEditTaskDialog(
+                      context, taskId, currentText, currentCategory, currentDueDate, reminderOffsetMinutes);
                 },
               ),
               ListTile(
@@ -296,6 +350,7 @@ class _HogarScreenState extends State<HogarScreen> {
                   final navigator = Navigator.of(dialogContext);
                   final messenger = ScaffoldMessenger.of(dialogContext);
                   try {
+                    await NotificationService.cancelTaskNotification(taskId);
                     await tasksCollection.doc(taskId).delete();
                     navigator.pop();
                     messenger.showSnackBar(
@@ -328,11 +383,13 @@ class _HogarScreenState extends State<HogarScreen> {
     String currentText,
     String? currentCategory,
     Timestamp? currentDueDate,
+    int? currentReminderOffset,
   ) {
     final TextEditingController taskController = TextEditingController(text: currentText);
     final List<String> categories = ['General', 'Estudios', 'Hogar', 'Meds', 'Foco'];
     String? selectedCategory = categories.contains(currentCategory) ? currentCategory : 'Hogar';
     DateTime? selectedDueDate = currentDueDate?.toDate();
+    int selectedReminderMinutes = currentReminderOffset ?? 0;
 
     showDialog(
       context: context,
@@ -373,11 +430,9 @@ class _HogarScreenState extends State<HogarScreen> {
                         IconButton(
                           icon: const Icon(Icons.calendar_today),
                           onPressed: () async {
-                            final DateTime? picked = await showDatePicker(
+                            final picked = await pickDateTime(
                               context: statefulContext,
-                              initialDate: selectedDueDate ?? DateTime.now(),
-                              firstDate: DateTime(DateTime.now().year - 1),
-                              lastDate: DateTime(DateTime.now().year + 5),
+                              initialDate: selectedDueDate,
                             );
                             if (picked != null) {
                               setDialogState(() => selectedDueDate = picked);
@@ -390,6 +445,27 @@ class _HogarScreenState extends State<HogarScreen> {
                             onPressed: () => setDialogState(() => selectedDueDate = null),
                           ),
                       ],
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<int>(
+                      decoration: const InputDecoration(
+                        labelText: 'Recordatorio',
+                        border: OutlineInputBorder(),
+                      ),
+                      initialValue: selectedReminderMinutes,
+                      items: kReminderOptions
+                          .map(
+                            (option) => DropdownMenuItem<int>(
+                              value: option['minutes'] as int,
+                              child: Text(option['label'] as String),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setDialogState(() => selectedReminderMinutes = value);
+                        }
+                      },
                     ),
                   ],
                 ),
@@ -414,6 +490,7 @@ class _HogarScreenState extends State<HogarScreen> {
                       'category': selectedCategory,
                       'iconName': iconName,
                       'colorName': colorName,
+                      'reminderOffsetMinutes': selectedReminderMinutes,
                       'dueDate': selectedDueDate == null
                           ? FieldValue.delete()
                           : Timestamp.fromDate(selectedDueDate!),
@@ -421,6 +498,14 @@ class _HogarScreenState extends State<HogarScreen> {
 
                     try {
                       await tasksCollection.doc(taskId).update(updatedData);
+                      await NotificationService.cancelTaskNotification(taskId);
+                      await NotificationService.scheduleReminderIfNeeded(
+                        userDocRef: userDocRef,
+                        taskId: taskId,
+                        taskTitle: taskController.text,
+                        dueDate: selectedDueDate,
+                        reminderOffsetMinutes: selectedReminderMinutes,
+                      );
                     } catch (error) {
                       debugPrint('Error: $error');
                     } finally {

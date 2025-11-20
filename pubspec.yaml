@@ -10,6 +10,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   # Íconos
   cupertino_icons: ^1.0.8
@@ -17,7 +19,7 @@ dependencies:
   flutter_svg: ^2.0.9
 
   # Fechas y localización en español
-  intl: ^0.19.0
+  intl: ^0.20.2
 
   # Guardar datos locales (tema, notificaciones activas, etc.)
   shared_preferences: ^2.2.2
@@ -33,12 +35,15 @@ dependencies:
 
   # Notificaciones locales
   flutter_local_notifications: ^17.1.0
+  flutter_native_timezone: ^2.0.0
+  timezone: ^0.9.4
 
   # Manejo de estado (útil para avatar, usuario, settings)
   provider: ^6.1.2
 
   # 🔊 AUDIO PARA POMODORO Y EJERCICIOS DE RELAJACIÓN
   audioplayers: ^6.0.0
+  vibration: ^1.8.4
 
 dev_dependencies:
   flutter_test:
