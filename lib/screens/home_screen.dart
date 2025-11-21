@@ -11,6 +11,8 @@ import 'package:organizate/screens/settings_screen.dart';
 import 'package:organizate/services/notification_service.dart';
 import 'package:organizate/services/streak_service.dart';
 import 'package:organizate/utils/date_time_helper.dart';
+import 'package:organizate/utils/emergency_contact_helper.dart';
+import 'package:organizate/utils/reminder_helper.dart';
 import 'package:organizate/utils/reminder_options.dart';
 import 'package:organizate/widgets/custom_nav_bar.dart';
 
@@ -68,6 +70,8 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildProgressHeader(),
+            const SizedBox(height: 16),
+            _buildEmergencyContactBanner(),
             const SizedBox(height: 24),
             _buildCategoryGrid(),
             const SizedBox(height: 24),
@@ -239,6 +243,99 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Tarjeta que enseña progreso y frase motivacional.
+  Widget _buildEmergencyContactBanner() {
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: userDocRef.snapshots(),
+      builder: (context, snapshot) {
+        final isLoading = snapshot.connectionState == ConnectionState.waiting;
+        final data = snapshot.data?.data();
+        final String? emergencyName = data?['emergencyName'] as String?;
+        final String? emergencyPhone =
+            data?['emergencyPhone'] as String? ?? data?['phone'] as String?;
+
+        final String? trimmedName =
+            (emergencyName?.trim().isEmpty ?? true) ? null : emergencyName!.trim();
+        final String? trimmedPhone =
+            (emergencyPhone?.trim().isEmpty ?? true) ? null : emergencyPhone!.trim();
+
+        final String subtitle = isLoading
+            ? 'Cargando tu contacto...'
+            : trimmedPhone != null
+                ? (trimmedName != null
+                    ? '$trimmedName - $trimmedPhone'
+                    : trimmedPhone)
+                : 'Configura un contacto desde tu perfil.';
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.red.shade50,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.red.shade100),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: const BoxDecoration(
+                  color: Colors.redAccent,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.phone_in_talk, color: Colors.white),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Contacto de emergencia',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(fontSize: 13, color: Colors.black54),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton.icon(
+                onPressed: () => handleEmergencyContactAction(
+                  context,
+                  emergencyName: trimmedName ?? emergencyName,
+                  emergencyPhone: trimmedPhone ?? emergencyPhone,
+                  onNavigateToProfile: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                    );
+                  },
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                icon: const Icon(Icons.phone_in_talk),
+                label: const Text('SOS'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildHeaderCard(
       double progress, String percentText, String motivationalText) {
     return Container(
@@ -523,8 +620,7 @@ class _HomeScreenState extends State<HomeScreen> {
             final String text = data['text'] as String? ?? '';
             final String? category = data['category'] as String?;
             final Timestamp? dueDate = data['dueDate'] as Timestamp?;
-            final int reminderOffset =
-                (data['reminderOffsetMinutes'] as num?)?.toInt() ?? 0;
+            final int? reminderMinutes = extractReminderMinutes(data);
             final bool isDone = data['done'] as bool? ?? false;
             return GestureDetector(
               onLongPress: () => _showTaskOptionsDialog(
@@ -533,7 +629,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 text,
                 category,
                 dueDate,
-                reminderOffset,
+                reminderMinutes,
               ),
               child: _buildGoalItem(
                 icon: _getIconFromString(data['iconName'] as String? ?? 'task_alt'),
@@ -635,6 +731,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Solo al pasar de pendiente -> completada evaluamos la racha.
     if (!isDone) {
+      await NotificationService.cancelTaskNotification(taskId);
       try {
         await StreakService.updateStreakOnTaskCompletion(userDocRef);
       } catch (error) {
@@ -644,12 +741,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Diálogo para crear una tarea con categoría, fecha y recordatorio.
-  void _showAddTaskDialog(BuildContext context) {
+  Future<void> _showAddTaskDialog(BuildContext context) async {
     final TextEditingController taskController = TextEditingController();
     final List<String> categories = ['General', 'Estudios', 'Hogar', 'Meds'];
     String? selectedCategory = 'General';
     DateTime? selectedDueDate;
-    int selectedReminderMinutes = 0;
+    final int? defaultReminder =
+        await fetchDefaultReminderMinutes(userDocRef);
+    int? selectedReminderMinutes = defaultReminder;
+    if (!context.mounted) return;
 
     showDialog(
       context: context,
@@ -714,7 +814,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    DropdownButtonFormField<int>(
+                    DropdownButtonFormField<int?>(
+                      key: ValueKey(selectedReminderMinutes),
                       decoration: const InputDecoration(
                         labelText: 'Recordatorio',
                         border: OutlineInputBorder(),
@@ -722,17 +823,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       initialValue: selectedReminderMinutes,
                       items: kReminderOptions
                           .map(
-                            (option) => DropdownMenuItem<int>(
-                              value: option['minutes'] as int,
+                            (option) => DropdownMenuItem<int?>(
+                              value: option['minutes'] as int?,
                               child: Text(option['label'] as String),
                             ),
                           )
                           .toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setDialogState(() => selectedReminderMinutes = value);
-                        }
-                      },
+                      onChanged: (value) =>
+                          setDialogState(() => selectedReminderMinutes = value),
                     ),
                   ],
                 ),
@@ -759,7 +857,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       'colorName': colorName,
                       'done': false,
                       'createdAt': Timestamp.now(),
-                      'reminderOffsetMinutes': selectedReminderMinutes,
+                      'reminderMinutes': selectedReminderMinutes,
                       if (selectedDueDate != null)
                         'dueDate': Timestamp.fromDate(selectedDueDate!),
                     };
@@ -770,7 +868,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         taskId: docRef.id,
                         taskTitle: taskController.text,
                         dueDate: selectedDueDate,
-                        reminderOffsetMinutes: selectedReminderMinutes,
+                        reminderMinutes: selectedReminderMinutes,
                       );
                     } finally {
                       if (navigator.mounted && navigator.canPop()) {
@@ -795,7 +893,7 @@ class _HomeScreenState extends State<HomeScreen> {
     String currentText,
     String? currentCategory,
     Timestamp? currentDueDate,
-    int? reminderOffsetMinutes,
+    int? reminderMinutes,
   ) {
     showDialog(
       context: context,
@@ -816,7 +914,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     currentText,
                     currentCategory,
                     currentDueDate,
-                    reminderOffsetMinutes,
+                    reminderMinutes,
                   );
                 },
               ),
@@ -827,16 +925,29 @@ class _HomeScreenState extends State<HomeScreen> {
                   final navigator = Navigator.of(dialogContext);
                   final messenger = ScaffoldMessenger.of(dialogContext);
                   try {
-                    await NotificationService.cancelTaskNotification(taskId);
                     await tasksCollection.doc(taskId).delete();
-                    navigator.pop();
+                    debugPrint('Tarea $taskId eliminada correctamente');
+                    try {
+                      await NotificationService.cancelTaskNotification(taskId);
+                      debugPrint('Notificación de $taskId cancelada');
+                    } catch (e, stack) {
+                      debugPrint('Error al cancelar notificación de $taskId: $e');
+                      debugPrint('$stack');
+                    }
+                    if (navigator.mounted) {
+                      navigator.pop();
+                    }
                     messenger.showSnackBar(
                       SnackBar(content: Text('"$currentText" eliminada')),
                     );
-                  } catch (_) {
-                    navigator.pop();
+                  } catch (error, stack) {
+                    debugPrint('Error al eliminar tarea $taskId: $error');
+                    debugPrint('$stack');
+                    if (navigator.mounted) {
+                      navigator.pop();
+                    }
                     messenger.showSnackBar(
-                      const SnackBar(content: Text('Error al eliminar')),
+                      SnackBar(content: Text('Error al eliminar: $error')),
                     );
                   }
                 },
@@ -861,7 +972,7 @@ class _HomeScreenState extends State<HomeScreen> {
     String currentText,
     String? currentCategory,
     Timestamp? currentDueDate,
-    int? currentReminderOffset,
+    int? currentReminderMinutes,
   ) {
     final TextEditingController taskController =
         TextEditingController(text: currentText);
@@ -875,7 +986,7 @@ class _HomeScreenState extends State<HomeScreen> {
     String? selectedCategory =
         categories.contains(currentCategory) ? currentCategory : 'General';
     DateTime? selectedDueDate = currentDueDate?.toDate();
-    int selectedReminderMinutes = currentReminderOffset ?? 0;
+    int? selectedReminderMinutes = currentReminderMinutes;
 
     showDialog(
       context: context,
@@ -941,7 +1052,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    DropdownButtonFormField<int>(
+                    DropdownButtonFormField<int?>(
+                      key: ValueKey(selectedReminderMinutes),
                       decoration: const InputDecoration(
                         labelText: 'Recordatorio',
                         border: OutlineInputBorder(),
@@ -949,17 +1061,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       initialValue: selectedReminderMinutes,
                       items: kReminderOptions
                           .map(
-                            (option) => DropdownMenuItem<int>(
-                              value: option['minutes'] as int,
+                            (option) => DropdownMenuItem<int?>(
+                              value: option['minutes'] as int?,
                               child: Text(option['label'] as String),
                             ),
                           )
                           .toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setDialogState(() => selectedReminderMinutes = value);
-                        }
-                      },
+                      onChanged: (value) =>
+                          setDialogState(() => selectedReminderMinutes = value),
                     ),
                   ],
                 ),
@@ -980,15 +1089,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         _getIconNameFromCategory(selectedCategory!);
                     final colorName =
                         _getColorNameFromCategory(selectedCategory!);
-                    final updatedData = <String, dynamic>{
-                      'text': taskController.text,
-                      'category': selectedCategory,
-                      'iconName': iconName,
-                      'colorName': colorName,
-                      'reminderOffsetMinutes': selectedReminderMinutes,
-                      'dueDate': selectedDueDate == null
-                          ? FieldValue.delete()
-                          : Timestamp.fromDate(selectedDueDate!),
+                      final updatedData = <String, dynamic>{
+                        'text': taskController.text,
+                        'category': selectedCategory,
+                        'iconName': iconName,
+                        'colorName': colorName,
+                        'reminderMinutes': selectedReminderMinutes,
+                        'reminderOffsetMinutes': FieldValue.delete(),
+                        'dueDate': selectedDueDate == null
+                            ? FieldValue.delete()
+                            : Timestamp.fromDate(selectedDueDate!),
                     };
                     try {
                       await tasksCollection.doc(taskId).update(updatedData);
@@ -998,7 +1108,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         taskId: taskId,
                         taskTitle: taskController.text,
                         dueDate: selectedDueDate,
-                        reminderOffsetMinutes: selectedReminderMinutes,
+                        reminderMinutes: selectedReminderMinutes,
                       );
                     } finally {
                       if (navigator.mounted && navigator.canPop()) {

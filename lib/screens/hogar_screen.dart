@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:organizate/services/notification_service.dart';
 import 'package:organizate/services/streak_service.dart';
 import 'package:organizate/utils/date_time_helper.dart';
+import 'package:organizate/utils/reminder_helper.dart';
 import 'package:organizate/utils/reminder_options.dart';
 import 'package:organizate/widgets/custom_nav_bar.dart';
 
@@ -155,13 +156,12 @@ class _HogarScreenState extends State<HogarScreen> {
               final String currentText = taskData['text'] ?? '';
               final Timestamp? currentDueDate = taskData['dueDate'] as Timestamp?;
               final bool isCurrentlyDone = taskData['done'] ?? false;
-              final int reminderOffset =
-                  (taskData['reminderOffsetMinutes'] as num?)?.toInt() ?? 0;
+              final int? reminderMinutes = extractReminderMinutes(taskData);
 
               // Reutiliza los mismos widgets de `HomeScreen`
               return GestureDetector(
                 onLongPress: () => _showTaskOptionsDialog(
-                    context, taskId, currentText, 'Hogar', currentDueDate, reminderOffset), // <-- CAMBIADO
+                    context, taskId, currentText, 'Hogar', currentDueDate, reminderMinutes), // <-- CAMBIADO
                 child: _buildGoalItem(
                   icon: Icons.cleaning_services, // <-- CAMBIADO: Ícono de Hogar
                   iconColor: Colors.green, // <-- CAMBIADO: Color de Hogar
@@ -177,6 +177,7 @@ class _HogarScreenState extends State<HogarScreen> {
                       try {
                         await batch.commit();
                         if (!isCurrentlyDone) {
+                          await NotificationService.cancelTaskNotification(taskId);
                           await StreakService.updateStreakOnTaskCompletion(userDocRef);
                         }
                       } catch (error) {
@@ -195,11 +196,14 @@ class _HogarScreenState extends State<HogarScreen> {
   // --- MÉTODOS AUXILIARES (Copiados de HomeScreen, con ligeros cambios) ---
 
   // Diálogo para AÑADIR una nueva tarea (¡GUARDANDO "Hogar"!)
-  void _showAddTaskDialog(BuildContext context) {
+  Future<void> _showAddTaskDialog(BuildContext context) async {
     final TextEditingController taskController = TextEditingController();
     DateTime? selectedDueDate;
     const String fixedCategory = 'Hogar'; // <-- CAMBIADO: Categoría fija
-    int selectedReminderMinutes = 0;
+    final int? defaultReminder =
+        await fetchDefaultReminderMinutes(userDocRef);
+    int? selectedReminderMinutes = defaultReminder;
+    if (!context.mounted) return;
 
     showDialog(
       context: context,
@@ -250,7 +254,8 @@ class _HogarScreenState extends State<HogarScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    DropdownButtonFormField<int>(
+                    DropdownButtonFormField<int?>(
+                      key: ValueKey(selectedReminderMinutes),
                       decoration: const InputDecoration(
                         labelText: 'Recordatorio',
                         border: OutlineInputBorder(),
@@ -258,17 +263,14 @@ class _HogarScreenState extends State<HogarScreen> {
                       initialValue: selectedReminderMinutes,
                       items: kReminderOptions
                           .map(
-                            (option) => DropdownMenuItem<int>(
-                              value: option['minutes'] as int,
+                            (option) => DropdownMenuItem<int?>(
+                              value: option['minutes'] as int?,
                               child: Text(option['label'] as String),
                             ),
                           )
                           .toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setDialogState(() => selectedReminderMinutes = value);
-                        }
-                      },
+                      onChanged: (value) =>
+                          setDialogState(() => selectedReminderMinutes = value),
                     ),
                   ],
                 ),
@@ -291,7 +293,7 @@ class _HogarScreenState extends State<HogarScreen> {
                       'colorName': colorName,
                       'done': false,
                       'createdAt': Timestamp.now(),
-                      'reminderOffsetMinutes': selectedReminderMinutes,
+                      'reminderMinutes': selectedReminderMinutes,
                       if (selectedDueDate != null)
                         'dueDate': Timestamp.fromDate(selectedDueDate!),
                     };
@@ -301,7 +303,7 @@ class _HogarScreenState extends State<HogarScreen> {
                       taskId: docRef.id,
                       taskTitle: taskController.text,
                       dueDate: selectedDueDate,
-                      reminderOffsetMinutes: selectedReminderMinutes,
+                      reminderMinutes: selectedReminderMinutes,
                     );
                     if (context.mounted) {
                       Navigator.of(context).pop();
@@ -324,7 +326,7 @@ class _HogarScreenState extends State<HogarScreen> {
     String currentText,
     String? currentCategory,
     Timestamp? currentDueDate,
-    int? reminderOffsetMinutes,
+    int? reminderMinutes,
   ) {
     showDialog(
       context: context,
@@ -340,7 +342,7 @@ class _HogarScreenState extends State<HogarScreen> {
                 onTap: () {
                   Navigator.of(dialogContext).pop();
                   _showEditTaskDialog(
-                      context, taskId, currentText, currentCategory, currentDueDate, reminderOffsetMinutes);
+                      context, taskId, currentText, currentCategory, currentDueDate, reminderMinutes);
                 },
               ),
               ListTile(
@@ -350,16 +352,29 @@ class _HogarScreenState extends State<HogarScreen> {
                   final navigator = Navigator.of(dialogContext);
                   final messenger = ScaffoldMessenger.of(dialogContext);
                   try {
-                    await NotificationService.cancelTaskNotification(taskId);
                     await tasksCollection.doc(taskId).delete();
-                    navigator.pop();
+                    debugPrint('Tarea $taskId eliminada correctamente');
+                    try {
+                      await NotificationService.cancelTaskNotification(taskId);
+                      debugPrint('Notificación de $taskId cancelada');
+                    } catch (e, stack) {
+                      debugPrint('Error al cancelar notificación de $taskId: $e');
+                      debugPrint('$stack');
+                    }
+                    if (navigator.mounted) {
+                      navigator.pop();
+                    }
                     messenger.showSnackBar(
                       SnackBar(content: Text('"$currentText" eliminada')),
                     );
-                  } catch (error) {
-                    navigator.pop();
+                  } catch (error, stack) {
+                    debugPrint('Error al eliminar tarea $taskId: $error');
+                    debugPrint('$stack');
+                    if (navigator.mounted) {
+                      navigator.pop();
+                    }
                     messenger.showSnackBar(
-                      const SnackBar(content: Text('Error al eliminar')),
+                      SnackBar(content: Text('Error al eliminar: $error')),
                     );
                   }
                 },
@@ -383,13 +398,13 @@ class _HogarScreenState extends State<HogarScreen> {
     String currentText,
     String? currentCategory,
     Timestamp? currentDueDate,
-    int? currentReminderOffset,
+    int? currentReminderMinutes,
   ) {
     final TextEditingController taskController = TextEditingController(text: currentText);
     final List<String> categories = ['General', 'Estudios', 'Hogar', 'Meds', 'Foco'];
     String? selectedCategory = categories.contains(currentCategory) ? currentCategory : 'Hogar';
     DateTime? selectedDueDate = currentDueDate?.toDate();
-    int selectedReminderMinutes = currentReminderOffset ?? 0;
+    int? selectedReminderMinutes = currentReminderMinutes;
 
     showDialog(
       context: context,
@@ -447,7 +462,8 @@ class _HogarScreenState extends State<HogarScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    DropdownButtonFormField<int>(
+                    DropdownButtonFormField<int?>(
+                      key: ValueKey(selectedReminderMinutes),
                       decoration: const InputDecoration(
                         labelText: 'Recordatorio',
                         border: OutlineInputBorder(),
@@ -455,17 +471,14 @@ class _HogarScreenState extends State<HogarScreen> {
                       initialValue: selectedReminderMinutes,
                       items: kReminderOptions
                           .map(
-                            (option) => DropdownMenuItem<int>(
-                              value: option['minutes'] as int,
+                            (option) => DropdownMenuItem<int?>(
+                              value: option['minutes'] as int?,
                               child: Text(option['label'] as String),
                             ),
                           )
                           .toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setDialogState(() => selectedReminderMinutes = value);
-                        }
-                      },
+                      onChanged: (value) =>
+                          setDialogState(() => selectedReminderMinutes = value),
                     ),
                   ],
                 ),
@@ -490,7 +503,8 @@ class _HogarScreenState extends State<HogarScreen> {
                       'category': selectedCategory,
                       'iconName': iconName,
                       'colorName': colorName,
-                      'reminderOffsetMinutes': selectedReminderMinutes,
+                      'reminderMinutes': selectedReminderMinutes,
+                      'reminderOffsetMinutes': FieldValue.delete(),
                       'dueDate': selectedDueDate == null
                           ? FieldValue.delete()
                           : Timestamp.fromDate(selectedDueDate!),
@@ -504,7 +518,7 @@ class _HogarScreenState extends State<HogarScreen> {
                         taskId: taskId,
                         taskTitle: taskController.text,
                         dueDate: selectedDueDate,
-                        reminderOffsetMinutes: selectedReminderMinutes,
+                        reminderMinutes: selectedReminderMinutes,
                       );
                     } catch (error) {
                       debugPrint('Error: $error');
@@ -544,3 +558,5 @@ class _HogarScreenState extends State<HogarScreen> {
   }
 
 } // ¡FIN DE LA CLASE!
+
+

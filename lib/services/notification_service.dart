@@ -1,7 +1,7 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+﻿import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_native_timezone/flutter_native_timezone.dart';
-import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 class NotificationService {
@@ -13,11 +13,16 @@ class NotificationService {
 
   static const AndroidNotificationChannel _tasksChannel =
       AndroidNotificationChannel(
-    'tasks_channel',
+    'tareas_channel',
     'Recordatorios de tareas',
-    description: 'Notificaciones para recordarte las tareas pendientes.',
-    importance: Importance.max,
+    description: 'Notificaciones programadas de tus tareas',
+    importance: Importance.high,
+    playSound: true,
+    enableVibration: true,
+    sound: RawResourceAndroidNotificationSound('notificacion1'),
   );
+
+  static FlutterLocalNotificationsPlugin get plugin => _notificationsPlugin;
 
   static Future<void> init() async {
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -32,45 +37,51 @@ class NotificationService {
     );
 
     await _notificationsPlugin.initialize(settings);
-    await _notificationsPlugin
+
+    final androidImplementation = _notificationsPlugin
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(_tasksChannel);
+            AndroidFlutterLocalNotificationsPlugin>();
+    await androidImplementation?.requestNotificationsPermission();
+    await androidImplementation?.createNotificationChannel(_tasksChannel);
+
     await _configureLocalTimeZone();
   }
 
   static Future<void> scheduleTaskNotification({
     required String taskId,
-    required String title,
     required DateTime scheduledTime,
+    required String body,
   }) async {
     if (!scheduledTime.isAfter(DateTime.now())) return;
     await _configureLocalTimeZone();
 
-    final androidDetails = AndroidNotificationDetails(
-      _tasksChannel.id,
-      _tasksChannel.name,
-      channelDescription: _tasksChannel.description,
-      importance: Importance.max,
-      priority: Priority.high,
+    final notificationDetails = NotificationDetails(
+      android: AndroidNotificationDetails(
+        _tasksChannel.id,
+        _tasksChannel.name,
+        channelDescription: _tasksChannel.description,
+        importance: Importance.high,
+        priority: Priority.high,
+        playSound: true,
+        sound: _tasksChannel.sound,
+        enableVibration: true,
+        visibility: NotificationVisibility.public,
+      ),
     );
-    const iosDetails = DarwinNotificationDetails();
-    final details = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
+
     final tz.TZDateTime tzScheduled =
         tz.TZDateTime.from(scheduledTime, tz.local);
 
     await _notificationsPlugin.zonedSchedule(
       taskId.hashCode,
-      title,
-      'Tienes una tarea próxima.',
+      'Recordatorio de tarea',
+      body,
       tzScheduled,
-      details,
+      notificationDetails,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
+      matchDateTimeComponents: DateTimeComponents.dateAndTime,
       payload: taskId,
     );
   }
@@ -84,9 +95,10 @@ class NotificationService {
     required String taskId,
     required String taskTitle,
     required DateTime? dueDate,
-    int? reminderOffsetMinutes,
+    int? reminderMinutes,
   }) async {
     if (dueDate == null) return;
+    if (reminderMinutes == null || reminderMinutes <= 0) return;
 
     try {
       final snapshot = await userDocRef.get();
@@ -94,21 +106,39 @@ class NotificationService {
       final bool notiTaskEnabled = (data?['notiTaskEnabled'] as bool?) ?? true;
       if (!notiTaskEnabled) return;
 
-      final int offsetMinutes = (reminderOffsetMinutes != null &&
-              reminderOffsetMinutes > 0)
-          ? reminderOffsetMinutes
-          : (data?['notiTaskDefaultOffsetMinutes'] as num?)?.toInt() ?? 30;
-      final scheduledTime = dueDate.subtract(Duration(minutes: offsetMinutes));
+      final scheduledTime = dueDate.subtract(Duration(minutes: reminderMinutes));
       if (!scheduledTime.isAfter(DateTime.now())) return;
 
       await scheduleTaskNotification(
         taskId: taskId,
-        title: 'Recordatorio: $taskTitle',
+        body: taskTitle,
         scheduledTime: scheduledTime,
       );
     } catch (_) {
-      // Ignora errores silenciosamente para no bloquear la creación de tareas.
+      // Ignoramos fallos para no bloquear la app.
     }
+  }
+
+  static Future<void> showTestNotification() async {
+    final details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        _tasksChannel.id,
+        _tasksChannel.name,
+        channelDescription: _tasksChannel.description,
+        importance: Importance.high,
+        priority: Priority.high,
+        playSound: true,
+        sound: _tasksChannel.sound,
+        enableVibration: true,
+        visibility: NotificationVisibility.public,
+      ),
+    );
+    await _notificationsPlugin.show(
+      9999,
+      'Prueba',
+      'Esto es una notificación de prueba',
+      details,
+    );
   }
 
   static Future<void> _configureLocalTimeZone() async {

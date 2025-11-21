@@ -7,9 +7,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:vibration/vibration.dart';
 
+import 'package:organizate/screens/settings_screen.dart';
 import 'package:organizate/services/notification_service.dart';
 import 'package:organizate/services/streak_service.dart';
 import 'package:organizate/utils/date_time_helper.dart';
+import 'package:organizate/utils/emergency_contact_helper.dart';
+import 'package:organizate/utils/reminder_helper.dart';
 import 'package:organizate/utils/reminder_options.dart';
 import 'package:organizate/widgets/custom_nav_bar.dart';
 
@@ -28,6 +31,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _pomodoroSoundEnabled = true;
   bool _pomodoroVibrationEnabled = false;
+  String _pomodoroSoundKey = 'bell';
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>?
       _userSettingsSubscription;
 
@@ -64,6 +68,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
         _pomodoroSoundEnabled = (data['pomodoroSoundEnabled'] as bool?) ?? true;
         _pomodoroVibrationEnabled =
             (data['pomodoroVibrationEnabled'] as bool?) ?? false;
+        _pomodoroSoundKey = (data['pomodoroSound'] as String?) ?? 'bell';
       });
     });
 
@@ -139,8 +144,10 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
       _remainingSeconds = _selectedDuration.inSeconds;
     });
     if (_pomodoroSoundEnabled) {
+      final String assetPath =
+          _pomodoroSoundKey == 'notificacion1' ? 'sounds/Notificacion1.mp3' : 'sounds/bell.mp3';
       try {
-        await _audioPlayer.play(AssetSource('sounds/bell.mp3'));
+        await _audioPlayer.play(AssetSource(assetPath));
       } catch (_) {
         // Ignora fallos al reproducir
       }
@@ -315,6 +322,8 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
             ),
             const SizedBox(height: 8),
             _buildTasksStream(),
+            const SizedBox(height: 24),
+            _buildEmergencyQuickButton(),
           ],
         ),
       ),
@@ -549,11 +558,10 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
             final String text = taskData['text'] ?? '';
             final Timestamp? dueDate = taskData['dueDate'] as Timestamp?;
             final bool isDone = taskData['done'] ?? false;
-            final int reminderOffset =
-                (taskData['reminderOffsetMinutes'] as num?)?.toInt() ?? 0;
+            final int? reminderMinutes = extractReminderMinutes(taskData);
             return GestureDetector(
               onLongPress: () =>
-                  _showTaskOptionsDialog(context, taskId, text, 'Foco', dueDate, reminderOffset),
+                  _showTaskOptionsDialog(context, taskId, text, 'Foco', dueDate, reminderMinutes),
               child: _buildGoalItem(
                 icon: Icons.psychology,
                 iconColor: Colors.purple,
@@ -571,6 +579,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                   try {
                     await batch.commit();
                     if (!isDone) {
+                      await NotificationService.cancelTaskNotification(taskId);
                       await StreakService.updateStreakOnTaskCompletion(userDocRef);
                     }
                   } catch (error) {
@@ -580,6 +589,57 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
               ),
             );
           },
+        );
+      },
+    );
+  }
+
+  Widget _buildEmergencyQuickButton() {
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: userDocRef.snapshots(),
+      builder: (context, snapshot) {
+        final isLoading = snapshot.connectionState == ConnectionState.waiting;
+        final data = snapshot.data?.data();
+        final String? emergencyName = data?['emergencyName'] as String?;
+        final String? emergencyPhone =
+            data?['emergencyPhone'] as String? ?? data?['phone'] as String?;
+        final String? trimmedName =
+            (emergencyName?.trim().isEmpty ?? true) ? null : emergencyName!.trim();
+        final String? trimmedPhone =
+            (emergencyPhone?.trim().isEmpty ?? true) ? null : emergencyPhone!.trim();
+        final String helperText = isLoading
+            ? 'Cargando contacto...'
+            : trimmedPhone != null
+                ? 'Tu contacto esta listo por si necesitas ayuda.'
+                : 'Configura un contacto desde tu perfil.';
+
+        return Column(
+          children: [
+            Text(
+              helperText,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 13, color: Colors.black54),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: 220,
+              child: OutlinedButton.icon(
+                onPressed: () => handleEmergencyContactAction(
+                  context,
+                  emergencyName: trimmedName ?? emergencyName,
+                  emergencyPhone: trimmedPhone ?? emergencyPhone,
+                  onNavigateToProfile: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                    );
+                  },
+                ),
+                icon: const Icon(Icons.phone_in_talk),
+                label: const Text('Necesito ayuda'),
+              ),
+            ),
+          ],
         );
       },
     );
@@ -643,11 +703,14 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
     );
   }
 
-  void _showAddTaskDialog(BuildContext context) {
+  Future<void> _showAddTaskDialog(BuildContext context) async {
     final TextEditingController taskController = TextEditingController();
     DateTime? selectedDueDate;
     const String fixedCategory = 'Foco';
-    int selectedReminderMinutes = 0;
+    final int? defaultReminder =
+        await fetchDefaultReminderMinutes(userDocRef);
+    int? selectedReminderMinutes = defaultReminder;
+    if (!context.mounted) return;
 
     showDialog(
       context: context,
@@ -698,7 +761,8 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    DropdownButtonFormField<int>(
+                    DropdownButtonFormField<int?>(
+                      key: ValueKey(selectedReminderMinutes),
                       decoration: const InputDecoration(
                         labelText: 'Recordatorio',
                         border: OutlineInputBorder(),
@@ -706,17 +770,14 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                       initialValue: selectedReminderMinutes,
                       items: kReminderOptions
                           .map(
-                            (option) => DropdownMenuItem<int>(
-                              value: option['minutes'] as int,
+                            (option) => DropdownMenuItem<int?>(
+                              value: option['minutes'] as int?,
                               child: Text(option['label'] as String),
                             ),
                           )
                           .toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setDialogState(() => selectedReminderMinutes = value);
-                        }
-                      },
+                      onChanged: (value) =>
+                          setDialogState(() => selectedReminderMinutes = value),
                     ),
                   ],
                 ),
@@ -736,7 +797,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                       'colorName': 'purple',
                       'done': false,
                       'createdAt': Timestamp.now(),
-                      'reminderOffsetMinutes': selectedReminderMinutes,
+                      'reminderMinutes': selectedReminderMinutes,
                       if (selectedDueDate != null)
                         'dueDate': Timestamp.fromDate(selectedDueDate!),
                     };
@@ -746,7 +807,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                       taskId: docRef.id,
                       taskTitle: taskController.text,
                       dueDate: selectedDueDate,
-                      reminderOffsetMinutes: selectedReminderMinutes,
+                      reminderMinutes: selectedReminderMinutes,
                     );
                     if (context.mounted) {
                       Navigator.of(context).pop();
@@ -768,7 +829,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
     String currentText,
     String? currentCategory,
     Timestamp? currentDueDate,
-    int? reminderOffsetMinutes,
+    int? reminderMinutes,
   ) {
     showDialog(
       context: context,
@@ -784,7 +845,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                 onTap: () {
                   Navigator.of(dialogContext).pop();
                   _showEditTaskDialog(context, taskId, currentText,
-                      currentCategory, currentDueDate, reminderOffsetMinutes);
+                      currentCategory, currentDueDate, reminderMinutes);
                 },
               ),
               ListTile(
@@ -794,16 +855,29 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                   final navigator = Navigator.of(dialogContext);
                   final messenger = ScaffoldMessenger.of(dialogContext);
                   try {
-                    await NotificationService.cancelTaskNotification(taskId);
                     await tasksCollection.doc(taskId).delete();
-                    navigator.pop();
+                    debugPrint('Tarea $taskId eliminada correctamente');
+                    try {
+                      await NotificationService.cancelTaskNotification(taskId);
+                      debugPrint('Notificación de $taskId cancelada');
+                    } catch (e, stack) {
+                      debugPrint('Error al cancelar notificación de $taskId: $e');
+                      debugPrint('$stack');
+                    }
+                    if (navigator.mounted) {
+                      navigator.pop();
+                    }
                     messenger.showSnackBar(
                       SnackBar(content: Text('"$currentText" eliminada')),
                     );
-                  } catch (error) {
-                    navigator.pop();
+                  } catch (error, stack) {
+                    debugPrint('Error al eliminar tarea $taskId: $error');
+                    debugPrint('$stack');
+                    if (navigator.mounted) {
+                      navigator.pop();
+                    }
                     messenger.showSnackBar(
-                      const SnackBar(content: Text('Error al eliminar')),
+                      SnackBar(content: Text('Error al eliminar: $error')),
                     );
                   }
                 },
@@ -827,12 +901,12 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
     String currentText,
     String? currentCategory,
     Timestamp? currentDueDate,
-    int? currentReminderOffset,
+    int? currentReminderMinutes,
   ) {
     final TextEditingController taskController =
         TextEditingController(text: currentText);
     DateTime? selectedDueDate = currentDueDate?.toDate();
-    int selectedReminderMinutes = currentReminderOffset ?? 0;
+    int? selectedReminderMinutes = currentReminderMinutes;
 
     showDialog(
       context: context,
@@ -883,7 +957,8 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    DropdownButtonFormField<int>(
+                    DropdownButtonFormField<int?>(
+                      key: ValueKey(selectedReminderMinutes),
                       decoration: const InputDecoration(
                         labelText: 'Recordatorio',
                         border: OutlineInputBorder(),
@@ -891,17 +966,14 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                       initialValue: selectedReminderMinutes,
                       items: kReminderOptions
                           .map(
-                            (option) => DropdownMenuItem<int>(
-                              value: option['minutes'] as int,
+                            (option) => DropdownMenuItem<int?>(
+                              value: option['minutes'] as int?,
                               child: Text(option['label'] as String),
                             ),
                           )
                           .toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setDialogState(() => selectedReminderMinutes = value);
-                        }
-                      },
+                      onChanged: (value) =>
+                          setDialogState(() => selectedReminderMinutes = value),
                     ),
                   ],
                 ),
@@ -923,7 +995,8 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                       'category': currentCategory ?? 'Foco',
                       'iconName': 'psychology',
                       'colorName': 'purple',
-                      'reminderOffsetMinutes': selectedReminderMinutes,
+                      'reminderMinutes': selectedReminderMinutes,
+                      'reminderOffsetMinutes': FieldValue.delete(),
                       'dueDate': selectedDueDate == null
                           ? FieldValue.delete()
                           : Timestamp.fromDate(selectedDueDate!),
@@ -936,7 +1009,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                         taskId: taskId,
                         taskTitle: taskController.text,
                         dueDate: selectedDueDate,
-                        reminderOffsetMinutes: selectedReminderMinutes,
+                        reminderMinutes: selectedReminderMinutes,
                       );
                     } catch (_) {
                       // ignore

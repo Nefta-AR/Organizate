@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 // Importa el paquete material porque toda la interfaz usa widgets de Material.
 import 'package:flutter/material.dart';
+import 'package:organizate/services/notification_service.dart';
+import 'package:organizate/utils/reminder_options.dart';
 
 // Declara el widget principal de ajustes como Stateful para poder reaccionar a cambios.
 class SettingsScreen extends StatefulWidget {
@@ -19,12 +21,19 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   // Guarda la referencia al documento del usuario en Firestore.
   late final DocumentReference<Map<String, dynamic>> _userDoc;
-  // Controlador que maneja el texto del campo de telefono.
-  final TextEditingController _phoneController = TextEditingController();
-  // Bandera que dice si el usuario modifico el telefono localmente.
-  bool _isPhoneDirty = false;
-  // Bandera que indica si estamos enviando el telefono a Firestore.
-  bool _isSavingPhone = false;
+  // Controlador que maneja el nombre del contacto de emergencia.
+  final TextEditingController _emergencyNameController = TextEditingController();
+  // Controlador que maneja el texto del telefono de emergencia.
+  final TextEditingController _emergencyPhoneController = TextEditingController();
+  // Bandera que dice si el usuario modifico los campos de contacto.
+  bool _isEmergencyDirty = false;
+  // Bandera que indica si estamos enviando esos datos a Firestore.
+  bool _isSavingEmergency = false;
+  // Opciones disponibles para el sonido del Pomodoro.
+  static const List<Map<String, String>> _pomodoroSoundOptions = [
+    {'key': 'bell', 'label': 'Campanilla clásica'},
+    {'key': 'notificacion1', 'label': 'Sonido Notificación'},
+  ];
   // Lista fija con los nombres de los avatares disponibles.
   static const List<String> _availableAvatars = [
     // Avatar con nombre emoticon.
@@ -59,49 +68,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // Metodo de ciclo de vida llamado cuando se libera el estado.
   @override
   void dispose() {
-    // Libera el controlador de texto para evitar fugas de memoria.
-    _phoneController.dispose();
+    // Libera los controladores de texto para evitar fugas de memoria.
+    _emergencyNameController.dispose();
+    _emergencyPhoneController.dispose();
     // Llama al dispose de la superclase para completar la limpieza.
     super.dispose();
   }
 
-  // Funcion que guarda el telefono escrito en el TextField.
-  Future<void> _savePhone() async {
+  // Funcion que guarda el contacto de emergencia en Firestore.
+  Future<void> _saveEmergencyContact() async {
     // Marca que se esta guardando para deshabilitar el boton y mostrar spinner.
-    setState(() => _isSavingPhone = true);
-    // Obtiene el messenger para poder mostrar mensajes tipo SnackBar.
+    setState(() => _isSavingEmergency = true);
     final messenger = ScaffoldMessenger.of(context);
-    // Quita espacios antes y despues del numero ingresado.
-    final trimmed = _phoneController.text.trim();
+    final trimmedName = _emergencyNameController.text.trim();
+    final trimmedPhone = _emergencyPhoneController.text.trim();
+    final Map<String, dynamic> payload = {
+      // Siempre eliminamos el campo antiguo de phone para evitar inconsistencias.
+      'phone': FieldValue.delete(),
+    };
+    if (trimmedName.isEmpty) {
+      payload['emergencyName'] = FieldValue.delete();
+    } else {
+      payload['emergencyName'] = trimmedName;
+    }
+    if (trimmedPhone.isEmpty) {
+      payload['emergencyPhone'] = FieldValue.delete();
+    } else {
+      payload['emergencyPhone'] = trimmedPhone;
+    }
     try {
-      // Si el usuario borro el texto se elimina el campo phone del documento.
-      if (trimmed.isEmpty) {
-        await _userDoc.set(
-          {'phone': FieldValue.delete()},
-          SetOptions(merge: true),
-        );
-      } else {
-        // Si hay texto se guarda el numero nuevo en el documento.
-        await _userDoc.set(
-          {'phone': trimmed},
-          SetOptions(merge: true),
-        );
-      }
-      // Marca que ya no hay cambios pendientes en el campo de telefono.
-      setState(() => _isPhoneDirty = false);
-      // Muestra un mensaje indicando exito.
+      await _userDoc.set(payload, SetOptions(merge: true));
+      setState(() => _isEmergencyDirty = false);
       messenger.showSnackBar(
-        const SnackBar(content: Text('Telefono actualizado')),
+        const SnackBar(content: Text('Contacto de emergencia actualizado')),
       );
     } catch (_) {
-      // Si ocurre un error avisa al usuario que no se guardo.
       messenger.showSnackBar(
-        const SnackBar(content: Text('No se pudo guardar el telefono')),
+        const SnackBar(content: Text('No se pudo guardar el contacto')),
       );
     } finally {
-      // Al terminar, si el widget sigue montado, desmarca el estado de guardado.
       if (mounted) {
-        setState(() => _isSavingPhone = false);
+        setState(() => _isSavingEmergency = false);
       }
     }
   }
@@ -212,19 +219,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
               (data['email'] as String?) ?? FirebaseAuth.instance.currentUser?.email ?? '';
           // Lee el avatar almacenado (puede ser nulo).
           final String? avatar = data['avatar'] as String?;
-          // Lee el telefono previamente guardado.
-          final String phone = (data['phone'] as String?) ?? '';
+          // Lee el contacto de emergencia previamente guardado.
+          final String emergencyName = (data['emergencyName'] as String?) ?? '';
+          final String emergencyPhone =
+              (data['emergencyPhone'] as String?) ?? (data['phone'] as String?) ?? '';
           // Determina si las notificaciones de tareas estan activadas.
           final bool notiTaskEnabled = (data['notiTaskEnabled'] as bool?) ?? true;
-          // Lee el tiempo por defecto para los recordatorios.
-          final int notiOffset =
-              (data['notiTaskDefaultOffsetMinutes'] as num?)?.toInt() ?? 30;
+          final bool hasDefaultReminderKey =
+              data.containsKey('notiTaskDefaultOffsetMinutes');
+          // Lee el tiempo por defecto para los recordatorios. Si nunca se configuró usamos el fallback.
+          final int? notiOffset = hasDefaultReminderKey
+              ? (data['notiTaskDefaultOffsetMinutes'] as num?)?.toInt()
+              : kDefaultReminderMinutes;
           // Obtiene el estado del sonido para pomodoro.
           final bool pomodoroSoundEnabled =
               (data['pomodoroSoundEnabled'] as bool?) ?? true;
           // Obtiene el estado de la vibracion para pomodoro.
           final bool pomodoroVibrationEnabled =
               (data['pomodoroVibrationEnabled'] as bool?) ?? false;
+          final String pomodoroSoundRaw =
+              (data['pomodoroSound'] as String?) ?? 'bell';
+          final String pomodoroSound = _pomodoroSoundOptions
+                  .any((option) => option['key'] == pomodoroSoundRaw)
+              ? pomodoroSoundRaw
+              : _pomodoroSoundOptions.first['key']!;
           // Recupera los puntos acumulados.
           final int points = (data['points'] as num?)?.toInt() ?? 0;
           // Recupera la racha actual guardada.
@@ -236,9 +254,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           final int totalFocusMinutes =
               (data['totalFocusMinutes'] as num?)?.toInt() ?? 0;
 
-          // Si el usuario no escribio nada nuevo se sincroniza el textbox con Firestore.
-          if (!_isPhoneDirty) {
-            _phoneController.text = phone;
+          // Si el usuario no escribio nada nuevo se sincroniza el formulario con Firestore.
+          if (!_isEmergencyDirty) {
+            _emergencyNameController.text = emergencyName;
+            _emergencyPhoneController.text = emergencyPhone;
           }
 
           // Devuelve un scroll para alojar todas las tarjetas de configuracion.
@@ -309,7 +328,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 // Separador vertical entre tarjetas.
                 const SizedBox(height: 16),
-                // Tarjeta para editar el telefono de contacto.
+                // Tarjeta para editar el contacto de emergencia.
                 Card(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
@@ -319,27 +338,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Titulo de la seccion de telefono.
+                        // Titulo de la seccion de contacto.
                         const Text(
-                          'Telefono de contacto',
+                          'Contacto de emergencia',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        // Espacio antes del campo de texto.
+                        // Texto auxiliar para contextualizar el campo.
+                        const SizedBox(height: 8),
+                        Text(
+                          'Numero al que llamar en caso de emergencia (opcional).',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                        // Espacio antes de los campos de texto.
+                        const SizedBox(height: 12),
+                        // Campo para el nombre del contacto.
+                        TextField(
+                          controller: _emergencyNameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Nombre del contacto (ej: Mama, Pareja, Amigo)',
+                            border: OutlineInputBorder(),
+                          ),
+                          textCapitalization: TextCapitalization.words,
+                          onChanged: (_) {
+                            if (!_isEmergencyDirty) {
+                              setState(() => _isEmergencyDirty = true);
+                            }
+                          },
+                        ),
+                        // Espacio antes del campo de telefono.
                         const SizedBox(height: 12),
                         // Campo donde el usuario ingresa su telefono.
                         TextField(
-                          controller: _phoneController,
+                          controller: _emergencyPhoneController,
                           keyboardType: TextInputType.phone,
                           decoration: const InputDecoration(
-                            hintText: 'Agrega un numero para recordatorios',
+                            labelText: 'Telefono',
+                            hintText: 'Ej: +56 9 1234 5678',
                             border: OutlineInputBorder(),
                           ),
                           onChanged: (_) {
-                            if (!_isPhoneDirty) {
-                              setState(() => _isPhoneDirty = true);
+                            if (!_isEmergencyDirty) {
+                              setState(() => _isEmergencyDirty = true);
                             }
                           },
                         ),
@@ -349,8 +394,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Align(
                           alignment: Alignment.centerRight,
                           child: ElevatedButton.icon(
-                            onPressed: _isPhoneDirty && !_isSavingPhone ? _savePhone : null,
-                            icon: _isSavingPhone
+                            onPressed: _isEmergencyDirty && !_isSavingEmergency
+                                ? _saveEmergencyContact
+                                : null,
+                            icon: _isSavingEmergency
                                 ? const SizedBox(
                                     width: 16,
                                     height: 16,
@@ -401,28 +448,69 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         // Espacio antes del Dropdown.
                         const SizedBox(height: 8),
                         // Selector del offset predeterminado para recordatorios.
-                        DropdownButtonFormField<int>(
+                        DropdownButtonFormField<int?>(
+                          key: ValueKey(notiOffset),
                           decoration: const InputDecoration(
                             labelText: 'Recordarme antes',
                             border: OutlineInputBorder(),
                           ),
                           initialValue: notiOffset,
-                          items: const [15, 30, 60, 120]
+                          items: kReminderOptions
                               .map(
-                                (minutes) => DropdownMenuItem<int>(
-                                  value: minutes,
-                                  child: Text('$minutes minutos'),
+                                (option) => DropdownMenuItem<int?>(
+                                  value: option['minutes'] as int?,
+                                  child: Text(option['label'] as String),
                                 ),
                               )
                               .toList(),
                           onChanged: (value) {
-                            if (value != null) {
-                              _userDoc.set(
-                                {'notiTaskDefaultOffsetMinutes': value},
-                                SetOptions(merge: true),
-                              );
-                            }
+                            _userDoc.set(
+                              {'notiTaskDefaultOffsetMinutes': value},
+                              SetOptions(merge: true),
+                            );
                           },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Prueba de notificación',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Pulsa para asegurarte de que las notificaciones y el sonido Notificacion1.mp3 funcionan en tu dispositivo.',
+                        ),
+                        const SizedBox(height: 12),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              await NotificationService.showTestNotification();
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Notificación enviada'),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.notifications_active),
+                            label: const Text('Probar notificación ahora'),
+                          ),
                         ),
                       ],
                     ),
@@ -473,6 +561,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               SetOptions(merge: true),
                             );
                           },
+                        ),
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<String>(
+                          key: ValueKey(pomodoroSound),
+                          decoration: const InputDecoration(
+                            labelText: 'Sonido del Pomodoro',
+                            border: OutlineInputBorder(),
+                          ),
+                          initialValue: pomodoroSound,
+                          items: _pomodoroSoundOptions
+                              .map(
+                                (option) => DropdownMenuItem<String>(
+                                  value: option['key'],
+                                  child: Text(option['label'] ?? ''),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: pomodoroSoundEnabled
+                              ? (value) {
+                                  if (value == null) return;
+                                  _userDoc.set(
+                                    {'pomodoroSound': value},
+                                    SetOptions(merge: true),
+                                  );
+                                }
+                              : null,
                         ),
                       ],
                     ),
