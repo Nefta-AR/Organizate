@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
@@ -197,17 +198,16 @@ class NotificationService {
   }
 
   static Future<bool> _playTestSoundPreview() async {
-    final AudioPlayer previewPlayer = AudioPlayer();
+    final player = AudioPlayer();
     try {
-      await previewPlayer.setReleaseMode(ReleaseMode.stop);
-      await previewPlayer.play(
-        AssetSource('sounds/Notificacion1.mp3'),
-      );
+      await player.play(AssetSource('sounds/Notificacion1.mp3'));
+      await player.onPlayerComplete.first;
       return true;
-    } catch (_) {
+    } catch (error) {
+      debugPrint('[NOTI] Error al reproducir preview: $error');
       return false;
     } finally {
-      await previewPlayer.dispose();
+      await player.dispose();
     }
   }
 
