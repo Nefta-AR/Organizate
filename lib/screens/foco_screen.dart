@@ -145,7 +145,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
     });
     if (_pomodoroSoundEnabled) {
       final String assetPath =
-          _pomodoroSoundKey == 'notificacion1' ? 'sounds/Notificacion1.mp3' : 'sounds/bell.mp3';
+          _pomodoroSoundKey == 'notificacion1' ? 'sounds/.mp3' : 'sounds/bell.mp3';
       try {
         await _audioPlayer.play(AssetSource(assetPath));
       } catch (_) {

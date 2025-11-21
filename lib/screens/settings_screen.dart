@@ -500,12 +500,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           alignment: Alignment.centerRight,
                           child: ElevatedButton.icon(
                             onPressed: () async {
-                              await NotificationService.showTestNotification();
+                              final messenger =
+                                  ScaffoldMessenger.of(context);
+                              final result = await NotificationService
+                                  .showTestNotification(
+                                playPreviewSound: true,
+                              );
                               if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Notificación enviada'),
-                                ),
+                              if (!result.notificationSent) {
+                                String failureMessage;
+                                switch (result.failure) {
+                                  case NotificationTestFailure.permissionDenied:
+                                    failureMessage =
+                                        'Debes aceptar el permiso de notificaciones para esta app.';
+                                    break;
+                                  case NotificationTestFailure
+                                      .permissionPermanentlyDenied:
+                                    failureMessage =
+                                        'Activa las notificaciones de la app desde Ajustes del sistema y vuelve a intentarlo.';
+                                    break;
+                                  default:
+                                    failureMessage = result.errorDescription !=
+                                            null
+                                        ? 'No se pudo enviar la notificación de prueba: ${result.errorDescription}'
+                                        : 'No se pudo enviar la notificación de prueba. Revisa los permisos del sistema.';
+                                }
+                                messenger.showSnackBar(
+                                  SnackBar(content: Text(failureMessage)),
+                                );
+                                return;
+                              }
+                              final message = result.previewSoundPlayed
+                                  ? 'Notificación enviada. Deberías escuchar Notificacion1.mp3.'
+                                  : 'Notificación enviada. Activa volumen o permisos para escuchar el sonido.';
+                              final fallbackHint = result.usedFallbackSound
+                                  ? '\nSe usó el sonido por defecto porque Notificacion1 no está disponible en este dispositivo. Reinstala la app tras ejecutar flutter clean para volver a probar con ese sonido.'
+                                  : '';
+                              messenger.showSnackBar(
+                                SnackBar(content: Text(message + fallbackHint)),
                               );
                             },
                             icon: const Icon(Icons.notifications_active),

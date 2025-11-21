@@ -47,6 +47,8 @@ dependencies:
   audioplayers: ^6.0.0
   vibration: ^3.1.4
   url_launcher: ^6.3.0
+  flutter_phone_direct_caller: ^2.1.1
+  permission_handler: ^11.3.1
 
 dev_dependencies:
   flutter_test:
