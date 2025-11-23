@@ -1,8 +1,8 @@
-// lib/main.dart
+// ✅ lib/main.dart — versión final ajustada
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -18,32 +18,33 @@ import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/onboarding_screen.dart';
 
-
+/// 🔧 Configura la zona horaria local para notificaciones exactas
 Future<void> _configureLocalTimeZone() async {
   try {
     tz.initializeTimeZones();
     final String timeZoneName = await FlutterNativeTimezone.getLocalTimezone();
     tz.setLocalLocation(tz.getLocation(timeZoneName));
+    debugPrint('[TIMEZONE] Configurada: $timeZoneName');
   } catch (e) {
-    // ignore: avoid_print
-    print('Failed to configure timezone: $e');
+    debugPrint('[TIMEZONE] Error: $e. Se usa UTC por defecto.');
+    tz.initializeTimeZones();
+    tz.setLocalLocation(tz.getLocation('UTC'));
   }
 }
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await _configureLocalTimeZone();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
   await initializeDateFormatting('es', null);
+
+  // 🧩 Inicialización de notificaciones locales
   await NotificationService.init();
-  try {
-    await NotificationService.requestPermissions();
-  } catch (error, stack) {
-    debugPrint('[NOTI] Error solicitando permisos: $error');
-    debugPrint('$stack');
-  }
+  await NotificationService.requestPermissions();
+
   runApp(
     MultiProvider(
       providers: [
@@ -100,6 +101,7 @@ class AuthGate extends StatelessWidget {
             body: Center(child: Text('Error de autenticación')),
           );
         }
+
         final user = snapshot.data;
         if (user == null) {
           return const LoginScreen();
@@ -137,11 +139,11 @@ class UserOnboardingGate extends StatelessWidget {
         final data = snapshot.data?.data();
         final hasCompleted = data?['hasCompletedOnboarding'] == true;
 
-        if (hasCompleted) {
-          return const HomeScreen();
-        }
-        return const OnboardingScreen();
+        return hasCompleted
+            ? const HomeScreen()
+            : const OnboardingScreen();
       },
     );
   }
 }
+

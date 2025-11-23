@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
@@ -48,31 +47,39 @@ class NotificationService {
 
     final androidImpl = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
+
     await androidImpl?.createNotificationChannel(_channel);
+
+    // 🔥 Solicitar permisos modernos (Android 13+)
+    await androidImpl?.requestNotificationsPermission();
+    await androidImpl?.requestExactAlarmsPermission();
+
     await _configureLocalTimezone();
 
     _initialized = true;
     debugPrint('[NOTI] Servicio de notificaciones inicializado.');
   }
-  
+
   static Future<bool> requestPermissions() async {
     if (kIsWeb) {
       debugPrint('[NOTI] Web no requiere permisos de notificaciones.');
       return true;
     }
+
     if (Platform.isAndroid) {
       final status = await Permission.notification.request();
       if (!status.isGranted) {
         debugPrint('[NOTI] Permiso de notificaciones denegado.');
         return false;
       }
+
       try {
         final alarmStatus = await Permission.scheduleExactAlarm.request();
         if (!alarmStatus.isGranted) {
           debugPrint('[NOTI] Permiso de alarmas exactas denegado.');
         }
       } catch (_) {
-        // Algunos dispositivos no permiten solicitar esta autorizaci��n por c��digo.
+        // Algunos dispositivos no permiten solicitar este permiso por código.
       }
     } else if (Platform.isIOS) {
       final status = await Permission.notification.request();
@@ -81,6 +88,7 @@ class NotificationService {
         return false;
       }
     }
+
     debugPrint('[NOTI] Permisos de notificación concedidos.');
     return true;
   }
@@ -127,6 +135,7 @@ class NotificationService {
         _defaultDetails(),
       );
       notificationSent = true;
+      debugPrint('[NOTI] Notificación de prueba enviada.');
     } catch (error) {
       debugPrint('[NOTI] Error al mostrar notificación de prueba: $error');
       errorDescription = error.toString();
@@ -152,12 +161,15 @@ class NotificationService {
       debugPrint('[NOTI] No hay permiso para mostrar notificación de Pomodoro');
       return;
     }
+
     await _plugin.show(
       _pomodoroNotificationId,
       'Pomodoro terminado',
       'Buen trabajo, tómate un descanso 😌',
       _defaultDetails(),
     );
+
+    debugPrint('[NOTI] Notificación de Pomodoro mostrada.');
   }
 
   static Future<void> schedulePomodoroNotification(DateTime endTime) async {
@@ -165,14 +177,18 @@ class NotificationService {
       debugPrint('[NOTI] Pomodoro no disponible en Web.');
       return;
     }
+
     final hasExactPermission = await _arePermissionsGranted(exact: true);
     final hasBasicPermission =
         hasExactPermission || await _arePermissionsGranted();
+
     if (!hasBasicPermission) {
       debugPrint('[NOTI] No se programa Pomodoro por falta de permisos');
       return;
     }
+
     final tzDateTime = tz.TZDateTime.from(endTime, tz.local);
+
     await _plugin.zonedSchedule(
       _pomodoroNotificationId,
       'Pomodoro terminado',
@@ -186,12 +202,14 @@ class NotificationService {
           UILocalNotificationDateInterpretation.absoluteTime,
       payload: 'pomodoro',
     );
+
     debugPrint('[NOTI] Pomodoro programado para $tzDateTime');
   }
 
   static Future<void> cancelPomodoroNotification() async {
     if (kIsWeb) return;
     await _plugin.cancel(_pomodoroNotificationId);
+    debugPrint('[NOTI] Pomodoro cancelado.');
   }
 
   static Future<void> scheduleReminderIfNeeded({
@@ -205,27 +223,28 @@ class NotificationService {
       debugPrint('[NOTI] Recordatorios locales no disponibles en Web.');
       return;
     }
+
     final hasExactPermission = await _arePermissionsGranted(exact: true);
     final hasBasicPermission =
         hasExactPermission || await _arePermissionsGranted();
+
     if (!hasBasicPermission) {
       debugPrint('[NOTI] No se programa tarea por falta de permisos');
       return;
     }
 
-    if (dueDate == null || reminderMinutes == null) {
-      return;
-    }
+    if (dueDate == null || reminderMinutes == null) return;
 
     final int safeMinutes = reminderMinutes < kMinimumReminderMinutes
         ? kMinimumReminderMinutes
         : reminderMinutes;
 
-    final scheduledDateTime =
+    DateTime scheduledDateTime =
         dueDate.subtract(Duration(minutes: safeMinutes));
 
-    if (scheduledDateTime.isBefore(DateTime.now())) {
-      return;
+    final DateTime now = DateTime.now();
+    if (scheduledDateTime.isBefore(now.add(const Duration(seconds: 5)))) {
+      scheduledDateTime = now.add(const Duration(seconds: 5));
     }
 
     final int notificationId = taskId.hashCode & 0x7fffffff;
@@ -244,6 +263,7 @@ class NotificationService {
             UILocalNotificationDateInterpretation.absoluteTime,
         payload: taskId,
       );
+      debugPrint('[NOTI] Recordatorio programado para $tzDateTime');
     } catch (error) {
       debugPrint('[NOTI] Error al programar recordatorio: $error');
     }
@@ -275,14 +295,10 @@ class NotificationService {
     if (Platform.isAndroid) {
       final hasNotifications = await Permission.notification.isGranted;
       if (!hasNotifications) return false;
-      if (exact) {
-        return await _hasExactAlarmPermission();
-      }
+      if (exact) return await _hasExactAlarmPermission();
       return true;
     }
-    if (Platform.isIOS) {
-      return await Permission.notification.isGranted;
-    }
+    if (Platform.isIOS) return await Permission.notification.isGranted;
     return false;
   }
 
@@ -292,11 +308,11 @@ class NotificationService {
       final status = await Permission.scheduleExactAlarm.status;
       return status.isGranted;
     } catch (_) {
-      // En versiones anteriores a Android 12 no se requiere este permiso.
+      // Android < 12 no requiere este permiso
       return true;
     }
   }
-  
+
   static Future<void> _configureLocalTimezone() async {
     if (_tzInitialized) return;
     try {
@@ -339,3 +355,4 @@ enum NotificationTestFailure {
   permissionPermanentlyDenied,
   unknown,
 }
+

@@ -15,7 +15,7 @@ import 'package:organizate/utils/emergency_contact_helper.dart';
 import 'package:organizate/utils/reminder_helper.dart';
 import 'package:organizate/utils/reminder_options.dart';
 import 'package:organizate/widgets/custom_nav_bar.dart';
-
+import 'package:organizate/screens/login_screen.dart';
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -191,11 +191,30 @@ class _HomeScreenState extends State<HomeScreen> {
         IconButton(
           icon: const Icon(Icons.logout),
           tooltip: 'Cerrar sesión',
-          onPressed: () => FirebaseAuth.instance.signOut(),
+          onPressed: _handleLogout,
         ),
       ],
     );
   }
+
+  Future<void> _handleLogout() async {
+  try {
+    await FirebaseAuth.instance.signOut();
+    if (!mounted) return;
+
+    // Navegar limpiando el stack completo
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
+  } catch (e) {
+    debugPrint('Error al cerrar sesión: $e');
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Error al cerrar sesión')),
+    );
+  }
+}
 
   // Muestra el progreso del día calculando tareas completadas hoy.
   Widget _buildProgressHeader() {

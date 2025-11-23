@@ -476,17 +476,37 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return ElevatedButton.icon(
+    return ElevatedButton(
       style: ElevatedButton.styleFrom(
         backgroundColor: color.withValues(alpha: 0.15),
         foregroundColor: color,
-        minimumSize: const Size(110, 44),
+        minimumSize: const Size(120, 72),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 0,
       ),
       onPressed: onTap,
-      icon: Icon(icon),
-      label: Text(label),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 22),
+          const SizedBox(height: 8),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.visible,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
