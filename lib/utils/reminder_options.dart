@@ -1,4 +1,5 @@
 const int kDefaultReminderMinutes = 30;
+const int kMinimumReminderMinutes = 10;
 
 const List<Map<String, dynamic>> kReminderOptions = [
   {'label': 'Sin recordatorio', 'minutes': null},

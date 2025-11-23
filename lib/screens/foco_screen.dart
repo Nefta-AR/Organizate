@@ -5,10 +5,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:vibration/vibration.dart';
 
 import 'package:organizate/screens/settings_screen.dart';
 import 'package:organizate/services/notification_service.dart';
+import 'package:organizate/services/pomodoro_service.dart';
 import 'package:organizate/services/streak_service.dart';
 import 'package:organizate/utils/date_time_helper.dart';
 import 'package:organizate/utils/emergency_contact_helper.dart';
@@ -26,6 +28,8 @@ class FocoScreen extends StatefulWidget {
 class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
   late final DocumentReference<Map<String, dynamic>> userDocRef;
   late final CollectionReference<Map<String, dynamic>> tasksCollection;
+  late final Stream<QuerySnapshot<Map<String, dynamic>>> _focusTasksStream;
+  late final Stream<DocumentSnapshot<Map<String, dynamic>>> _userDocStream;
 
   final DateFormat _dateFormatter = DateFormat('dd MMM, HH:mm', 'es_ES');
   final AudioPlayer _audioPlayer = AudioPlayer();
@@ -36,16 +40,15 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
       _userSettingsSubscription;
 
   final List<Duration> _quickDurations = const [
+    Duration(minutes: 5),
+    Duration(minutes: 15),
     Duration(minutes: 25),
     Duration(minutes: 50),
-    Duration(minutes: 15),
   ];
-
   Duration _selectedDuration = const Duration(minutes: 25);
-  int _remainingSeconds = 25 * 60;
-  Timer? _pomodoroTimer;
-  bool _isRunning = false;
-  bool _isPaused = false;
+
+  PomodoroStatus _lastPomodoroStatus = PomodoroStatus.idle;
+  PomodoroService? _pomodoroService;
 
   late final AnimationController _breathController;
   late final Animation<double> _breathAnimation;
@@ -61,6 +64,12 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
     final uid = FirebaseAuth.instance.currentUser!.uid;
     userDocRef = FirebaseFirestore.instance.collection('users').doc(uid);
     tasksCollection = userDocRef.collection('tasks');
+    _userDocStream = userDocRef.snapshots();
+    _focusTasksStream = tasksCollection
+        .where('category', isEqualTo: 'Foco')
+        .orderBy('done')
+        .orderBy('createdAt', descending: true)
+        .snapshots();
     _userSettingsSubscription = userDocRef.snapshots().listen((snapshot) {
       final data = snapshot.data() ?? {};
       if (!mounted) return;
@@ -77,79 +86,57 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
       duration: const Duration(seconds: 14),
     );
     _breathAnimation = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0.8, end: 1.0), weight: 4), // inhale
-      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.0), weight: 4), // hold
-      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.7), weight: 6), // exhale
-    ]).animate(CurvedAnimation(parent: _breathController, curve: Curves.easeInOut));
+      TweenSequenceItem(tween: Tween(begin: 0.8, end: 1.0), weight: 4),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.0), weight: 4),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.7), weight: 6),
+    ]).animate(
+        CurvedAnimation(parent: _breathController, curve: Curves.easeInOut));
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _attachPomodoroListener();
+      _requestPermissions();
+    });
+  }
+
+  Future<void> _requestPermissions() async {
+    await NotificationService.requestPermissions();
+  }
+
+  void _attachPomodoroListener() {
+    _pomodoroService = context.read<PomodoroService>();
+    _lastPomodoroStatus = _pomodoroService!.status;
+    _pomodoroService!.addListener(_onPomodoroStatusChanged);
   }
 
   @override
   void dispose() {
-    _pomodoroTimer?.cancel();
     _breathingTimer?.cancel();
     _breathController.dispose();
     _audioPlayer.dispose();
-     _userSettingsSubscription?.cancel();
+    _userSettingsSubscription?.cancel();
+    _pomodoroService?.removeListener(_onPomodoroStatusChanged);
     super.dispose();
   }
 
-  void _selectDuration(Duration duration) {
-    if (_isRunning) return;
-    setState(() {
-      _selectedDuration = duration;
-      _remainingSeconds = duration.inSeconds;
-    });
+  void _onPomodoroStatusChanged() {
+    final service = _pomodoroService;
+    if (service == null) return;
+    if (_lastPomodoroStatus != PomodoroStatus.finished &&
+        service.status == PomodoroStatus.finished) {
+      _handlePomodoroFinished(service);
+    }
+    _lastPomodoroStatus = service.status;
   }
 
-  void _startPomodoro() {
-    if (_isRunning && !_isPaused) return;
-    _pomodoroTimer?.cancel();
-    setState(() {
-      _isRunning = true;
-      _isPaused = false;
-    });
-    _pomodoroTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_remainingSeconds <= 0) {
-        timer.cancel();
-        _onPomodoroFinished();
-        return;
-      }
-      setState(() {
-        _remainingSeconds--;
-      });
-    });
-  }
-
-  void _pausePomodoro() {
-    if (!_isRunning) return;
-    _pomodoroTimer?.cancel();
-    setState(() {
-      _isPaused = true;
-    });
-  }
-
-  void _resetPomodoro() {
-    _pomodoroTimer?.cancel();
-    setState(() {
-      _isRunning = false;
-      _isPaused = false;
-      _remainingSeconds = _selectedDuration.inSeconds;
-    });
-  }
-
-  Future<void> _onPomodoroFinished() async {
-    setState(() {
-      _isRunning = false;
-      _isPaused = false;
-      _remainingSeconds = _selectedDuration.inSeconds;
-    });
+  Future<void> _handlePomodoroFinished(PomodoroService service) async {
     if (_pomodoroSoundEnabled) {
-      final String assetPath =
-          _pomodoroSoundKey == 'notificacion1' ? 'sounds/.mp3' : 'sounds/bell.mp3';
+      final String assetPath = _pomodoroSoundKey == 'notificacion1'
+          ? 'sounds/Notificacion1.mp3'
+          : 'sounds/bell.mp3';
       try {
         await _audioPlayer.play(AssetSource(assetPath));
-      } catch (_) {
-        // Ignora fallos al reproducir
+      } catch (error) {
+        debugPrint('[FOCO] Error al reproducir sonido Pomodoro: $error');
       }
     }
     if (_pomodoroVibrationEnabled) {
@@ -167,13 +154,11 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
         {
           'focusSessionsCompleted': FieldValue.increment(1),
           'totalFocusMinutes':
-              FieldValue.increment(_selectedDuration.inMinutes),
+              FieldValue.increment(service.totalDuration.inMinutes),
         },
         SetOptions(merge: true),
       );
-    } catch (_) {
-      // Si falla no se interrumpe el flujo
-    }
+    } catch (_) {}
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Tiempo finalizado. ¡Toma un descanso!')),
@@ -181,13 +166,48 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
     }
   }
 
-  double get _pomodoroProgress =>
-      1 - (_remainingSeconds / _selectedDuration.inSeconds);
+  void _selectDuration(Duration duration, PomodoroService pomodoro) {
+    if (pomodoro.status == PomodoroStatus.running ||
+        pomodoro.status == PomodoroStatus.paused) {
+      return;
+    }
+    setState(() {
+      _selectedDuration = duration;
+    });
+  }
 
-  String get _formattedRemaining {
-    final minutes = (_remainingSeconds ~/ 60).toString().padLeft(2, '0');
-    final seconds = (_remainingSeconds % 60).toString().padLeft(2, '0');
+  Future<void> _startPomodoro(PomodoroService pomodoro) async {
+    await pomodoro.start(_selectedDuration);
+  }
+
+  Future<void> _pauseOrResume(PomodoroService pomodoro) async {
+    if (pomodoro.status == PomodoroStatus.running) {
+      await pomodoro.pause();
+    } else if (pomodoro.status == PomodoroStatus.paused) {
+      await pomodoro.resume();
+    }
+  }
+
+  Future<void> _cancelPomodoro(PomodoroService pomodoro) async {
+    await pomodoro.cancel();
+  }
+
+  String _formattedRemaining(PomodoroService pomodoro) {
+    final Duration current = pomodoro.status == PomodoroStatus.idle
+        ? _selectedDuration
+        : (pomodoro.remaining > Duration.zero
+            ? pomodoro.remaining
+            : const Duration());
+    final minutes = current.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = current.inSeconds.remainder(60).toString().padLeft(2, '0');
     return '$minutes:$seconds';
+  }
+
+  double _pomodoroProgress(PomodoroService pomodoro) {
+    if (pomodoro.totalDuration.inSeconds == 0) return 0;
+    final remaining = pomodoro.remaining.inSeconds;
+    final total = pomodoro.totalDuration.inSeconds;
+    return 1 - (remaining / total);
   }
 
   void _startBreathingExercise() {
@@ -231,6 +251,9 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     const int screenIndex = 4;
+    final pomodoro = context.watch<PomodoroService>();
+    final bool isPaused = pomodoro.status == PomodoroStatus.paused;
+
     return Scaffold(
       bottomNavigationBar: const CustomNavBar(initialIndex: screenIndex),
       appBar: AppBar(
@@ -241,7 +264,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
         automaticallyImplyLeading: false,
         actions: [
           StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-            stream: userDocRef.snapshots(),
+            stream: _userDocStream,
             builder: (context, snapshot) {
               if (!snapshot.hasData) return const SizedBox();
               final userData = snapshot.data?.data() ?? {};
@@ -312,8 +335,13 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildPomodoroCard(),
-            const SizedBox(height: 20),
+            const Text(
+              'Modo Foco',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            _buildPomodoroCard(pomodoro, isPaused),
+            const SizedBox(height: 24),
             _buildBreathingCard(),
             const SizedBox(height: 24),
             const Text(
@@ -335,7 +363,9 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildPomodoroCard() {
+  Widget _buildPomodoroCard(PomodoroService pomodoro, bool isPaused) {
+    final String pauseResumeLabel = isPaused ? 'Reanudar' : 'Pausar';
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -346,7 +376,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Pomodoro',
+            'Sesiones Pomodoro',
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
@@ -357,63 +387,81 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                   (duration) => ChoiceChip(
                     label: Text('${duration.inMinutes} min'),
                     selected: _selectedDuration == duration,
-                    onSelected: (_) => _selectDuration(duration),
+                    onSelected: (_) => _selectDuration(duration, pomodoro),
                   ),
                 )
                 .toList(),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           Center(
-            child: SizedBox(
-              height: 220,
-              width: 220,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0, end: _pomodoroProgress),
-                    duration: const Duration(milliseconds: 400),
-                    builder: (context, value, child) {
-                      return CircularProgressIndicator(
-                        value: value,
-                        strokeWidth: 12,
-                        backgroundColor: Colors.white,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Colors.purple.shade400,
+            child: Column(
+              children: [
+                Text(
+                  _formattedRemaining(pomodoro),
+                  style: const TextStyle(
+                    fontSize: 40,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 160,
+                  width: 160,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      TweenAnimationBuilder<double>(
+                        tween: Tween(
+                          begin: 0,
+                          end: _pomodoroProgress(pomodoro),
                         ),
-                      );
-                    },
+                        duration: const Duration(milliseconds: 400),
+                        builder: (context, value, child) {
+                          return CircularProgressIndicator(
+                            value: value,
+                            strokeWidth: 10,
+                            backgroundColor: Colors.white,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.purple.shade400,
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
-                  Text(
-                    _formattedRemaining,
-                    style: const TextStyle(
-                        fontSize: 36, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildPomodoroButton(
-                label: _isPaused ? 'Continuar' : 'Iniciar',
-                icon: Icons.play_arrow,
-                color: Colors.green,
-                onTap: _startPomodoro,
+              Expanded(
+                child: _buildPomodoroButton(
+                  label: 'Iniciar',
+                  icon: Icons.play_arrow,
+                  color: Colors.green,
+                  onTap: () => _startPomodoro(pomodoro),
+                ),
               ),
-              _buildPomodoroButton(
-                label: 'Pausar',
-                icon: Icons.pause,
-                color: Colors.orange,
-                onTap: _pausePomodoro,
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildPomodoroButton(
+                  label: pauseResumeLabel,
+                  icon: isPaused ? Icons.play_arrow : Icons.pause,
+                  color: Colors.orange,
+                  onTap: () => _pauseOrResume(pomodoro),
+                ),
               ),
-              _buildPomodoroButton(
-                label: 'Reiniciar',
-                icon: Icons.refresh,
-                color: Colors.redAccent,
-                onTap: _resetPomodoro,
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildPomodoroButton(
+                  label: 'Reiniciar',
+                  icon: Icons.refresh,
+                  color: Colors.redAccent,
+                  onTap: () => _cancelPomodoro(pomodoro),
+                ),
               ),
             ],
           ),
@@ -432,7 +480,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
       style: ElevatedButton.styleFrom(
         backgroundColor: color.withValues(alpha: 0.15),
         foregroundColor: color,
-        minimumSize: const Size(100, 44),
+        minimumSize: const Size(110, 44),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 0,
       ),
@@ -478,9 +526,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  _breathingActive
-                      ? _breathingInstruction
-                      : 'Pulsa iniciar',
+                  _breathingActive ? _breathingInstruction : 'Pulsa iniciar',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     color: Colors.white,
@@ -505,8 +551,8 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blueAccent,
                 minimumSize: const Size(180, 48),
-                shape:
-                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
               ),
               onPressed: _startBreathingExercise,
               icon: const Icon(Icons.self_improvement),
@@ -520,11 +566,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
 
   Widget _buildTasksStream() {
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: tasksCollection
-          .where('category', isEqualTo: 'Foco')
-          .orderBy('done')
-          .orderBy('createdAt', descending: true)
-          .snapshots(),
+      stream: _focusTasksStream,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Padding(
@@ -560,8 +602,8 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
             final bool isDone = taskData['done'] ?? false;
             final int? reminderMinutes = extractReminderMinutes(taskData);
             return GestureDetector(
-              onLongPress: () =>
-                  _showTaskOptionsDialog(context, taskId, text, 'Foco', dueDate, reminderMinutes),
+              onLongPress: () => _showTaskOptionsDialog(
+                  context, taskId, text, 'Foco', dueDate, reminderMinutes),
               child: _buildGoalItem(
                 icon: Icons.psychology,
                 iconColor: Colors.purple,
@@ -569,7 +611,6 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                 isDone: isDone,
                 dueDate: dueDate,
                 onDonePressed: () async {
-                  // Reutilizamos la misma receta que en Home para mantener consistencia.
                   final pointsChange = isDone ? -10 : 10;
                   final batch = FirebaseFirestore.instance.batch();
                   batch.update(docs[index].reference, {'done': !isDone});
@@ -580,7 +621,8 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                     await batch.commit();
                     if (!isDone) {
                       await NotificationService.cancelTaskNotification(taskId);
-                      await StreakService.updateStreakOnTaskCompletion(userDocRef);
+                      await StreakService.updateStreakOnTaskCompletion(
+                          userDocRef);
                     }
                   } catch (error) {
                     debugPrint('Error al actualizar: $error');
@@ -596,7 +638,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
 
   Widget _buildEmergencyQuickButton() {
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: userDocRef.snapshots(),
+      stream: _userDocStream,
       builder: (context, snapshot) {
         final isLoading = snapshot.connectionState == ConnectionState.waiting;
         final data = snapshot.data?.data();
@@ -610,7 +652,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
         final String helperText = isLoading
             ? 'Cargando contacto...'
             : trimmedPhone != null
-                ? 'Tu contacto esta listo por si necesitas ayuda.'
+                ? 'Tu contacto está listo por si necesitas ayuda.'
                 : 'Configura un contacto desde tu perfil.';
 
         return Column(
@@ -687,9 +729,10 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
           ElevatedButton(
             onPressed: onDonePressed,
             style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  isDone ? Colors.grey.shade300 : Colors.purple.withValues(alpha: 0.2),
-              foregroundColor:
+              backgroundColor: isDone
+                  ? Colors.grey.shade300
+                  : Colors.purple.withValues(alpha: 0.2),
+            foregroundColor:
                   isDone ? Colors.grey.shade600 : Colors.purple.shade800,
               elevation: 0,
               shape: RoundedRectangleBorder(
@@ -707,8 +750,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
     final TextEditingController taskController = TextEditingController();
     DateTime? selectedDueDate;
     const String fixedCategory = 'Foco';
-    final int? defaultReminder =
-        await fetchDefaultReminderMinutes(userDocRef);
+    final int? defaultReminder = await fetchDefaultReminderMinutes(userDocRef);
     int? selectedReminderMinutes = defaultReminder;
     if (!context.mounted) return;
 
@@ -856,23 +898,16 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                   final messenger = ScaffoldMessenger.of(dialogContext);
                   try {
                     await tasksCollection.doc(taskId).delete();
-                    debugPrint('Tarea $taskId eliminada correctamente');
                     try {
                       await NotificationService.cancelTaskNotification(taskId);
-                      debugPrint('Notificación de $taskId cancelada');
-                    } catch (e, stack) {
-                      debugPrint('Error al cancelar notificación de $taskId: $e');
-                      debugPrint('$stack');
-                    }
+                    } catch (_) {}
                     if (navigator.mounted) {
                       navigator.pop();
                     }
                     messenger.showSnackBar(
                       SnackBar(content: Text('"$currentText" eliminada')),
                     );
-                  } catch (error, stack) {
-                    debugPrint('Error al eliminar tarea $taskId: $error');
-                    debugPrint('$stack');
+                  } catch (error) {
                     if (navigator.mounted) {
                       navigator.pop();
                     }
@@ -1011,9 +1046,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                         dueDate: selectedDueDate,
                         reminderMinutes: selectedReminderMinutes,
                       );
-                    } catch (_) {
-                      // ignore
-                    } finally {
+                    } catch (_) {} finally {
                       navigator.pop();
                     }
                   },

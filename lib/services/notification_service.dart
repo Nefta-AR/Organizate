@@ -1,185 +1,134 @@
-import 'dart:async';
+import 'dart:io';
+
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_native_timezone/flutter_native_timezone.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import 'package:organizate/utils/reminder_options.dart';
 
 class NotificationService {
   NotificationService._();
 
-  static final FlutterLocalNotificationsPlugin _notificationsPlugin =
+  static final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
-  static bool _timezoneInitialized = false;
-  static bool _customSoundAvailable = true;
+  static bool _initialized = false;
+  static bool _tzInitialized = false;
+  static const int _pomodoroNotificationId = 7777;
 
-  static const AndroidNotificationChannel _tasksChannel =
-      AndroidNotificationChannel(
+  static const AndroidNotificationChannel _channel = AndroidNotificationChannel(
     'tareas_channel',
-    'Recordatorios de tareas',
-    description: 'Notificaciones programadas de tus tareas',
+    'Recordatorios Organízate',
+    description: 'Notificaciones de tareas y Pomodoro',
     importance: Importance.high,
     playSound: true,
     enableVibration: true,
-    sound: RawResourceAndroidNotificationSound('notificacion1'),
   );
 
-  static FlutterLocalNotificationsPlugin get plugin => _notificationsPlugin;
-
   static Future<void> init() async {
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
-    const settings = InitializationSettings(
-      android: androidSettings,
-      iOS: iosSettings,
-    );
-
-    await _notificationsPlugin.initialize(settings);
-
-    final androidImplementation = _notificationsPlugin
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
-    await androidImplementation?.requestNotificationsPermission();
-    await _registerTasksChannel();
-
-    await _configureLocalTimeZone();
-  }
-
-  static Future<void> scheduleTaskNotification({
-    required String taskId,
-    required DateTime scheduledTime,
-    required String body,
-  }) async {
-    if (!scheduledTime.isAfter(DateTime.now())) return;
-    await _configureLocalTimeZone();
-
-    final tz.TZDateTime tzScheduled =
-        tz.TZDateTime.from(scheduledTime, tz.local);
-
-    try {
-      await _sendNotificationWithBestSound((details) async {
-        await _notificationsPlugin.zonedSchedule(
-          taskId.hashCode,
-          'Recordatorio de tarea',
-          body,
-          tzScheduled,
-          details,
-          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-          uiLocalNotificationDateInterpretation:
-              UILocalNotificationDateInterpretation.absoluteTime,
-          matchDateTimeComponents: DateTimeComponents.dateAndTime,
-          payload: taskId,
-        );
-      });
-    } catch (_) {
-      // Ignoramos fallos para no bloquear la app.
+    if (_initialized) return;
+    if (kIsWeb) {
+      _initialized = true;
+      debugPrint('[NOTI] Notificaciones locales no disponibles en Web.');
+      return;
     }
+
+    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const darwinInit = DarwinInitializationSettings();
+    const settings =
+        InitializationSettings(android: androidInit, iOS: darwinInit);
+
+    await _plugin.initialize(
+      settings,
+      onDidReceiveNotificationResponse: _onNotificationResponse,
+    );
+
+    final androidImpl = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    await androidImpl?.createNotificationChannel(_channel);
+    await _configureLocalTimezone();
+
+    _initialized = true;
+    debugPrint('[NOTI] Servicio de notificaciones inicializado.');
   }
-
-  static Future<void> cancelTaskNotification(String taskId) async {
-    await _notificationsPlugin.cancel(taskId.hashCode);
-  }
-
-  static Future<void> scheduleReminderIfNeeded({
-    required DocumentReference<Map<String, dynamic>> userDocRef,
-    required String taskId,
-    required String taskTitle,
-    required DateTime? dueDate,
-    int? reminderMinutes,
-  }) async {
-    if (dueDate == null) return;
-    if (reminderMinutes == null || reminderMinutes <= 0) return;
-
-    try {
-      final snapshot = await userDocRef.get();
-      final data = snapshot.data();
-      final bool notiTaskEnabled = (data?['notiTaskEnabled'] as bool?) ?? true;
-      if (!notiTaskEnabled) return;
-
-      final scheduledTime = dueDate.subtract(Duration(minutes: reminderMinutes));
-      if (!scheduledTime.isAfter(DateTime.now())) return;
-
-      await scheduleTaskNotification(
-        taskId: taskId,
-        body: taskTitle,
-        scheduledTime: scheduledTime,
-      );
-    } catch (_) {
-      // Ignoramos fallos para no bloquear la app.
+  
+  static Future<bool> requestPermissions() async {
+    if (kIsWeb) {
+      debugPrint('[NOTI] Web no requiere permisos de notificaciones.');
+      return true;
     }
+    if (Platform.isAndroid) {
+      final status = await Permission.notification.request();
+      if (!status.isGranted) {
+        debugPrint('[NOTI] Permiso de notificaciones denegado.');
+        return false;
+      }
+      try {
+        final alarmStatus = await Permission.scheduleExactAlarm.request();
+        if (!alarmStatus.isGranted) {
+          debugPrint('[NOTI] Permiso de alarmas exactas denegado.');
+        }
+      } catch (_) {
+        // Algunos dispositivos no permiten solicitar esta autorizaci��n por c��digo.
+      }
+    } else if (Platform.isIOS) {
+      final status = await Permission.notification.request();
+      if (!status.isGranted) {
+        debugPrint('[NOTI] Permiso de notificaciones denegado en iOS.');
+        return false;
+      }
+    }
+    debugPrint('[NOTI] Permisos de notificación concedidos.');
+    return true;
+  }
+
+  static NotificationDetails _defaultDetails() {
+    return const NotificationDetails(
+      android: AndroidNotificationDetails(
+        'tareas_channel',
+        'Recordatorios Organízate',
+        channelDescription: 'Notificaciones de tareas y Pomodoro',
+        importance: Importance.high,
+        priority: Priority.high,
+        playSound: true,
+        enableVibration: true,
+      ),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
+    );
   }
 
   static Future<NotificationTestResult> showTestNotification({
     bool playPreviewSound = false,
   }) async {
-    final permissionStatus = await _ensureNotificationPermission();
-    if (permissionStatus == _NotificationPermissionStatus.denied) {
+    if (!await _arePermissionsGranted()) {
       return const NotificationTestResult(
         notificationSent: false,
         previewSoundPlayed: false,
         failure: NotificationTestFailure.permissionDenied,
-      );
-    }
-    if (permissionStatus == _NotificationPermissionStatus.permanentlyDenied) {
-      return const NotificationTestResult(
-        notificationSent: false,
-        previewSoundPlayed: false,
-        failure: NotificationTestFailure.permissionPermanentlyDenied,
-      );
-    }
-    if (permissionStatus == _NotificationPermissionStatus.failed) {
-      return const NotificationTestResult(
-        notificationSent: false,
-        previewSoundPlayed: false,
-        failure: NotificationTestFailure.unknown,
-        errorDescription:
-            'No se pudo validar el permiso de notificaciones del sistema.',
-      );
-    }
-
-    final androidImplementation = _notificationsPlugin
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
-    final bool? areEnabled =
-        await androidImplementation?.areNotificationsEnabled();
-    if (areEnabled == false) {
-      return const NotificationTestResult(
-        notificationSent: false,
-        previewSoundPlayed: false,
-        failure: NotificationTestFailure.permissionPermanentlyDenied,
-        errorDescription:
-            'Las notificaciones estan desactivadas para la app en Android.',
+        errorDescription: 'Permiso de notificaciones denegado',
       );
     }
 
     bool notificationSent = false;
     String? errorDescription;
-    bool usedFallbackSound = false;
+
     try {
-      usedFallbackSound = await _sendNotificationWithBestSound(
-        (details) async {
-          await _notificationsPlugin.show(
-            9999,
-            'Prueba',
-            'Esto es una notificación de prueba',
-            details,
-          );
-        },
+      await _plugin.show(
+        9999,
+        'Prueba de notificación',
+        'Si ves esto, las notificaciones están funcionando.',
+        _defaultDetails(),
       );
       notificationSent = true;
-    } on PlatformException catch (error) {
-      notificationSent = false;
-      errorDescription = error.message ?? error.code;
     } catch (error) {
-      notificationSent = false;
+      debugPrint('[NOTI] Error al mostrar notificación de prueba: $error');
       errorDescription = error.toString();
     }
 
@@ -193,8 +142,118 @@ class NotificationService {
       previewSoundPlayed: previewSoundPlayed,
       failure: notificationSent ? null : NotificationTestFailure.unknown,
       errorDescription: errorDescription,
-      usedFallbackSound: usedFallbackSound,
+      usedFallbackSound: false,
     );
+  }
+
+  static Future<void> showPomodoroFinishedNotification() async {
+    if (kIsWeb) return;
+    if (!await _arePermissionsGranted()) {
+      debugPrint('[NOTI] No hay permiso para mostrar notificación de Pomodoro');
+      return;
+    }
+    await _plugin.show(
+      _pomodoroNotificationId,
+      'Pomodoro terminado',
+      'Buen trabajo, tómate un descanso 😌',
+      _defaultDetails(),
+    );
+  }
+
+  static Future<void> schedulePomodoroNotification(DateTime endTime) async {
+    if (kIsWeb) {
+      debugPrint('[NOTI] Pomodoro no disponible en Web.');
+      return;
+    }
+    final hasExactPermission = await _arePermissionsGranted(exact: true);
+    final hasBasicPermission =
+        hasExactPermission || await _arePermissionsGranted();
+    if (!hasBasicPermission) {
+      debugPrint('[NOTI] No se programa Pomodoro por falta de permisos');
+      return;
+    }
+    final tzDateTime = tz.TZDateTime.from(endTime, tz.local);
+    await _plugin.zonedSchedule(
+      _pomodoroNotificationId,
+      'Pomodoro terminado',
+      'Buen trabajo, tómate un descanso 😌',
+      tzDateTime,
+      _defaultDetails(),
+      androidScheduleMode: hasExactPermission
+          ? AndroidScheduleMode.exactAllowWhileIdle
+          : AndroidScheduleMode.inexactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      payload: 'pomodoro',
+    );
+    debugPrint('[NOTI] Pomodoro programado para $tzDateTime');
+  }
+
+  static Future<void> cancelPomodoroNotification() async {
+    if (kIsWeb) return;
+    await _plugin.cancel(_pomodoroNotificationId);
+  }
+
+  static Future<void> scheduleReminderIfNeeded({
+    required DocumentReference<Map<String, dynamic>> userDocRef,
+    required String taskId,
+    required String taskTitle,
+    DateTime? dueDate,
+    int? reminderMinutes,
+  }) async {
+    if (kIsWeb) {
+      debugPrint('[NOTI] Recordatorios locales no disponibles en Web.');
+      return;
+    }
+    final hasExactPermission = await _arePermissionsGranted(exact: true);
+    final hasBasicPermission =
+        hasExactPermission || await _arePermissionsGranted();
+    if (!hasBasicPermission) {
+      debugPrint('[NOTI] No se programa tarea por falta de permisos');
+      return;
+    }
+
+    if (dueDate == null || reminderMinutes == null) {
+      return;
+    }
+
+    final int safeMinutes = reminderMinutes < kMinimumReminderMinutes
+        ? kMinimumReminderMinutes
+        : reminderMinutes;
+
+    final scheduledDateTime =
+        dueDate.subtract(Duration(minutes: safeMinutes));
+
+    if (scheduledDateTime.isBefore(DateTime.now())) {
+      return;
+    }
+
+    final int notificationId = taskId.hashCode & 0x7fffffff;
+    try {
+      final tzDateTime = tz.TZDateTime.from(scheduledDateTime, tz.local);
+      await _plugin.zonedSchedule(
+        notificationId,
+        'Recordatorio: $taskTitle',
+        'Tarea programada para ${dueDate.toLocal()}',
+        tzDateTime,
+        _defaultDetails(),
+        androidScheduleMode: hasExactPermission
+            ? AndroidScheduleMode.exactAllowWhileIdle
+            : AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        payload: taskId,
+      );
+    } catch (error) {
+      debugPrint('[NOTI] Error al programar recordatorio: $error');
+    }
+  }
+
+  static Future<void> cancelTaskNotification(String taskId) async {
+    if (kIsWeb) return;
+    final int notificationId = taskId.hashCode & 0x7fffffff;
+    await _plugin.cancel(notificationId);
+    debugPrint('[NOTI] Notificación cancelada para taskId=$taskId');
   }
 
   static Future<bool> _playTestSoundPreview() async {
@@ -211,113 +270,51 @@ class NotificationService {
     }
   }
 
-  static Future<_NotificationPermissionStatus>
-      _ensureNotificationPermission() async {
-    if (!(defaultTargetPlatform == TargetPlatform.android ||
-        defaultTargetPlatform == TargetPlatform.iOS)) {
-      return _NotificationPermissionStatus.granted;
+  static Future<bool> _arePermissionsGranted({bool exact = false}) async {
+    if (kIsWeb) return false;
+    if (Platform.isAndroid) {
+      final hasNotifications = await Permission.notification.isGranted;
+      if (!hasNotifications) return false;
+      if (exact) {
+        return await _hasExactAlarmPermission();
+      }
+      return true;
     }
+    if (Platform.isIOS) {
+      return await Permission.notification.isGranted;
+    }
+    return false;
+  }
+
+  static Future<bool> _hasExactAlarmPermission() async {
+    if (!Platform.isAndroid) return false;
     try {
-      PermissionStatus status = await Permission.notification.status;
-      if (status.isGranted) {
-        return _NotificationPermissionStatus.granted;
-      }
-      status = await Permission.notification.request();
-      if (status.isGranted) {
-        return _NotificationPermissionStatus.granted;
-      }
-      if (status.isPermanentlyDenied) {
-        return _NotificationPermissionStatus.permanentlyDenied;
-      }
-      return _NotificationPermissionStatus.denied;
+      final status = await Permission.scheduleExactAlarm.status;
+      return status.isGranted;
     } catch (_) {
-      return _NotificationPermissionStatus.failed;
+      // En versiones anteriores a Android 12 no se requiere este permiso.
+      return true;
     }
   }
-
-  static Future<void> _registerTasksChannel() async {
-    final androidImplementation = _notificationsPlugin
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
-    if (androidImplementation == null) return;
-    final channel = _customSoundAvailable
-        ? _tasksChannel
-        : AndroidNotificationChannel(
-            _tasksChannel.id,
-            _tasksChannel.name,
-            description: _tasksChannel.description,
-            importance: _tasksChannel.importance,
-            playSound: true,
-            enableVibration: true,
-          );
-    await androidImplementation.createNotificationChannel(channel);
-  }
-
-  static Future<void> _disableCustomChannelSound() async {
-    if (!_customSoundAvailable) return;
-    _customSoundAvailable = false;
-    final androidImplementation = _notificationsPlugin
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
-    await androidImplementation?.deleteNotificationChannel(_tasksChannel.id);
-    await _registerTasksChannel();
-  }
-
-  static NotificationDetails _buildNotificationDetails({
-    required bool useCustomSound,
-  }) {
-    return NotificationDetails(
-      android: AndroidNotificationDetails(
-        _tasksChannel.id,
-        _tasksChannel.name,
-        channelDescription: _tasksChannel.description,
-        importance: Importance.high,
-        priority: Priority.high,
-        playSound: true,
-        sound: useCustomSound ? _tasksChannel.sound : null,
-        enableVibration: true,
-        visibility: NotificationVisibility.public,
-      ),
-      iOS: const DarwinNotificationDetails(
-        presentAlert: true,
-        presentBadge: true,
-        presentSound: true,
-      ),
-    );
-  }
-
-  static Future<bool> _sendNotificationWithBestSound(
-    Future<void> Function(NotificationDetails details) action,
-  ) async {
+  
+  static Future<void> _configureLocalTimezone() async {
+    if (_tzInitialized) return;
     try {
-      final details = _buildNotificationDetails(
-        useCustomSound: _customSoundAvailable,
-      );
-      await action(details);
-      return false;
-    } on PlatformException catch (error) {
-      if (error.code == 'invalid_sound' && _customSoundAvailable) {
-        await _disableCustomChannelSound();
-        final fallbackDetails =
-            _buildNotificationDetails(useCustomSound: false);
-        await action(fallbackDetails);
-        return true;
-      }
-      rethrow;
+      tz.initializeTimeZones();
+      final String timeZone = await FlutterNativeTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(timeZone));
+      debugPrint('[NOTI] Timezone configurado: $timeZone');
+      _tzInitialized = true;
+    } catch (e) {
+      debugPrint('[NOTI] No se pudo configurar timezone, fallback UTC: $e');
+      tz.initializeTimeZones();
+      tz.setLocalLocation(tz.getLocation('UTC'));
+      _tzInitialized = true;
     }
   }
 
-  static Future<void> _configureLocalTimeZone() async {
-    if (_timezoneInitialized) return;
-    tz.initializeTimeZones();
-    try {
-      final String timeZoneName =
-          await FlutterNativeTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(timeZoneName));
-    } catch (_) {
-      tz.setLocalLocation(tz.UTC);
-    }
-    _timezoneInitialized = true;
+  static void _onNotificationResponse(NotificationResponse response) {
+    debugPrint('[NOTI] Notification tapped with payload=${response.payload}');
   }
 }
 
@@ -341,11 +338,4 @@ enum NotificationTestFailure {
   permissionDenied,
   permissionPermanentlyDenied,
   unknown,
-}
-
-enum _NotificationPermissionStatus {
-  granted,
-  denied,
-  permanentlyDenied,
-  failed,
 }

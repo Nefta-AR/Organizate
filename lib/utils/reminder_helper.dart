@@ -13,7 +13,11 @@ Future<int?> fetchDefaultReminderMinutes(
     }
     if (data.containsKey('notiTaskDefaultOffsetMinutes')) {
       final value = data['notiTaskDefaultOffsetMinutes'];
-      return value == null ? null : (value as num).toInt();
+      if (value == null) return null;
+      final parsed = (value as num).toInt();
+      return parsed < kMinimumReminderMinutes
+          ? kMinimumReminderMinutes
+          : parsed;
     }
   } catch (_) {
     // Si hay un error, regresamos al valor por defecto.
@@ -24,12 +28,14 @@ Future<int?> fetchDefaultReminderMinutes(
 int? extractReminderMinutes(Map<String, dynamic> data) {
   final reminder = data['reminderMinutes'];
   if (reminder is num) {
-    return reminder.toInt();
+    final parsed = reminder.toInt();
+    return parsed < kMinimumReminderMinutes ? kMinimumReminderMinutes : parsed;
   }
   final legacy = data['reminderOffsetMinutes'];
   if (legacy is num) {
     final value = legacy.toInt();
-    return value > 0 ? value : null;
+    if (value <= 0) return null;
+    return value < kMinimumReminderMinutes ? kMinimumReminderMinutes : value;
   }
   return null;
 }

@@ -22,7 +22,7 @@ dependencies:
   intl: ^0.20.2
 
   # Guardar datos locales (tema, notificaciones activas, etc.)
-  shared_preferences: ^2.2.2
+  shared_preferences: ^2.2.3
 
   # Firebase
   firebase_core: ^2.31.0
@@ -34,10 +34,10 @@ dependencies:
   fl_chart: ^1.1.1
 
   # Notificaciones locales
-  flutter_local_notifications: ^17.1.0
+  flutter_local_notifications: ^17.1.2
   flutter_native_timezone:
     path: packages/flutter_native_timezone
-  timezone: ^0.9.4
+  timezone: ^0.9.3
   google_sign_in: ^6.2.1
 
   # Manejo de estado (útil para avatar, usuario, settings)
