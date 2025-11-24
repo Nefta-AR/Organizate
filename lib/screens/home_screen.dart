@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import 'package:organizate/main.dart';
 import 'package:organizate/screens/estudios_screen.dart';
 import 'package:organizate/screens/foco_screen.dart';
 import 'package:organizate/screens/hogar_screen.dart';
@@ -15,7 +16,7 @@ import 'package:organizate/utils/emergency_contact_helper.dart';
 import 'package:organizate/utils/reminder_helper.dart';
 import 'package:organizate/utils/reminder_options.dart';
 import 'package:organizate/widgets/custom_nav_bar.dart';
-import 'package:organizate/screens/login_screen.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -197,24 +198,31 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _handleLogout() async {
+Future<void> _handleLogout() async {
   try {
+    // Cierra sesión en Firebase
     await FirebaseAuth.instance.signOut();
     if (!mounted) return;
 
-    // Navegar limpiando el stack completo
+    // Espera un poco a que el estado se actualice internamente
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
+
+    // Limpia todo el stack y vuelve al AuthGate (no directamente al LoginScreen)
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      MaterialPageRoute(builder: (_) => const AuthGate()),
       (route) => false,
     );
-  } catch (e) {
+  } catch (e, stack) {
     debugPrint('Error al cerrar sesión: $e');
+    debugPrint('$stack');
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Error al cerrar sesión')),
     );
   }
 }
+
 
   // Muestra el progreso del día calculando tareas completadas hoy.
   Widget _buildProgressHeader() {
@@ -760,150 +768,170 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Diálogo para crear una tarea con categoría, fecha y recordatorio.
-  Future<void> _showAddTaskDialog(BuildContext context) async {
-    final TextEditingController taskController = TextEditingController();
-    final List<String> categories = ['General', 'Estudios', 'Hogar', 'Meds'];
-    String? selectedCategory = 'General';
-    DateTime? selectedDueDate;
-    final int? defaultReminder =
-        await fetchDefaultReminderMinutes(userDocRef);
-    int? selectedReminderMinutes = defaultReminder;
-    if (!context.mounted) return;
+  // Diálogo para crear una tarea con categoría, fecha y recordatorio.
+Future<void> _showAddTaskDialog(BuildContext context) async {
+  final TextEditingController taskController = TextEditingController();
+  final List<String> categories = ['General', 'Estudios', 'Hogar', 'Meds'];
+  String? selectedCategory = 'General';
+  DateTime? selectedDueDate;
+  bool isSaving = false; // 👈 evita múltiples taps
+  final int? defaultReminder = await fetchDefaultReminderMinutes(userDocRef);
+  int? selectedReminderMinutes = defaultReminder;
+  if (!context.mounted) return;
 
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('Nueva tarea'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: taskController,
-                      decoration: const InputDecoration(hintText: 'Descripción'),
-                      autofocus: true,
-                    ),
-                    const SizedBox(height: 20),
-                    DropdownButtonFormField<String>(
-                      initialValue: selectedCategory,
-                      decoration: const InputDecoration(labelText: 'Categoría'),
-                      items: categories
-                          .map(
-                            (cat) => DropdownMenuItem(
+  showDialog(
+    context: context,
+    builder: (dialogContext) {
+      return StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Text('Nueva tarea'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: taskController,
+                    decoration: const InputDecoration(hintText: 'Descripción'),
+                    autofocus: true,
+                  ),
+                  const SizedBox(height: 20),
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedCategory,
+                    decoration: const InputDecoration(labelText: 'Categoría'),
+                    items: categories
+                        .map((cat) => DropdownMenuItem(
                               value: cat,
                               child: Text(cat),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (value) =>
-                          setDialogState(() => selectedCategory = value),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            selectedDueDate == null
-                                ? 'Sin fecha'
-                                : 'Entrega: ${_dateTimeFormatter.format(selectedDueDate!)}',
-                            style: TextStyle(color: Colors.grey.shade600),
-                          ),
+                            ))
+                        .toList(),
+                    onChanged: (value) =>
+                        setDialogState(() => selectedCategory = value),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          selectedDueDate == null
+                              ? 'Sin fecha'
+                              : 'Entrega: ${_dateTimeFormatter.format(selectedDueDate!)}',
+                          style: TextStyle(color: Colors.grey.shade600),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.calendar_today),
-                          onPressed: () async {
-                            final picked = await pickDateTime(
-                              context: context,
-                              initialDate: selectedDueDate,
-                            );
-                            if (picked != null) {
-                              setDialogState(() => selectedDueDate = picked);
-                            }
-                          },
-                        ),
-                        if (selectedDueDate != null)
-                          IconButton(
-                            icon: const Icon(Icons.clear, size: 18),
-                            onPressed: () =>
-                                setDialogState(() => selectedDueDate = null),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<int?>(
-                      key: ValueKey(selectedReminderMinutes),
-                      decoration: const InputDecoration(
-                        labelText: 'Recordatorio',
-                        border: OutlineInputBorder(),
                       ),
-                      initialValue: selectedReminderMinutes,
-                      items: kReminderOptions
-                          .map(
-                            (option) => DropdownMenuItem<int?>(
-                              value: option['minutes'] as int?,
-                              child: Text(option['label'] as String),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (value) =>
-                          setDialogState(() => selectedReminderMinutes = value),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Cancelar'),
-                ),
-                TextButton(
-                  onPressed: () async {
-                    if (taskController.text.isEmpty || selectedCategory == null) {
-                      return;
-                    }
-                    final navigator = Navigator.of(dialogContext);
-                    final iconName =
-                        _getIconNameFromCategory(selectedCategory!);
-                    final colorName =
-                        _getColorNameFromCategory(selectedCategory!);
-                    final data = <String, dynamic>{
-                      'text': taskController.text,
-                      'category': selectedCategory,
-                      'iconName': iconName,
-                      'colorName': colorName,
-                      'done': false,
-                      'createdAt': Timestamp.now(),
-                      'reminderMinutes': selectedReminderMinutes,
+                      IconButton(
+                        icon: const Icon(Icons.calendar_today),
+                        onPressed: () async {
+                          final picked = await pickDateTime(
+                            context: context,
+                            initialDate: selectedDueDate,
+                          );
+                          if (picked != null) {
+                            setDialogState(() => selectedDueDate = picked);
+                          }
+                        },
+                      ),
                       if (selectedDueDate != null)
-                        'dueDate': Timestamp.fromDate(selectedDueDate!),
-                    };
-                    try {
-                      final docRef = await tasksCollection.add(data);
-                      await NotificationService.scheduleReminderIfNeeded(
-                        userDocRef: userDocRef,
-                        taskId: docRef.id,
-                        taskTitle: taskController.text,
-                        dueDate: selectedDueDate,
-                        reminderMinutes: selectedReminderMinutes,
-                      );
-                    } finally {
-                      if (navigator.mounted && navigator.canPop()) {
-                        navigator.pop();
-                      }
-                    }
-                  },
-                  child: const Text('Añadir'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
+                        IconButton(
+                          icon: const Icon(Icons.clear, size: 18),
+                          onPressed: () =>
+                              setDialogState(() => selectedDueDate = null),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<int?>(
+                    key: ValueKey(selectedReminderMinutes),
+                    decoration: const InputDecoration(
+                      labelText: 'Recordatorio',
+                      border: OutlineInputBorder(),
+                    ),
+                    initialValue: selectedReminderMinutes,
+                    items: kReminderOptions
+                        .map(
+                          (option) => DropdownMenuItem<int?>(
+                            value: option['minutes'] as int?,
+                            child: Text(option['label'] as String),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) =>
+                        setDialogState(() => selectedReminderMinutes = value),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton.icon(
+                onPressed: isSaving
+                    ? null
+                    : () async {
+                        if (taskController.text.trim().isEmpty ||
+                            selectedCategory == null) return;
+
+                        setDialogState(() => isSaving = true); // 🚫 bloquea taps
+                        try {
+                          final iconName =
+                              _getIconNameFromCategory(selectedCategory!);
+                          final colorName =
+                              _getColorNameFromCategory(selectedCategory!);
+
+                          final data = <String, dynamic>{
+                            'text': taskController.text.trim(),
+                            'category': selectedCategory,
+                            'iconName': iconName,
+                            'colorName': colorName,
+                            'done': false,
+                            'createdAt': Timestamp.now(),
+                            'reminderMinutes': selectedReminderMinutes,
+                            if (selectedDueDate != null)
+                              'dueDate': Timestamp.fromDate(selectedDueDate!),
+                          };
+
+                          final docRef = await tasksCollection.add(data);
+                          await NotificationService.scheduleReminderIfNeeded(
+                            userDocRef: userDocRef,
+                            taskId: docRef.id,
+                            taskTitle: taskController.text,
+                            dueDate: selectedDueDate,
+                            reminderMinutes: selectedReminderMinutes,
+                          );
+
+                          if (dialogContext.mounted) {
+                            Navigator.of(dialogContext).pop(); // ✅ cierra 1 sola vez
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Tarea añadida correctamente'),
+                              ),
+                            );
+                          }
+                        } catch (e, stack) {
+                          debugPrint('Error al añadir tarea: $e');
+                          debugPrint('$stack');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Error al crear la tarea'),
+                            ),
+                          );
+                        } finally {
+                          setDialogState(() => isSaving = false);
+                        }
+                      },
+                icon: const Icon(Icons.add),
+                label: const Text('Añadir'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+
 
   // Menú contextual que permite editar o eliminar una tarea.
   void _showTaskOptionsDialog(
