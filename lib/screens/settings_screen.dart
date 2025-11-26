@@ -470,6 +470,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             );
                           },
                         ),
+                        const SizedBox(height: 12),
+                        // Botón para asegurar configuración de notificaciones en Android/HyperOS
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              await NotificationService.ensureDeviceCanDeliverNotifications();
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Revisa permisos del sistema y optimización de batería si tu dispositivo es Xiaomi/HyperOS.',
+                                  ),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.settings_suggest),
+                            label: const Text('Optimizar entrega en mi dispositivo'),
+                          ),
+                        ),
                       ],
                     ),
                   ),

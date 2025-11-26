@@ -1,49 +1,35 @@
-// ✅ lib/main.dart — versión final ajustada
+// ✅ lib/main.dart — versión ajustada (timezone solo desde NotificationService)
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:flutter_native_timezone/flutter_native_timezone.dart';
 import 'package:provider/provider.dart';
-import 'package:timezone/data/latest_all.dart' as tz;
-import 'package:timezone/timezone.dart' as tz;
 
 import 'firebase_options.dart';
 import 'services/notification_service.dart';
 import 'services/pomodoro_service.dart';
+import 'services/push_notification_service.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/onboarding_screen.dart';
 
-/// 🔧 Configura la zona horaria local para notificaciones exactas
-Future<void> _configureLocalTimeZone() async {
-  try {
-    tz.initializeTimeZones();
-    final String timeZoneName = await FlutterNativeTimezone.getLocalTimezone();
-    tz.setLocalLocation(tz.getLocation(timeZoneName));
-    debugPrint('[TIMEZONE] Configurada: $timeZoneName');
-  } catch (e) {
-    debugPrint('[TIMEZONE] Error: $e. Se usa UTC por defecto.');
-    tz.initializeTimeZones();
-    tz.setLocalLocation(tz.getLocation('UTC'));
-  }
-}
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await _configureLocalTimeZone();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   await initializeDateFormatting('es', null);
 
   // 🧩 Inicialización de notificaciones locales
   await NotificationService.init();
   await NotificationService.requestPermissions();
+  await PushNotificationService.initialize();
 
   runApp(
     MultiProvider(
@@ -112,15 +98,26 @@ class AuthGate extends StatelessWidget {
   }
 }
 
-class UserOnboardingGate extends StatelessWidget {
+class UserOnboardingGate extends StatefulWidget {
   const UserOnboardingGate({super.key, required this.user});
 
   final User user;
 
   @override
+  State<UserOnboardingGate> createState() => _UserOnboardingGateState();
+}
+
+class _UserOnboardingGateState extends State<UserOnboardingGate> {
+  @override
+  void initState() {
+    super.initState();
+    PushNotificationService.syncUserToken(widget.user);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final userDoc =
-        FirebaseFirestore.instance.collection('users').doc(user.uid);
+        FirebaseFirestore.instance.collection('users').doc(widget.user.uid);
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: userDoc.snapshots(),
@@ -146,4 +143,3 @@ class UserOnboardingGate extends StatelessWidget {
     );
   }
 }
-

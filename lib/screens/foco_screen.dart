@@ -11,6 +11,7 @@ import 'package:vibration/vibration.dart';
 import 'package:organizate/screens/settings_screen.dart';
 import 'package:organizate/services/notification_service.dart';
 import 'package:organizate/services/pomodoro_service.dart';
+import 'package:organizate/services/reminder_dispatcher.dart';
 import 'package:organizate/services/streak_service.dart';
 import 'package:organizate/utils/date_time_helper.dart';
 import 'package:organizate/utils/emergency_contact_helper.dart';
@@ -640,7 +641,10 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                   try {
                     await batch.commit();
                     if (!isDone) {
-                      await NotificationService.cancelTaskNotification(taskId);
+                      await ReminderDispatcher.cancelTaskReminder(
+                        userDocRef: userDocRef,
+                        taskId: taskId,
+                      );
                       await StreakService.updateStreakOnTaskCompletion(
                           userDocRef);
                     }
@@ -864,7 +868,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                         'dueDate': Timestamp.fromDate(selectedDueDate!),
                     };
                     final docRef = await tasksCollection.add(data);
-                    await NotificationService.scheduleReminderIfNeeded(
+                    await ReminderDispatcher.scheduleTaskReminder(
                       userDocRef: userDocRef,
                       taskId: docRef.id,
                       taskTitle: taskController.text,
@@ -919,7 +923,10 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                   try {
                     await tasksCollection.doc(taskId).delete();
                     try {
-                      await NotificationService.cancelTaskNotification(taskId);
+                      await ReminderDispatcher.cancelTaskReminder(
+                        userDocRef: userDocRef,
+                        taskId: taskId,
+                      );
                     } catch (_) {}
                     if (navigator.mounted) {
                       navigator.pop();
@@ -1058,8 +1065,11 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                     };
                     try {
                       await tasksCollection.doc(taskId).update(updatedData);
-                      await NotificationService.cancelTaskNotification(taskId);
-                      await NotificationService.scheduleReminderIfNeeded(
+                      await ReminderDispatcher.cancelTaskReminder(
+                        userDocRef: userDocRef,
+                        taskId: taskId,
+                      );
+                      await ReminderDispatcher.scheduleTaskReminder(
                         userDocRef: userDocRef,
                         taskId: taskId,
                         taskTitle: taskController.text,

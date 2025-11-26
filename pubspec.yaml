@@ -29,6 +29,7 @@ dependencies:
   firebase_auth: ^4.17.4        # LOGIN
   cloud_firestore: ^4.17.3
   firebase_storage: ^11.7.2     # Para subir fotos en el futuro
+  firebase_messaging: ^14.9.1
 
   # UI / Gráficos
   fl_chart: ^1.1.1

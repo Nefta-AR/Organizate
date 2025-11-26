@@ -22,10 +22,54 @@ class NotificationService {
     'tareas_channel',
     'Recordatorios Organízate',
     description: 'Notificaciones de tareas y Pomodoro',
-    importance: Importance.high,
+    // Importance.max hace que siempre aparezca banner heads-up
+    importance: Importance.max,
     playSound: true,
     enableVibration: true,
-  );
+    );
+
+  /// Guía y solicita permisos/ajustes para mejorar la entrega en dispositivos con ROMs agresivas
+  static Future<void> ensureDeviceCanDeliverNotifications() async {
+    if (kIsWeb) return;
+
+    if (Platform.isAndroid) {
+      try {
+        if (!await Permission.notification.isGranted) {
+          final status = await Permission.notification.request();
+          if (!status.isGranted) {
+            debugPrint('[NOTI] Notificaciones denegadas. Abriendo ajustes de app.');
+            await openAppSettings();
+          }
+        }
+      } catch (e) {
+        debugPrint('[NOTI] Error solicitando POST_NOTIFICATIONS: $e');
+      }
+
+      try {
+        final ignoreBattery = Permission.ignoreBatteryOptimizations;
+        final status = await ignoreBattery.status;
+        if (!status.isGranted) {
+          final req = await ignoreBattery.request();
+          if (!req.isGranted) {
+            debugPrint('[NOTI] Optimización de batería activa. Sugerir desactivarla.');
+            await openAppSettings();
+          } else {
+            debugPrint('[NOTI] Concedido ignoreBatteryOptimizations.');
+          }
+        }
+      } catch (e) {
+        debugPrint('[NOTI] No se pudo solicitar ignoreBatteryOptimizations: $e');
+      }
+
+      try {
+        final androidImpl = _plugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+        await androidImpl?.requestExactAlarmsPermission();
+      } catch (e) {
+        debugPrint('[NOTI] No se pudo solicitar exact alarm: $e');
+      }
+    }
+  }
 
   static Future<void> init() async {
     if (_initialized) return;
@@ -53,6 +97,9 @@ class NotificationService {
     // 🔥 Solicitar permisos modernos (Android 13+)
     await androidImpl?.requestNotificationsPermission();
     await androidImpl?.requestExactAlarmsPermission();
+
+    // Intentar mitigar restricciones de batería (Xiaomi/HyperOS)
+    await _tryRequestIgnoreBatteryOptimizations();
 
     await _configureLocalTimezone();
 
@@ -99,16 +146,41 @@ class NotificationService {
         'tareas_channel',
         'Recordatorios Organízate',
         channelDescription: 'Notificaciones de tareas y Pomodoro',
-        importance: Importance.high,
-        priority: Priority.high,
+        importance: Importance.max,
+        priority: Priority.max,
         playSound: true,
         enableVibration: true,
+        category: AndroidNotificationCategory.alarm,
+        fullScreenIntent: true,
       ),
       iOS: DarwinNotificationDetails(
         presentAlert: true,
         presentBadge: true,
         presentSound: true,
+        interruptionLevel: InterruptionLevel.timeSensitive,
       ),
+    );
+  }
+
+  static Future<void> showInstantNotification({
+    required String title,
+    required String body,
+    String? payload,
+  }) async {
+    if (kIsWeb) return;
+    if (!_initialized) {
+      await init();
+    }
+    if (!await _arePermissionsGranted()) return;
+
+    final int notificationId =
+        DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    await _plugin.show(
+      notificationId,
+      title,
+      body,
+      _defaultDetails(),
+      payload: payload,
     );
   }
 
@@ -219,6 +291,7 @@ class NotificationService {
     DateTime? dueDate,
     int? reminderMinutes,
   }) async {
+    debugPrint('[NOTI] → Entró al método scheduleReminderIfNeeded');
     if (kIsWeb) {
       debugPrint('[NOTI] Recordatorios locales no disponibles en Web.');
       return;
@@ -290,6 +363,25 @@ class NotificationService {
     }
   }
 
+  static Future<void> _tryRequestIgnoreBatteryOptimizations() async {
+    if (kIsWeb) return;
+    if (!Platform.isAndroid) return;
+    try {
+      final permission = Permission.ignoreBatteryOptimizations;
+      final status = await permission.status;
+      if (!status.isGranted) {
+        final result = await permission.request();
+        if (result.isGranted) {
+          debugPrint('[NOTI] Ignorando optimización de batería concedido.');
+        } else {
+          debugPrint('[NOTI] Usuario no concedió ignorar optimización de batería.');
+        }
+      }
+    } catch (e) {
+      debugPrint('[NOTI] Error solicitando ignorar optimización de batería: $e');
+    }
+  }
+
   static Future<bool> _arePermissionsGranted({bool exact = false}) async {
     if (kIsWeb) return false;
     if (Platform.isAndroid) {
@@ -355,4 +447,3 @@ enum NotificationTestFailure {
   permissionPermanentlyDenied,
   unknown,
 }
-

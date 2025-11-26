@@ -9,7 +9,7 @@ import 'package:organizate/screens/foco_screen.dart';
 import 'package:organizate/screens/hogar_screen.dart';
 import 'package:organizate/screens/meds_screen.dart';
 import 'package:organizate/screens/settings_screen.dart';
-import 'package:organizate/services/notification_service.dart';
+import 'package:organizate/services/reminder_dispatcher.dart';
 import 'package:organizate/services/streak_service.dart';
 import 'package:organizate/utils/date_time_helper.dart';
 import 'package:organizate/utils/emergency_contact_helper.dart';
@@ -476,6 +476,7 @@ Future<void> _handleLogout() async {
           crossAxisCount: 2,
           mainAxisSpacing: 16,
           crossAxisSpacing: 16,
+          childAspectRatio: 1.1,
           children: [
             _buildCategoryCard(
               title: 'Estudios',
@@ -484,7 +485,7 @@ Future<void> _handleLogout() async {
               color: Colors.orange,
               pendingCount: countFor('Estudios'),
               topTasks: topTasksFor('Estudios'),
-              onTap: () => Navigator.pushReplacement(
+              onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const EstudiosScreen()),
               ),
@@ -496,7 +497,7 @@ Future<void> _handleLogout() async {
               color: Colors.green,
               pendingCount: countFor('Hogar'),
               topTasks: topTasksFor('Hogar'),
-              onTap: () => Navigator.pushReplacement(
+              onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const HogarScreen()),
               ),
@@ -508,7 +509,7 @@ Future<void> _handleLogout() async {
               color: Colors.red,
               pendingCount: countFor('Meds'),
               topTasks: topTasksFor('Meds'),
-              onTap: () => Navigator.pushReplacement(
+              onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const MedsScreen()),
               ),
@@ -520,7 +521,7 @@ Future<void> _handleLogout() async {
               color: Colors.purple,
               pendingCount: countFor('Foco'),
               topTasks: topTasksFor('Foco'),
-              onTap: () => Navigator.pushReplacement(
+              onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const FocoScreen()),
               ),
@@ -560,17 +561,19 @@ Future<void> _handleLogout() async {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(icon, size: 32, color: color),
-            const Spacer(),
+            const SizedBox(height: 8),
             Text(
               title,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               subtitle,
-              style: const TextStyle(fontSize: 14, color: Colors.black54),
+              style: const TextStyle(fontSize: 13, color: Colors.black54),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             if (pendingCount == 0)
               const Text(
                 'Sin tareas pendientes',
@@ -580,23 +583,44 @@ Future<void> _handleLogout() async {
               Text(
                 '$pendingCount pendientes',
                 style: const TextStyle(
-                  fontSize: 13,
+                  fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(height: 4),
-              ...topTasks.map(
-                (task) => Text(
-                  '• $task',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 12, color: Colors.black87),
+              // Lista scrollable con límite de alto para evitar desbordes
+              Flexible(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: 56, // ~3-4 líneas
+                      ),
+                      child: ListView.builder(
+                        padding: EdgeInsets.zero,
+                        physics: const ClampingScrollPhysics(),
+                        itemCount: topTasks.length,
+                        itemBuilder: (context, index) {
+                          final task = topTasks[index];
+                          return Text(
+                            '• $task',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 12, color: Colors.black87),
+                          );
+                        },
+                      ),
+                    );
+                  },
                 ),
               ),
               if (pendingCount > topTasks.length)
-                const Text(
-                  '…',
-                  style: TextStyle(fontSize: 12),
+                const Padding(
+                  padding: EdgeInsets.only(top: 2),
+                  child: Text(
+                    '…',
+                    style: TextStyle(fontSize: 12),
+                  ),
                 ),
             ],
           ],
@@ -758,7 +782,10 @@ Future<void> _handleLogout() async {
 
     // Solo al pasar de pendiente -> completada evaluamos la racha.
     if (!isDone) {
-      await NotificationService.cancelTaskNotification(taskId);
+      await ReminderDispatcher.cancelTaskReminder(
+        userDocRef: userDocRef,
+        taskId: taskId,
+      );
       try {
         await StreakService.updateStreakOnTaskCompletion(userDocRef);
       } catch (error) {
@@ -893,7 +920,7 @@ Future<void> _showAddTaskDialog(BuildContext context) async {
                           };
 
                           final docRef = await tasksCollection.add(data);
-                          await NotificationService.scheduleReminderIfNeeded(
+                          await ReminderDispatcher.scheduleTaskReminder(
                             userDocRef: userDocRef,
                             taskId: docRef.id,
                             taskTitle: taskController.text,
@@ -975,7 +1002,10 @@ Future<void> _showAddTaskDialog(BuildContext context) async {
                     await tasksCollection.doc(taskId).delete();
                     debugPrint('Tarea $taskId eliminada correctamente');
                     try {
-                      await NotificationService.cancelTaskNotification(taskId);
+                      await ReminderDispatcher.cancelTaskReminder(
+                        userDocRef: userDocRef,
+                        taskId: taskId,
+                      );
                       debugPrint('Notificación de $taskId cancelada');
                     } catch (e, stack) {
                       debugPrint('Error al cancelar notificación de $taskId: $e');
@@ -1149,8 +1179,11 @@ Future<void> _showAddTaskDialog(BuildContext context) async {
                     };
                     try {
                       await tasksCollection.doc(taskId).update(updatedData);
-                      await NotificationService.cancelTaskNotification(taskId);
-                      await NotificationService.scheduleReminderIfNeeded(
+                      await ReminderDispatcher.cancelTaskReminder(
+                        userDocRef: userDocRef,
+                        taskId: taskId,
+                      );
+                      await ReminderDispatcher.scheduleTaskReminder(
                         userDocRef: userDocRef,
                         taskId: taskId,
                         taskTitle: taskController.text,

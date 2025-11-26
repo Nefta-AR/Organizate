@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import 'package:organizate/services/notification_service.dart';
+import 'package:organizate/services/reminder_dispatcher.dart';
 import 'package:organizate/services/streak_service.dart';
 import 'package:organizate/utils/date_time_helper.dart';
 import 'package:organizate/utils/reminder_helper.dart';
@@ -178,7 +178,10 @@ class _EstudiosScreenState extends State<EstudiosScreen> {
                       try {
                         await batch.commit();
                         if (!isCurrentlyDone) {
-                          await NotificationService.cancelTaskNotification(taskId);
+                          await ReminderDispatcher.cancelTaskReminder(
+                            userDocRef: userDocRef,
+                            taskId: taskId,
+                          );
                           await StreakService.updateStreakOnTaskCompletion(userDocRef);
                         }
                       } catch (error) {
@@ -296,7 +299,7 @@ class _EstudiosScreenState extends State<EstudiosScreen> {
                         'dueDate': Timestamp.fromDate(selectedDueDate!),
                     };
                     final docRef = await tasksCollection.add(data);
-                    await NotificationService.scheduleReminderIfNeeded(
+                    await ReminderDispatcher.scheduleTaskReminder(
                       userDocRef: userDocRef,
                       taskId: docRef.id,
                       taskTitle: taskController.text,
@@ -353,7 +356,10 @@ class _EstudiosScreenState extends State<EstudiosScreen> {
                     await tasksCollection.doc(taskId).delete();
                     debugPrint('Tarea $taskId eliminada correctamente');
                     try {
-                      await NotificationService.cancelTaskNotification(taskId);
+                      await ReminderDispatcher.cancelTaskReminder(
+                        userDocRef: userDocRef,
+                        taskId: taskId,
+                      );
                       debugPrint('Notificación de $taskId cancelada');
                     } catch (e, stack) {
                       debugPrint('Error al cancelar notificación de $taskId: $e');
@@ -510,8 +516,11 @@ class _EstudiosScreenState extends State<EstudiosScreen> {
 
                     try {
                       await tasksCollection.doc(taskId).update(updatedData);
-                      await NotificationService.cancelTaskNotification(taskId);
-                      await NotificationService.scheduleReminderIfNeeded(
+                      await ReminderDispatcher.cancelTaskReminder(
+                        userDocRef: userDocRef,
+                        taskId: taskId,
+                      );
+                      await ReminderDispatcher.scheduleTaskReminder(
                         userDocRef: userDocRef,
                         taskId: taskId,
                         taskTitle: taskController.text,
