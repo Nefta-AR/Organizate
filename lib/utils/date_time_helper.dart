@@ -5,12 +5,15 @@ Future<DateTime?> pickDateTime({
   DateTime? initialDate,
 }) async {
   final DateTime now = DateTime.now();
-  final DateTime initial = initialDate ?? now;
+  final DateTime today = DateTime(now.year, now.month, now.day);
+  // Use now as baseline to avoid suggesting past dates by default.
+  final DateTime initial =
+      (initialDate != null && initialDate.isAfter(now)) ? initialDate : now;
 
   final DateTime? pickedDate = await showDatePicker(
     context: context,
     initialDate: initial,
-    firstDate: DateTime(now.year - 1),
+    firstDate: today,
     lastDate: DateTime(now.year + 5),
     locale: const Locale('es', 'ES'),
   );
@@ -27,11 +30,20 @@ Future<DateTime?> pickDateTime({
   if (!context.mounted) return null;
   if (pickedTime == null) return null;
 
-  return DateTime(
+  final DateTime result = DateTime(
     pickedDate.year,
     pickedDate.month,
     pickedDate.day,
     pickedTime.hour,
     pickedTime.minute,
   );
+
+  if (result.isBefore(now)) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('No puedes agendar en el pasado')),
+    );
+    return null;
+  }
+
+  return result;
 }
