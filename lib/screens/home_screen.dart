@@ -590,10 +590,10 @@ Future<void> _handleLogout() async {
               const SizedBox(height: 4),
               // Lista scrollable con límite de alto para evitar desbordes
               Flexible(
-                child: LayoutBuilder(
+                    child: LayoutBuilder(
                   builder: (context, constraints) {
                     return ConstrainedBox(
-                      constraints: BoxConstraints(
+                      constraints: const BoxConstraints(
                         maxHeight: 56, // ~3-4 líneas
                       ),
                       child: ListView.builder(
@@ -782,10 +782,17 @@ Future<void> _handleLogout() async {
 
     // Solo al pasar de pendiente -> completada evaluamos la racha.
     if (!isDone) {
-      await ReminderDispatcher.cancelTaskReminder(
-        userDocRef: userDocRef,
-        taskId: taskId,
-      );
+      try {
+        await ReminderDispatcher.cancelTaskReminder(
+          userDocRef: userDocRef,
+          taskId: taskId,
+        );
+      } catch (error, stack) {
+        debugPrint(
+            '[REMINDER] No se pudo cancelar recordatorio para $taskId: $error');
+        debugPrint('$stack');
+      }
+
       try {
         await StreakService.updateStreakOnTaskCompletion(userDocRef);
       } catch (error) {
@@ -796,7 +803,7 @@ Future<void> _handleLogout() async {
 
   // Diálogo para crear una tarea con categoría, fecha y recordatorio.
   // Diálogo para crear una tarea con categoría, fecha y recordatorio.
-Future<void> _showAddTaskDialog(BuildContext context) async {
+Future<void> _showAddTaskDialog(BuildContext screenContext) async {
   final TextEditingController taskController = TextEditingController();
   final List<String> categories = ['General', 'Estudios', 'Hogar', 'Meds'];
   String? selectedCategory = 'General';
@@ -804,13 +811,13 @@ Future<void> _showAddTaskDialog(BuildContext context) async {
   bool isSaving = false; // 👈 evita múltiples taps
   final int? defaultReminder = await fetchDefaultReminderMinutes(userDocRef);
   int? selectedReminderMinutes = defaultReminder;
-  if (!context.mounted) return;
+  if (!screenContext.mounted) return;
 
   showDialog(
-    context: context,
+    context: screenContext,
     builder: (dialogContext) {
       return StatefulBuilder(
-        builder: (context, setDialogState) {
+        builder: (statefulContext, setDialogState) {
           return AlertDialog(
             title: const Text('Nueva tarea'),
             content: SingleChildScrollView(
@@ -850,7 +857,7 @@ Future<void> _showAddTaskDialog(BuildContext context) async {
                         icon: const Icon(Icons.calendar_today),
                         onPressed: () async {
                           final picked = await pickDateTime(
-                            context: context,
+                            context: statefulContext,
                             initialDate: selectedDueDate,
                           );
                           if (picked != null) {
@@ -898,7 +905,9 @@ Future<void> _showAddTaskDialog(BuildContext context) async {
                     ? null
                     : () async {
                         if (taskController.text.trim().isEmpty ||
-                            selectedCategory == null) return;
+                            selectedCategory == null) {
+                          return;
+                        }
 
                         setDialogState(() => isSaving = true); // 🚫 bloquea taps
                         try {
@@ -930,7 +939,8 @@ Future<void> _showAddTaskDialog(BuildContext context) async {
 
                           if (dialogContext.mounted) {
                             Navigator.of(dialogContext).pop(); // ✅ cierra 1 sola vez
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            if (!screenContext.mounted) return;
+                            ScaffoldMessenger.of(screenContext).showSnackBar(
                               const SnackBar(
                                 content: Text('Tarea añadida correctamente'),
                               ),
@@ -939,7 +949,8 @@ Future<void> _showAddTaskDialog(BuildContext context) async {
                         } catch (e, stack) {
                           debugPrint('Error al añadir tarea: $e');
                           debugPrint('$stack');
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          if (!screenContext.mounted) return;
+                          ScaffoldMessenger.of(screenContext).showSnackBar(
                             const SnackBar(
                               content: Text('Error al crear la tarea'),
                             ),
@@ -1156,17 +1167,18 @@ Future<void> _showAddTaskDialog(BuildContext context) async {
                   child: const Text('Cancelar'),
                 ),
                 TextButton(
-                  onPressed: () async {
-                    if (taskController.text.isEmpty ||
-                        selectedCategory == null) {
-                      return;
-                    }
-                    final navigator = Navigator.of(dialogContext);
-                    final iconName =
-                        _getIconNameFromCategory(selectedCategory!);
-                    final colorName =
-                        _getColorNameFromCategory(selectedCategory!);
-                      final updatedData = <String, dynamic>{
+                onPressed: () async {
+                  if (taskController.text.isEmpty ||
+                      selectedCategory == null) {
+                    return;
+                  }
+                  final navigator = Navigator.of(dialogContext);
+                  final messenger = ScaffoldMessenger.of(context);
+                  final iconName =
+                      _getIconNameFromCategory(selectedCategory!);
+                  final colorName =
+                      _getColorNameFromCategory(selectedCategory!);
+                    final updatedData = <String, dynamic>{
                         'text': taskController.text,
                         'category': selectedCategory,
                         'iconName': iconName,
@@ -1189,6 +1201,14 @@ Future<void> _showAddTaskDialog(BuildContext context) async {
                         taskTitle: taskController.text,
                         dueDate: selectedDueDate,
                         reminderMinutes: selectedReminderMinutes,
+                      );
+                    } catch (error, stack) {
+                      debugPrint('Error al actualizar tarea $taskId: $error');
+                      debugPrint('$stack');
+                      messenger.showSnackBar(
+                        const SnackBar(
+                          content: Text('No se pudo guardar los cambios.'),
+                        ),
                       );
                     } finally {
                       if (navigator.mounted && navigator.canPop()) {

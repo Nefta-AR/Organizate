@@ -1,3 +1,4 @@
+
 import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
 
@@ -35,67 +36,104 @@ export const processDueNotifications = functions.pubsub
     }
 
     const jobs = snapshot.docs.map(async (doc) => {
-      const data = doc.data() as QueueDoc;
-      const userRef = doc.ref.parent.parent;
-      if (!userRef) {
-        await doc.ref.set(
-          {
-            status: 'failed',
-            lastError: 'Missing user reference',
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      try {
+        const data = doc.data() as QueueDoc;
+        const userRef = doc.ref.parent.parent;
+        if (!userRef) {
+          await doc.ref.set(
+            {
+              status: 'failed',
+              lastError: 'Missing user reference',
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            },
+            { merge: true },
+          );
+          return;
+        }
+
+        const userSnap = await userRef.get();
+        if (!userSnap.exists) {
+          await doc.ref.set(
+            {
+              status: 'failed',
+              lastError: 'User document not found',
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            },
+            { merge: true },
+          );
+          return;
+        }
+
+        const userData = userSnap.data() as { fcmTokens?: unknown[] } | undefined;
+        const tokens = Array.isArray(userData?.fcmTokens)
+          ? (userData!.fcmTokens as unknown[]).filter(
+              (token): token is string => typeof token === 'string' && token.trim().length > 0,
+            )
+          : [];
+
+        if (tokens.length === 0) {
+          await doc.ref.set(
+            {
+              status: 'no_tokens',
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            },
+            { merge: true },
+          );
+          return;
+        }
+
+        const title = data.taskTitle ?? 'Recordatorio';
+        const body = 'Tienes una tarea pendiente.';
+        const taskId = data.taskId ?? doc.id;
+
+        const message: admin.messaging.MulticastMessage = {
+          tokens,
+          notification: { title, body },
+          data: {
+            taskId,
+            type: data.type ?? 'task',
           },
-          { merge: true },
-        );
-        return;
-      }
-
-      const userSnap = await userRef.get();
-      const tokens: string[] = Array.isArray(userSnap.get('fcmTokens'))
-        ? userSnap.get('fcmTokens')
-        : [];
-
-      if (tokens.length === 0) {
-        await doc.ref.set(
-          {
-            status: 'no_tokens',
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          },
-          { merge: true },
-        );
-        return;
-      }
-
-      const title = data.taskTitle ?? 'Recordatorio';
-      const body = 'Tienes una tarea pendiente.';
-      const taskId = data.taskId ?? doc.id;
-
-      const message: admin.messaging.MulticastMessage = {
-        tokens,
-        notification: { title, body },
-        data: {
-          taskId,
-          type: data.type ?? 'task',
-        },
-        android: {
-          priority: 'high',
-          notification: {
-            channelId: 'tareas_channel',
-          },
-        },
-        apns: {
-          payload: {
-            aps: {
-              contentAvailable: true,
-              sound: 'default',
-              alert: { title, body },
+          android: {
+            priority: 'high',
+            notification: {
+              channelId: 'tareas_channel',
             },
           },
-        },
-      };
+          apns: {
+            payload: {
+              aps: {
+                contentAvailable: true,
+                sound: 'default',
+                alert: { title, body },
+              },
+            },
+          },
+        };
 
-      try {
         const response = await messaging.sendEachForMulticast(message);
         const hasSuccess = response.successCount > 0;
+
+        // Limpia tokens inválidos para evitar fallos recurrentes.
+        const invalidCodes = new Set([
+          'messaging/registration-token-not-registered',
+          'messaging/invalid-registration-token',
+          'messaging/mismatched-credential',
+          'messaging/invalid-argument',
+        ]);
+        const invalidTokens = response.responses
+          .map((resp, idx) =>
+            !resp.success && resp.error && invalidCodes.has(resp.error.code)
+              ? tokens[idx]
+              : null,
+          )
+          .filter((token): token is string => !!token);
+        if (invalidTokens.length) {
+          await userRef.set(
+            { fcmTokens: admin.firestore.FieldValue.arrayRemove(...invalidTokens) },
+            { merge: true },
+          );
+        }
+
         await doc.ref.set(
           {
             status: hasSuccess ? 'sent' : 'failed',

@@ -46,7 +46,7 @@ class NotificationService {
       }
 
       try {
-        final ignoreBattery = Permission.ignoreBatteryOptimizations;
+        const ignoreBattery = Permission.ignoreBatteryOptimizations;
         final status = await ignoreBattery.status;
         if (!status.isGranted) {
           final req = await ignoreBattery.request();
@@ -367,7 +367,7 @@ class NotificationService {
     if (kIsWeb) return;
     if (!Platform.isAndroid) return;
     try {
-      final permission = Permission.ignoreBatteryOptimizations;
+      const permission = Permission.ignoreBatteryOptimizations;
       final status = await permission.status;
       if (!status.isGranted) {
         final result = await permission.request();
