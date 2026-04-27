@@ -1,58 +1,42 @@
-// lib/widgets/custom_nav_bar.dart
 import 'package:flutter/material.dart';
-// Importa TODAS las pantallas
-import 'package:organizate/screens/home_screen.dart';
-import 'package:organizate/screens/estudios_screen.dart';
-import 'package:organizate/screens/hogar_screen.dart';
-import 'package:organizate/screens/meds_screen.dart';
+
 import 'package:organizate/screens/foco_screen.dart';
-import 'package:organizate/screens/progreso_screen.dart';
+import 'package:organizate/screens/home_screen.dart';
+import 'package:organizate/screens/settings_screen.dart';
+import 'package:organizate/screens/tareas_screen.dart';
 
 class CustomNavBar extends StatefulWidget {
-  // (Opcional) Podemos pasar el índice activo inicial si es necesario
   final int initialIndex;
-  const CustomNavBar({super.key, this.initialIndex = 0}); // Inicio por defecto
+  const CustomNavBar({super.key, this.initialIndex = 0});
 
   @override
   State<CustomNavBar> createState() => _CustomNavBarState();
 }
 
 class _CustomNavBarState extends State<CustomNavBar> {
-  late int _currentIndex; // Guardará el índice del botón activo
+  late int _currentIndex;
 
-  // Lista de las pantallas a las que navegaremos
-  final List<Widget> _screens = const [
+  static const List<Widget> _screens = [
     HomeScreen(),
-    EstudiosScreen(),
-    HogarScreen(),
-    MedsScreen(),
+    TareasScreen(),
     FocoScreen(),
-    ProgresoScreen(),
+    SettingsScreen(),
   ];
 
   @override
   void initState() {
     super.initState();
-    _currentIndex = widget.initialIndex; // Usa el índice inicial
+    _currentIndex = widget.initialIndex;
   }
 
-  // Función que se llama CADA VEZ que se toca un ítem de la barra
   void _onItemTapped(int index) {
-    // Si ya estamos en esa pantalla, no hacemos nada
     if (index == _currentIndex) return;
-
-    setState(() {
-      _currentIndex = index; // Actualiza el ítem activo
-    });
-
-    // Navega a la pantalla correspondiente REEMPLAZANDO la actual
-    // Esto evita acumular pantallas en el historial de navegación
+    setState(() => _currentIndex = index);
     Navigator.pushReplacement(
       context,
-      // Usamos PageRouteBuilder para quitar la animación de transición
       PageRouteBuilder(
         pageBuilder: (context, animation1, animation2) => _screens[index],
-        transitionDuration: Duration.zero, // Sin animación
+        transitionDuration: Duration.zero,
         reverseTransitionDuration: Duration.zero,
       ),
     );
@@ -61,50 +45,33 @@ class _CustomNavBarState extends State<CustomNavBar> {
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
-      currentIndex: _currentIndex, // Le dice cuál ítem está activo
-      onTap: _onItemTapped,       // Qué hacer al tocar un ítem
+      currentIndex: _currentIndex,
+      onTap: _onItemTapped,
       type: BottomNavigationBarType.fixed,
       selectedItemColor: Colors.blue.shade700,
-      unselectedItemColor: Colors.grey.shade600,
+      unselectedItemColor: Colors.grey.shade500,
       selectedFontSize: 12,
       unselectedFontSize: 12,
       backgroundColor: Colors.white,
-      elevation: 5, // Sombra
-      items: [ // Los ítems (igual que antes)
-        _buildNavItem('Inicio', 'assets/icons/Inicio.png'),
-        _buildNavItem('Estudios', 'assets/icons/Estudios.png'),
-        _buildNavItem('Hogar', 'assets/icons/Hogar.png'),
-        _buildNavItem('Meds', 'assets/icons/Meds.png'),
-        _buildNavItem('Foco', 'assets/icons/Foco.png'),
-        _buildNavItem('Progreso', 'assets/icons/Progreso.png'),
+      elevation: 8,
+      items: const [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.home_rounded),
+          label: 'Inicio',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.task_alt),
+          label: 'Tareas',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.self_improvement),
+          label: 'Foco',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person_rounded),
+          label: 'Perfil',
+        ),
       ],
     );
   }
-
-  // Método auxiliar (igual que antes)
-  BottomNavigationBarItem _buildNavItem(String label, String imagePath) {
-    // Podríamos añadir lógica aquí para mostrar un ícono diferente si está activo
-    return BottomNavigationBarItem(
-      label: label,
-      icon: Padding(
-        padding: const EdgeInsets.only(bottom: 4.0, top: 4.0),
-        child: Image.asset( imagePath, width: 28, height: 28,
-          // Aplica color gris si NO está activo (opcional)
-          // color: _currentIndex == _getIndexFromLabel(label) ? null : Colors.grey.shade400,
-        ),
-      ),
-      // (Opcional) Ícono diferente cuando está activo
-      // activeIcon: Padding(...)
-    );
-  }
-
-   // (Opcional) Función auxiliar para obtener el índice basado en la etiqueta
-   // int _getIndexFromLabel(String label) {
-   //   switch(label){
-   //     case 'Inicio': return 0;
-   //     case 'Estudios': return 1;
-   //     // ... y así sucesivamente
-   //     default: return 0;
-   //   }
-   // }
 }

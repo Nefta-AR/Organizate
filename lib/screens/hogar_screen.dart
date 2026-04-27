@@ -7,7 +7,6 @@ import 'package:organizate/services/streak_service.dart';
 import 'package:organizate/utils/date_time_helper.dart';
 import 'package:organizate/utils/reminder_helper.dart';
 import 'package:organizate/utils/reminder_options.dart';
-import 'package:organizate/widgets/custom_nav_bar.dart';
 
 
 class HogarScreen extends StatefulWidget {
@@ -34,14 +33,11 @@ class _HogarScreenState extends State<HogarScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const int screenIndex = 2; // <-- CAMBIADO: Índice 2 para "Hogar"
-
     return Scaffold(
-      bottomNavigationBar: const CustomNavBar(initialIndex: screenIndex), // Pasa el índice
       appBar: AppBar(
-        title: const Text('Hogar'), // <-- CAMBIADO: Título
+        title: const Text('Hogar'),
         elevation: 0, backgroundColor: Colors.transparent, foregroundColor: Colors.black,
-        automaticallyImplyLeading: false, // Quita la flecha de "atrás"
+        automaticallyImplyLeading: true,
         actions: [ // Muestra Puntos/Racha/Avatar (igual que en HomeScreen)
           StreamBuilder<DocumentSnapshot>(
             stream: userDocRef.snapshots(),

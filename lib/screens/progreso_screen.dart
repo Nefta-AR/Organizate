@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fl_chart/fl_chart.dart';
 
-import 'package:organizate/widgets/custom_nav_bar.dart';
 
 class ProgresoScreen extends StatefulWidget {
   const ProgresoScreen({super.key});
@@ -30,8 +29,6 @@ class _ProgresoScreenState extends State<ProgresoScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const int screenIndex = 5;
-
     if (_userDocRef == null || _tasksCollection == null) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -39,13 +36,12 @@ class _ProgresoScreenState extends State<ProgresoScreen> {
     }
 
     return Scaffold(
-      bottomNavigationBar: const CustomNavBar(initialIndex: screenIndex),
       appBar: AppBar(
         title: const Text('Progreso'),
         elevation: 0,
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.black,
-        automaticallyImplyLeading: false,
+        automaticallyImplyLeading: true,
         actions: [
           StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
             stream: _userDocRef!.snapshots(),

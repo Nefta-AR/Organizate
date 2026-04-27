@@ -5,11 +5,12 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
 
 import 'package:organizate/screens/estudios_screen.dart';
-import 'package:organizate/screens/login_screen.dart';
 import 'package:organizate/screens/foco_screen.dart';
 import 'package:organizate/screens/hogar_screen.dart';
+import 'package:organizate/screens/login_screen.dart';
 import 'package:organizate/screens/meds_screen.dart';
 import 'package:organizate/screens/settings_screen.dart';
+import 'package:organizate/screens/tareas_screen.dart';
 import 'package:organizate/services/reminder_dispatcher.dart';
 import 'package:organizate/services/streak_service.dart';
 import 'package:organizate/utils/date_time_helper.dart';
@@ -27,6 +28,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   User? get _currentUser => FirebaseAuth.instance.currentUser;
+
   static const List<String> _motivationalPhrases = [
     'Paso pequeño también es progreso.',
     'Tu valor no depende de cuántas tareas terminas.',
@@ -36,505 +38,593 @@ class _HomeScreenState extends State<HomeScreen> {
     'Organizarte es un acto de cuidado propio.',
   ];
 
-  DocumentReference<Map<String, dynamic>> get userDocRef =>
+  DocumentReference<Map<String, dynamic>> get _userDocRef =>
       FirebaseFirestore.instance.collection('users').doc(_currentUser!.uid);
 
-  CollectionReference<Map<String, dynamic>> get tasksCollection =>
-      userDocRef.collection('tasks');
+  CollectionReference<Map<String, dynamic>> get _tasksCollection =>
+      _userDocRef.collection('tasks');
 
   final DateFormat _dateTimeFormatter = DateFormat('dd MMM, HH:mm', 'es_ES');
 
   String get _motivationLine {
-    const phrases = _motivationalPhrases;
-    if (phrases.isEmpty) return '';
-    final index = DateTime.now().day % phrases.length;
-    return phrases[index];
+    final index = DateTime.now().day % _motivationalPhrases.length;
+    return _motivationalPhrases[index];
   }
 
   @override
   Widget build(BuildContext context) {
     if (_currentUser == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     return Scaffold(
       bottomNavigationBar: const CustomNavBar(initialIndex: 0),
       appBar: _buildAppBar(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddTaskDialog(context),
-        backgroundColor: Colors.blueAccent,
-        child: const Icon(Icons.add, color: Colors.white),
+      floatingActionButton: FloatingActionButton.large(
+        onPressed: () => _showMagicBottomSheet(context),
+        backgroundColor: Colors.deepPurple,
+        foregroundColor: Colors.white,
+        tooltip: 'Súper Experto',
+        child: const Icon(Icons.auto_fix_high, size: 32),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildProgressHeader(),
-            const SizedBox(height: 16),
-            _buildEmergencyContactBanner(),
-            const SizedBox(height: 24),
-            _buildCategoryGrid(),
-            const SizedBox(height: 24),
-            _buildTodayGoalsHeader(),
-            const SizedBox(height: 16),
-            _buildTasksStream(),
-          ],
-        ),
-      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      body: _buildBody(),
     );
   }
 
-  // AppBar con puntos, racha y acceso al perfil.
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      title: const Text('Organízate'),
+      title: const Text('Organízate', style: TextStyle(fontWeight: FontWeight.bold)),
       elevation: 0,
       backgroundColor: Colors.transparent,
       foregroundColor: Colors.black,
       automaticallyImplyLeading: false,
       actions: [
         StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-          stream: userDocRef.snapshots(),
+          stream: _userDocRef.snapshots(),
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting ||
-                snapshot.hasError ||
-                !snapshot.hasData) {
-              return const Row(
-                children: [
-                  Icon(Icons.star, color: Colors.grey, size: 20),
-                  SizedBox(width: 4),
-                  Text('...', style: TextStyle(fontWeight: FontWeight.bold)),
-                  SizedBox(width: 16),
-                  Icon(Icons.local_fire_department, color: Colors.grey, size: 20),
-                  SizedBox(width: 4),
-                  Text('...'),
-                  SizedBox(width: 16),
-                  Padding(
-                    padding: EdgeInsets.only(right: 12),
-                    child: CircleAvatar(
-                      radius: 15,
-                      backgroundColor: Colors.grey,
-                    ),
-                  ),
-                ],
-              );
-            }
-            final userData = snapshot.data!.data() ?? {};
-            final int points = (userData['points'] as num?)?.toInt() ?? 0;
-            final int streak = (userData['streak'] as num?)?.toInt() ?? 0;
-            final String? avatarName = userData['avatar'] as String?;
+            final d = snapshot.data?.data() ?? {};
+            final points = (d['points'] as num?)?.toInt() ?? 0;
+            final streak = (d['streak'] as num?)?.toInt() ?? 0;
+            final emergencyName = d['emergencyName'] as String?;
+            final emergencyPhone =
+                d['emergencyPhone'] as String? ?? d['phone'] as String?;
+            final hasEmergency =
+                (emergencyPhone?.trim().isNotEmpty ?? false);
 
-            return Row(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.star, color: Colors.amber, size: 20),
-                      const SizedBox(width: 4),
-                      Text(
-                        '$points',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ],
+            return Row(children: [
+              const Icon(Icons.star, color: Colors.amber, size: 18),
+              const SizedBox(width: 2),
+              Text(
+                '$points',
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Colors.black87),
+              ),
+              const SizedBox(width: 10),
+              const Icon(Icons.local_fire_department,
+                  color: Colors.deepOrange, size: 18),
+              const SizedBox(width: 2),
+              Text(
+                '$streak',
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Colors.black87),
+              ),
+              const SizedBox(width: 4),
+              IconButton(
+                icon: Icon(
+                  Icons.health_and_safety,
+                  color: hasEmergency ? Colors.red : Colors.grey.shade400,
+                  size: 22,
+                ),
+                tooltip: 'Contacto de emergencia',
+                onPressed: () => handleEmergencyContactAction(
+                  context,
+                  emergencyName: (emergencyName?.trim().isNotEmpty ?? false)
+                      ? emergencyName
+                      : null,
+                  emergencyPhone: (emergencyPhone?.trim().isNotEmpty ?? false)
+                      ? emergencyPhone
+                      : null,
+                  onNavigateToProfile: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.local_fire_department,
-                          color: Colors.deepOrange, size: 20),
-                      const SizedBox(width: 4),
-                      Text(
-                        '$streak',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const SettingsScreen(),
-                        ),
-                      );
-                    },
-                    child: CircleAvatar(
-                      radius: 15,
-                      backgroundColor: Colors.grey.shade200,
-                      backgroundImage: avatarName != null
-                          ? AssetImage('assets/avatars/$avatarName.png')
-                          : null,
-                      child: avatarName == null
-                          ? const Icon(Icons.person, size: 16)
-                          : null,
-                    ),
-                  ),
-                ),
-              ],
-            );
+              ),
+              IconButton(
+                icon: const Icon(Icons.logout, size: 20),
+                tooltip: 'Cerrar sesión',
+                onPressed: _handleLogout,
+              ),
+            ]);
           },
-        ),
-        IconButton(
-          icon: const Icon(Icons.logout),
-          tooltip: 'Cerrar sesión',
-          onPressed: _handleLogout,
         ),
       ],
     );
   }
 
-Future<void> _handleLogout() async {
-  try {
-    await GoogleSignIn().signOut();
-    await FirebaseAuth.instance.signOut();
-    if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-      (route) => false,
-    );
-  } catch (e, stack) {
-    debugPrint('Error al cerrar sesión: $e');
-    debugPrint('$stack');
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Error al cerrar sesión')),
-    );
-  }
-}
-
-
-  // Muestra el progreso del día calculando tareas completadas hoy.
-  Widget _buildProgressHeader() {
-    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: tasksCollection.snapshots(),
-      builder: (context, snapshot) {
-        double progress = 0;
-        String percentText = '0%';
-        if (snapshot.hasData) {
-          final docs = snapshot.data!.docs;
-          final now = DateTime.now();
-          final startOfDay = DateTime(now.year, now.month, now.day);
-          final endOfDay = startOfDay.add(const Duration(days: 1));
-          int totalTasks = 0;
-          int completedTasks = 0;
-
-          for (final doc in docs) {
-            final data = doc.data();
-            final Timestamp? dueStamp = data['dueDate'] as Timestamp?;
-            final Timestamp? createdStamp = data['createdAt'] as Timestamp?;
-            final DateTime? referenceDate =
-                dueStamp?.toDate() ?? createdStamp?.toDate();
-            if (referenceDate == null) continue;
-            if (!referenceDate.isBefore(startOfDay) &&
-                referenceDate.isBefore(endOfDay)) {
-              totalTasks++;
-              if ((data['done'] as bool?) ?? false) {
-                completedTasks++;
-              }
-            }
-          }
-
-          if (totalTasks > 0) {
-            progress = completedTasks / totalTasks;
-            percentText = '${(progress * 100).round()}%';
-          }
-        }
-        return _buildHeaderCard(
-          progress.clamp(0.0, 1.0).toDouble(),
-          percentText,
-          _motivationLine,
-        );
-      },
-    );
-  }
-
-  // Tarjeta que enseña progreso y frase motivacional.
-  Widget _buildEmergencyContactBanner() {
+  Widget _buildBody() {
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: userDocRef.snapshots(),
+      stream: _userDocRef.snapshots(),
       builder: (context, snapshot) {
-        final isLoading = snapshot.connectionState == ConnectionState.waiting;
-        final data = snapshot.data?.data();
-        final String? emergencyName = data?['emergencyName'] as String?;
-        final String? emergencyPhone =
-            data?['emergencyPhone'] as String? ?? data?['phone'] as String?;
+        final userData = snapshot.data?.data() ?? {};
+        final name =
+            (userData['name'] as String?)?.split(' ').first ?? 'amigo';
 
-        final String? trimmedName =
-            (emergencyName?.trim().isEmpty ?? true) ? null : emergencyName!.trim();
-        final String? trimmedPhone =
-            (emergencyPhone?.trim().isEmpty ?? true) ? null : emergencyPhone!.trim();
-
-        final String subtitle = isLoading
-            ? 'Cargando tu contacto...'
-            : trimmedPhone != null
-                ? (trimmedName != null
-                    ? '$trimmedName - $trimmedPhone'
-                    : trimmedPhone)
-                : 'Configura un contacto desde tu perfil.';
-
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.red.shade50,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.red.shade100),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: const BoxDecoration(
-                  color: Colors.redAccent,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.phone_in_talk, color: Colors.white),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Contacto de emergencia',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(fontSize: 13, color: Colors.black54),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              ElevatedButton.icon(
-                onPressed: () => handleEmergencyContactAction(
-                  context,
-                  emergencyName: trimmedName ?? emergencyName,
-                  emergencyPhone: trimmedPhone ?? emergencyPhone,
-                  onNavigateToProfile: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                    );
-                  },
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                icon: const Icon(Icons.phone_in_talk),
-                label: const Text('SOS'),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildHeaderCard(
-      double progress, String percentText, String motivationalText) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.blue.withAlpha(25),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
+        return SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Hola 👋',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Hoy, enfoquémonos en...',
-                style: TextStyle(fontSize: 16, color: Colors.black54),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: 180,
-                child: Text(
-                  motivationalText,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Colors.black54,
-                  ),
-                ),
-              ),
+              _buildGreeting(name),
+              const SizedBox(height: 28),
+              _buildPriorityTaskCard(),
+              const SizedBox(height: 28),
+              _buildQuickAccess(),
             ],
           ),
-          SizedBox(
-            width: 70,
-            height: 70,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                CircularProgressIndicator(
-                  value: progress,
-                  strokeWidth: 8,
-                  backgroundColor: Colors.green.withAlpha(50),
-                  color: Colors.green,
-                ),
-                Center(
-                  child: Text(
-                    percentText,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green.shade800,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+        );
+      },
+    );
+  }
+
+  Widget _buildGreeting(String name) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Hola, $name 👋',
+          style: const TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          _motivationLine,
+          style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPriorityTaskCard() {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: _tasksCollection.snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
+          return const SizedBox(
+            height: 200,
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final docs = snapshot.data?.docs ?? [];
+        final pending = docs
+            .where((d) => !(d.data()['done'] as bool? ?? false))
+            .toList();
+
+        pending.sort((a, b) {
+          final aData = a.data();
+          final bData = b.data();
+          final aDue = (aData['dueDate'] as Timestamp?)?.toDate();
+          final bDue = (bData['dueDate'] as Timestamp?)?.toDate();
+          if (aDue != null && bDue != null) return aDue.compareTo(bDue);
+          if (aDue != null) return -1;
+          if (bDue != null) return 1;
+          final aCreated = (aData['createdAt'] as Timestamp?)?.toDate();
+          final bCreated = (bData['createdAt'] as Timestamp?)?.toDate();
+          if (aCreated != null && bCreated != null) {
+            return aCreated.compareTo(bCreated);
+          }
+          return 0;
+        });
+
+        if (pending.isEmpty) return _buildEmptyPriorityCard();
+
+        final doc = pending.first;
+        final data = doc.data();
+        final taskId = doc.id;
+        final text = data['text'] as String? ?? '';
+        final category = data['category'] as String? ?? 'General';
+        final dueDate = data['dueDate'] as Timestamp?;
+        final isDone = data['done'] as bool? ?? false;
+        final reminderMinutes = extractReminderMinutes(data);
+
+        return _buildTaskCard(
+          taskId: taskId,
+          text: text,
+          category: category,
+          dueDate: dueDate,
+          isDone: isDone,
+          totalPending: pending.length,
+          reminderMinutes: reminderMinutes,
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyPriorityCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.green.shade50, Colors.teal.shade50],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.green.shade100),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.check_circle_outline,
+              size: 64, color: Colors.green.shade400),
+          const SizedBox(height: 16),
+          Text(
+            '¡Todo al día!',
+            style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.green.shade700),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'No tienes tareas pendientes.\nUsa el botón mágico para añadir una.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
           ),
         ],
       ),
     );
   }
 
-  // Resumen por categoría para saltar rápido a cada vista especializada.
-  Widget _buildCategoryGrid() {
-    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: tasksCollection.snapshots(),
-      builder: (context, snapshot) {
-        final docs = snapshot.data?.docs ?? [];
-        final Map<String, List<Map<String, dynamic>>> pendingByCategory = {
-          'Estudios': [],
-          'Hogar': [],
-          'Meds': [],
-          'Foco': [],
-          'General': [],
-        };
-        for (final doc in docs) {
-          final data = doc.data();
-          final bool isDone = (data['done'] as bool?) ?? false;
-          if (isDone) continue;
-          final category = (data['category'] as String?) ?? 'General';
-          final normalized = pendingByCategory.containsKey(category)
-              ? category
-              : 'General';
-          final list = pendingByCategory[normalized];
-          if (list != null) {
-            list.add(data);
-          }
-        }
+  Widget _buildTaskCard({
+    required String taskId,
+    required String text,
+    required String category,
+    required bool isDone,
+    required int totalPending,
+    Timestamp? dueDate,
+    int? reminderMinutes,
+  }) {
+    final color =
+        _getColorFromString(_getColorNameFromCategory(category));
+    final icon =
+        _getIconFromString(_getIconNameFromCategory(category));
 
-        List<String> topTasksFor(String category) {
-          final entries =
-              pendingByCategory[category] ?? <Map<String, dynamic>>[];
-          return entries
-              .map((task) => (task['text'] as String?)?.trim())
-              .whereType<String>()
-              .where((text) => text.isNotEmpty)
-              .take(3)
-              .toList();
-        }
-
-        int countFor(String category) =>
-            pendingByCategory[category]?.length ?? 0;
-
-        return GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
-          childAspectRatio: 1.1,
+    return GestureDetector(
+      onLongPress: () => _showTaskOptionsDialog(
+        context,
+        taskId,
+        text,
+        category,
+        dueDate,
+        reminderMinutes,
+      ),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [color.withAlpha(30), color.withAlpha(12)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: color.withAlpha(80), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: color.withAlpha(20),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildCategoryCard(
-              title: 'Estudios',
-              subtitle: 'Organiza tus clases',
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: color.withAlpha(40),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(icon, color: color, size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    category,
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: color,
+                        letterSpacing: 0.5),
+                  ),
+                ]),
+                if (totalPending > 1)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '+${totalPending - 1} más',
+                      style: TextStyle(
+                          fontSize: 12, color: Colors.grey.shade600),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'TAREA PRIORITARIA',
+              style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade500,
+                  letterSpacing: 1.2),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              text,
+              style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                  height: 1.3),
+            ),
+            if (dueDate != null) ...[
+              const SizedBox(height: 10),
+              Row(children: [
+                Icon(Icons.schedule,
+                    size: 14, color: Colors.grey.shade500),
+                const SizedBox(width: 4),
+                Text(
+                  'Entrega: ${_dateTimeFormatter.format(dueDate.toDate())}',
+                  style: TextStyle(
+                      fontSize: 12, color: Colors.grey.shade500),
+                ),
+              ]),
+            ],
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _toggleTaskCompletion(taskId, isDone),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: color,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                    icon: const Icon(Icons.check_circle_outline, size: 18),
+                    label: const Text('Marcar hecha',
+                        style: TextStyle(fontWeight: FontWeight.w600)),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                OutlinedButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const TareasScreen()),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.grey.shade700,
+                    side: BorderSide(color: Colors.grey.shade300),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 12, horizontal: 12),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Ver todas'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickAccess() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Accesos rápidos',
+          style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade700),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            _buildQuickAccessItem(
               icon: Icons.menu_book,
+              label: 'Estudios',
               color: Colors.orange,
-              pendingCount: countFor('Estudios'),
-              topTasks: topTasksFor('Estudios'),
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const EstudiosScreen()),
               ),
             ),
-            _buildCategoryCard(
-              title: 'Hogar',
-              subtitle: 'Lista visual',
+            const SizedBox(width: 12),
+            _buildQuickAccessItem(
               icon: Icons.cottage,
+              label: 'Hogar',
               color: Colors.green,
-              pendingCount: countFor('Hogar'),
-              topTasks: topTasksFor('Hogar'),
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const HogarScreen()),
               ),
             ),
-            _buildCategoryCard(
-              title: 'Medicamentos',
-              subtitle: 'Recordatorios',
+            const SizedBox(width: 12),
+            _buildQuickAccessItem(
               icon: Icons.medication,
+              label: 'Meds',
               color: Colors.red,
-              pendingCount: countFor('Meds'),
-              topTasks: topTasksFor('Meds'),
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const MedsScreen()),
               ),
             ),
-            _buildCategoryCard(
-              title: 'Foco',
-              subtitle: 'Respira y enfoca',
-              icon: Icons.self_improvement,
-              color: Colors.purple,
-              pendingCount: countFor('Foco'),
-              topTasks: topTasksFor('Foco'),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const FocoScreen()),
-              ),
-            ),
           ],
-        );
-      },
+        ),
+      ],
     );
   }
 
-  // Widget reutilizable para dibujar cada tarjeta de categoría.
-  Widget _buildCategoryCard({
+  Widget _buildQuickAccessItem({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: color.withAlpha(20),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: color.withAlpha(50)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: color, size: 26),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: color),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showMagicBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2)),
+            ),
+            const SizedBox(height: 20),
+            Row(children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.deepPurple.shade50,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(Icons.auto_fix_high,
+                    color: Colors.deepPurple, size: 24),
+              ),
+              const SizedBox(width: 12),
+              const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Súper Experto',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text('¿Qué hacemos ahora?',
+                        style:
+                            TextStyle(fontSize: 13, color: Colors.grey)),
+                  ]),
+            ]),
+            const SizedBox(height: 24),
+            _buildSheetAction(
+              icon: Icons.add_task,
+              iconColor: Colors.blue,
+              bgColor: Colors.blue.shade50,
+              title: 'Nueva tarea',
+              subtitle: 'Añade algo a tu lista',
+              onTap: () {
+                Navigator.of(sheetCtx).pop();
+                _showAddTaskDialog(context);
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildSheetAction(
+              icon: Icons.self_improvement,
+              iconColor: Colors.purple,
+              bgColor: Colors.purple.shade50,
+              title: 'Iniciar sesión de Foco',
+              subtitle: 'Activa el temporizador Pomodoro',
+              onTap: () {
+                Navigator.of(sheetCtx).pop();
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const FocoScreen()),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildSheetAction(
+              icon: Icons.task_alt,
+              iconColor: Colors.teal,
+              bgColor: Colors.teal.shade50,
+              title: 'Ver todas las tareas',
+              subtitle: 'Gestiona tu lista completa',
+              onTap: () {
+                Navigator.of(sheetCtx).pop();
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const TareasScreen()),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSheetAction({
+    required IconData icon,
+    required Color iconColor,
+    required Color bgColor,
     required String title,
     required String subtitle,
-    required IconData icon,
-    required Color color,
-    required int pendingCount,
-    required List<String> topTasks,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
@@ -542,231 +632,61 @@ Future<void> _handleLogout() async {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: bgColor,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withAlpha(40),
-              spreadRadius: 2,
-              blurRadius: 5,
-            ),
-          ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, size: 32, color: color),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        child: Row(children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
             ),
-            const SizedBox(height: 2),
-            Text(
-              subtitle,
-              style: const TextStyle(fontSize: 13, color: Colors.black54),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 6),
-            if (pendingCount == 0)
-              const Text(
-                'Sin tareas pendientes',
-                style: TextStyle(fontSize: 12, color: Colors.black54),
-              )
-            else ...[
-              Text(
-                '$pendingCount pendientes',
+            child: Icon(icon, color: iconColor, size: 22),
+          ),
+          const SizedBox(width: 14),
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title,
                 style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 4),
-              // Lista scrollable con límite de alto para evitar desbordes
-              Flexible(
-                    child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    return ConstrainedBox(
-                      constraints: const BoxConstraints(
-                        maxHeight: 56, // ~3-4 líneas
-                      ),
-                      child: ListView.builder(
-                        padding: EdgeInsets.zero,
-                        physics: const ClampingScrollPhysics(),
-                        itemCount: topTasks.length,
-                        itemBuilder: (context, index) {
-                          final task = topTasks[index];
-                          return Text(
-                            '• $task',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 12, color: Colors.black87),
-                          );
-                        },
-                      ),
-                    );
-                  },
-                ),
-              ),
-              if (pendingCount > topTasks.length)
-                const Padding(
-                  padding: EdgeInsets.only(top: 2),
-                  child: Text(
-                    '…',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                ),
-            ],
-          ],
-        ),
+                    fontSize: 15, fontWeight: FontWeight.w600)),
+            Text(subtitle,
+                style: TextStyle(
+                    fontSize: 12, color: Colors.grey.shade600)),
+          ]),
+          const Spacer(),
+          Icon(Icons.chevron_right, color: Colors.grey.shade400),
+        ]),
       ),
     );
   }
 
-  // Encabezado simple para la lista de tareas del día.
-  Widget _buildTodayGoalsHeader() {
-    return const Text(
-      'Tus metas de hoy',
-      style: TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
-        color: Colors.black87,
-      ),
-    );
+  Future<void> _handleLogout() async {
+    try {
+      await GoogleSignIn().signOut();
+      await FirebaseAuth.instance.signOut();
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    } catch (e, stack) {
+      debugPrint('Error al cerrar sesión: $e');
+      debugPrint('$stack');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error al cerrar sesión')),
+      );
+    }
   }
 
-  // Lista en vivo de tareas ordenadas por fecha de creación.
-  Widget _buildTasksStream() {
-    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: tasksCollection.orderBy('createdAt', descending: true).snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return const Center(child: Text('Error al cargar tareas'));
-        }
-        final docs = snapshot.data?.docs ?? [];
-        if (docs.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 32),
-            child: Center(
-              child: Text('Añade tu primera tarea con el botón +'),
-            ),
-          );
-        }
-        return ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: docs.length,
-          itemBuilder: (context, index) {
-            final data = docs[index].data();
-            final taskId = docs[index].id;
-            final String text = data['text'] as String? ?? '';
-            final String? category = data['category'] as String?;
-            final Timestamp? dueDate = data['dueDate'] as Timestamp?;
-            final int? reminderMinutes = extractReminderMinutes(data);
-            final bool isDone = data['done'] as bool? ?? false;
-            return GestureDetector(
-              onLongPress: () => _showTaskOptionsDialog(
-                context,
-                taskId,
-                text,
-                category,
-                dueDate,
-                reminderMinutes,
-              ),
-              child: _buildGoalItem(
-                icon: _getIconFromString(data['iconName'] as String? ?? 'task_alt'),
-                iconColor:
-                    _getColorFromString(data['colorName'] as String? ?? 'grey'),
-                text: text,
-                isDone: isDone,
-                dueDate: dueDate,
-                onDonePressed: () => _toggleTaskCompletion(taskId, isDone),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  // Tarjeta reutilizable que muestra una tarea cualquiera.
-  Widget _buildGoalItem({
-    required IconData icon,
-    required Color iconColor,
-    required String text,
-    required bool isDone,
-    required VoidCallback onDonePressed,
-    Timestamp? dueDate,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Icon(icon, color: iconColor, size: 28),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  text,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: isDone ? Colors.grey : Colors.black87,
-                    decoration: isDone
-                        ? TextDecoration.lineThrough
-                        : TextDecoration.none,
-                  ),
-                ),
-                if (dueDate != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    'Entrega: ${_dateTimeFormatter.format(dueDate.toDate())}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          ElevatedButton(
-            onPressed: onDonePressed,
-            style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  isDone ? Colors.grey.shade300 : Colors.blue.withAlpha(30),
-              foregroundColor:
-                  isDone ? Colors.grey.shade600 : Colors.blue.shade800,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(isDone ? 'Deshacer' : 'Hecho'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Cambia el estado de una tarea, actualiza puntos y, si aplica, la racha.
   Future<void> _toggleTaskCompletion(String taskId, bool isDone) async {
     final messenger = ScaffoldMessenger.of(context);
-    // Suma 10 puntos al completar y resta 10 al deshacer.
     final pointsChange = isDone ? -10 : 10;
     final batch = FirebaseFirestore.instance.batch();
-    // 1) Invierte el campo done.
-    batch.update(tasksCollection.doc(taskId), {'done': !isDone});
-    // 2) Ajusta los puntos del usuario.
-    batch.update(userDocRef, {'points': FieldValue.increment(pointsChange)});
+    batch.update(_tasksCollection.doc(taskId), {'done': !isDone});
+    batch.update(
+        _userDocRef, {'points': FieldValue.increment(pointsChange)});
     try {
-      // 3) Ejecuta ambas operaciones juntas para mantener consistencia.
       await batch.commit();
     } catch (error) {
       messenger.showSnackBar(
@@ -775,11 +695,10 @@ Future<void> _handleLogout() async {
       return;
     }
 
-    // Solo al pasar de pendiente -> completada evaluamos la racha.
     if (!isDone) {
       try {
         await ReminderDispatcher.cancelTaskReminder(
-          userDocRef: userDocRef,
+          userDocRef: _userDocRef,
           taskId: taskId,
         );
       } catch (error, stack) {
@@ -787,186 +706,186 @@ Future<void> _handleLogout() async {
             '[REMINDER] No se pudo cancelar recordatorio para $taskId: $error');
         debugPrint('$stack');
       }
-
       try {
-        await StreakService.updateStreakOnTaskCompletion(userDocRef);
+        await StreakService.updateStreakOnTaskCompletion(_userDocRef);
       } catch (error) {
         debugPrint('No se pudo actualizar la racha: $error');
       }
     }
   }
 
-  // Diálogo para crear una tarea con categoría, fecha y recordatorio.
-  // Diálogo para crear una tarea con categoría, fecha y recordatorio.
-Future<void> _showAddTaskDialog(BuildContext screenContext) async {
-  final TextEditingController taskController = TextEditingController();
-  final List<String> categories = ['General', 'Estudios', 'Hogar', 'Meds'];
-  String? selectedCategory = 'General';
-  DateTime? selectedDueDate;
-  bool isSaving = false; // 👈 evita múltiples taps
-  final int? defaultReminder = await fetchDefaultReminderMinutes(userDocRef);
-  int? selectedReminderMinutes = defaultReminder;
-  if (!screenContext.mounted) return;
+  Future<void> _showAddTaskDialog(BuildContext screenContext) async {
+    final TextEditingController taskController = TextEditingController();
+    final List<String> categories = [
+      'General',
+      'Estudios',
+      'Hogar',
+      'Meds',
+      'Foco'
+    ];
+    String? selectedCategory = 'General';
+    DateTime? selectedDueDate;
+    bool isSaving = false;
+    final int? defaultReminder =
+        await fetchDefaultReminderMinutes(_userDocRef);
+    int? selectedReminderMinutes = defaultReminder;
+    if (!screenContext.mounted) return;
 
-  showDialog(
-    context: screenContext,
-    builder: (dialogContext) {
-      return StatefulBuilder(
-        builder: (statefulContext, setDialogState) {
-          return AlertDialog(
-            title: const Text('Nueva tarea'),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: taskController,
-                    decoration: const InputDecoration(hintText: 'Descripción'),
-                    autofocus: true,
-                  ),
-                  const SizedBox(height: 20),
-                  DropdownButtonFormField<String>(
-                    initialValue: selectedCategory,
-                    decoration: const InputDecoration(labelText: 'Categoría'),
-                    items: categories
-                        .map((cat) => DropdownMenuItem(
-                              value: cat,
-                              child: Text(cat),
-                            ))
-                        .toList(),
-                    onChanged: (value) =>
-                        setDialogState(() => selectedCategory = value),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          selectedDueDate == null
-                              ? 'Sin fecha'
-                              : 'Entrega: ${_dateTimeFormatter.format(selectedDueDate!)}',
-                          style: TextStyle(color: Colors.grey.shade600),
+    showDialog(
+      context: screenContext,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (statefulContext, setDialogState) {
+            return AlertDialog(
+              title: const Text('Nueva tarea'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: taskController,
+                      decoration:
+                          const InputDecoration(hintText: 'Descripción'),
+                      autofocus: true,
+                    ),
+                    const SizedBox(height: 20),
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedCategory,
+                      decoration:
+                          const InputDecoration(labelText: 'Categoría'),
+                      items: categories
+                          .map((cat) => DropdownMenuItem(
+                                value: cat,
+                                child: Text(cat),
+                              ))
+                          .toList(),
+                      onChanged: (value) =>
+                          setDialogState(() => selectedCategory = value),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            selectedDueDate == null
+                                ? 'Sin fecha'
+                                : 'Entrega: ${_dateTimeFormatter.format(selectedDueDate!)}',
+                            style:
+                                TextStyle(color: Colors.grey.shade600),
+                          ),
                         ),
+                        IconButton(
+                          icon: const Icon(Icons.calendar_today),
+                          onPressed: () async {
+                            final picked = await pickDateTime(
+                              context: statefulContext,
+                              initialDate: selectedDueDate,
+                            );
+                            if (picked != null) {
+                              setDialogState(
+                                  () => selectedDueDate = picked);
+                            }
+                          },
+                        ),
+                        if (selectedDueDate != null)
+                          IconButton(
+                            icon: const Icon(Icons.clear, size: 18),
+                            onPressed: () => setDialogState(
+                                () => selectedDueDate = null),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<int?>(
+                      key: ValueKey(selectedReminderMinutes),
+                      decoration: const InputDecoration(
+                        labelText: 'Recordatorio',
+                        border: OutlineInputBorder(),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.calendar_today),
-                        onPressed: () async {
-                          final picked = await pickDateTime(
-                            context: statefulContext,
-                            initialDate: selectedDueDate,
-                          );
-                          if (picked != null) {
-                            setDialogState(() => selectedDueDate = picked);
+                      initialValue: selectedReminderMinutes,
+                      items: kReminderOptions
+                          .map(
+                            (option) => DropdownMenuItem<int?>(
+                              value: option['minutes'] as int?,
+                              child: Text(option['label'] as String),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) => setDialogState(
+                          () => selectedReminderMinutes = value),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Cancelar'),
+                ),
+                ElevatedButton.icon(
+                  onPressed: isSaving
+                      ? null
+                      : () async {
+                          if (taskController.text.trim().isEmpty ||
+                              selectedCategory == null) { return; }
+                          setDialogState(() => isSaving = true);
+                          try {
+                            final iconName = _getIconNameFromCategory(
+                                selectedCategory!);
+                            final colorName = _getColorNameFromCategory(
+                                selectedCategory!);
+                            final data = <String, dynamic>{
+                              'text': taskController.text.trim(),
+                              'category': selectedCategory,
+                              'iconName': iconName,
+                              'colorName': colorName,
+                              'done': false,
+                              'createdAt': Timestamp.now(),
+                              'reminderMinutes': selectedReminderMinutes,
+                              if (selectedDueDate != null)
+                                'dueDate':
+                                    Timestamp.fromDate(selectedDueDate!),
+                            };
+                            final docRef =
+                                await _tasksCollection.add(data);
+                            await ReminderDispatcher.scheduleTaskReminder(
+                              userDocRef: _userDocRef,
+                              taskId: docRef.id,
+                              taskTitle: taskController.text,
+                              dueDate: selectedDueDate,
+                              reminderMinutes: selectedReminderMinutes,
+                            );
+                            if (dialogContext.mounted) {
+                              Navigator.of(dialogContext).pop();
+                              if (!screenContext.mounted) return;
+                              ScaffoldMessenger.of(screenContext)
+                                  .showSnackBar(const SnackBar(
+                                content: Text('Tarea añadida'),
+                              ));
+                            }
+                          } catch (e, stack) {
+                            debugPrint('Error al añadir tarea: $e');
+                            debugPrint('$stack');
+                            if (!screenContext.mounted) return;
+                            ScaffoldMessenger.of(screenContext)
+                                .showSnackBar(const SnackBar(
+                              content: Text('Error al crear la tarea'),
+                            ));
+                          } finally {
+                            setDialogState(() => isSaving = false);
                           }
                         },
-                      ),
-                      if (selectedDueDate != null)
-                        IconButton(
-                          icon: const Icon(Icons.clear, size: 18),
-                          onPressed: () =>
-                              setDialogState(() => selectedDueDate = null),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<int?>(
-                    key: ValueKey(selectedReminderMinutes),
-                    decoration: const InputDecoration(
-                      labelText: 'Recordatorio',
-                      border: OutlineInputBorder(),
-                    ),
-                    initialValue: selectedReminderMinutes,
-                    items: kReminderOptions
-                        .map(
-                          (option) => DropdownMenuItem<int?>(
-                            value: option['minutes'] as int?,
-                            child: Text(option['label'] as String),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (value) =>
-                        setDialogState(() => selectedReminderMinutes = value),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('Cancelar'),
-              ),
-              ElevatedButton.icon(
-                onPressed: isSaving
-                    ? null
-                    : () async {
-                        if (taskController.text.trim().isEmpty ||
-                            selectedCategory == null) {
-                          return;
-                        }
+                  icon: const Icon(Icons.add),
+                  label: const Text('Añadir'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
-                        setDialogState(() => isSaving = true); // 🚫 bloquea taps
-                        try {
-                          final iconName =
-                              _getIconNameFromCategory(selectedCategory!);
-                          final colorName =
-                              _getColorNameFromCategory(selectedCategory!);
-
-                          final data = <String, dynamic>{
-                            'text': taskController.text.trim(),
-                            'category': selectedCategory,
-                            'iconName': iconName,
-                            'colorName': colorName,
-                            'done': false,
-                            'createdAt': Timestamp.now(),
-                            'reminderMinutes': selectedReminderMinutes,
-                            if (selectedDueDate != null)
-                              'dueDate': Timestamp.fromDate(selectedDueDate!),
-                          };
-
-                          final docRef = await tasksCollection.add(data);
-                          await ReminderDispatcher.scheduleTaskReminder(
-                            userDocRef: userDocRef,
-                            taskId: docRef.id,
-                            taskTitle: taskController.text,
-                            dueDate: selectedDueDate,
-                            reminderMinutes: selectedReminderMinutes,
-                          );
-
-                          if (dialogContext.mounted) {
-                            Navigator.of(dialogContext).pop(); // ✅ cierra 1 sola vez
-                            if (!screenContext.mounted) return;
-                            ScaffoldMessenger.of(screenContext).showSnackBar(
-                              const SnackBar(
-                                content: Text('Tarea añadida correctamente'),
-                              ),
-                            );
-                          }
-                        } catch (e, stack) {
-                          debugPrint('Error al añadir tarea: $e');
-                          debugPrint('$stack');
-                          if (!screenContext.mounted) return;
-                          ScaffoldMessenger.of(screenContext).showSnackBar(
-                            const SnackBar(
-                              content: Text('Error al crear la tarea'),
-                            ),
-                          );
-                        } finally {
-                          setDialogState(() => isSaving = false);
-                        }
-                      },
-                icon: const Icon(Icons.add),
-                label: const Text('Añadir'),
-              ),
-            ],
-          );
-        },
-      );
-    },
-  );
-}
-
-
-  // Menú contextual que permite editar o eliminar una tarea.
   void _showTaskOptionsDialog(
     BuildContext context,
     String taskId,
@@ -999,39 +918,37 @@ Future<void> _showAddTaskDialog(BuildContext screenContext) async {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.delete),
-                title: const Text('Eliminar'),
+                leading:
+                    const Icon(Icons.delete, color: Colors.red),
+                title: const Text('Eliminar',
+                    style: TextStyle(color: Colors.red)),
                 onTap: () async {
                   final navigator = Navigator.of(dialogContext);
-                  final messenger = ScaffoldMessenger.of(dialogContext);
+                  final messenger =
+                      ScaffoldMessenger.of(dialogContext);
                   try {
-                    await tasksCollection.doc(taskId).delete();
-                    debugPrint('Tarea $taskId eliminada correctamente');
+                    await _tasksCollection.doc(taskId).delete();
                     try {
                       await ReminderDispatcher.cancelTaskReminder(
-                        userDocRef: userDocRef,
+                        userDocRef: _userDocRef,
                         taskId: taskId,
                       );
-                      debugPrint('Notificación de $taskId cancelada');
                     } catch (e, stack) {
-                      debugPrint('Error al cancelar notificación de $taskId: $e');
+                      debugPrint(
+                          'Error al cancelar notificación: $e');
                       debugPrint('$stack');
                     }
-                    if (navigator.mounted) {
-                      navigator.pop();
-                    }
-                    messenger.showSnackBar(
-                      SnackBar(content: Text('"$currentText" eliminada')),
-                    );
+                    if (navigator.mounted) navigator.pop();
+                    messenger.showSnackBar(SnackBar(
+                        content:
+                            Text('"$currentText" eliminada')));
                   } catch (error, stack) {
-                    debugPrint('Error al eliminar tarea $taskId: $error');
+                    debugPrint(
+                        'Error al eliminar tarea $taskId: $error');
                     debugPrint('$stack');
-                    if (navigator.mounted) {
-                      navigator.pop();
-                    }
-                    messenger.showSnackBar(
-                      SnackBar(content: Text('Error al eliminar: $error')),
-                    );
+                    if (navigator.mounted) navigator.pop();
+                    messenger.showSnackBar(SnackBar(
+                        content: Text('Error al eliminar: $error')));
                   }
                 },
               ),
@@ -1048,7 +965,6 @@ Future<void> _showAddTaskDialog(BuildContext screenContext) async {
     );
   }
 
-  // Diálogo de edición reutilizable con mismos campos que el alta.
   void _showEditTaskDialog(
     BuildContext context,
     String taskId,
@@ -1091,14 +1007,13 @@ Future<void> _showAddTaskDialog(BuildContext screenContext) async {
                     const SizedBox(height: 20),
                     DropdownButtonFormField<String>(
                       initialValue: selectedCategory,
-                      decoration: const InputDecoration(labelText: 'Categoría'),
+                      decoration:
+                          const InputDecoration(labelText: 'Categoría'),
                       items: categories
-                          .map(
-                            (cat) => DropdownMenuItem(
-                              value: cat,
-                              child: Text(cat),
-                            ),
-                          )
+                          .map((cat) => DropdownMenuItem(
+                                value: cat,
+                                child: Text(cat),
+                              ))
                           .toList(),
                       onChanged: (value) =>
                           setDialogState(() => selectedCategory = value),
@@ -1111,7 +1026,8 @@ Future<void> _showAddTaskDialog(BuildContext screenContext) async {
                             selectedDueDate == null
                                 ? 'Sin fecha'
                                 : 'Entrega: ${_dateTimeFormatter.format(selectedDueDate!)}',
-                            style: TextStyle(color: Colors.grey.shade600),
+                            style:
+                                TextStyle(color: Colors.grey.shade600),
                           ),
                         ),
                         IconButton(
@@ -1122,15 +1038,16 @@ Future<void> _showAddTaskDialog(BuildContext screenContext) async {
                               initialDate: selectedDueDate,
                             );
                             if (picked != null) {
-                              setDialogState(() => selectedDueDate = picked);
+                              setDialogState(
+                                  () => selectedDueDate = picked);
                             }
                           },
                         ),
                         if (selectedDueDate != null)
                           IconButton(
                             icon: const Icon(Icons.clear, size: 18),
-                            onPressed: () =>
-                                setDialogState(() => selectedDueDate = null),
+                            onPressed: () => setDialogState(
+                                () => selectedDueDate = null),
                           ),
                       ],
                     ),
@@ -1150,8 +1067,8 @@ Future<void> _showAddTaskDialog(BuildContext screenContext) async {
                             ),
                           )
                           .toList(),
-                      onChanged: (value) =>
-                          setDialogState(() => selectedReminderMinutes = value),
+                      onChanged: (value) => setDialogState(
+                          () => selectedReminderMinutes = value),
                     ),
                   ],
                 ),
@@ -1162,49 +1079,48 @@ Future<void> _showAddTaskDialog(BuildContext screenContext) async {
                   child: const Text('Cancelar'),
                 ),
                 TextButton(
-                onPressed: () async {
-                  if (taskController.text.isEmpty ||
-                      selectedCategory == null) {
-                    return;
-                  }
-                  final navigator = Navigator.of(dialogContext);
-                  final messenger = ScaffoldMessenger.of(context);
-                  final iconName =
-                      _getIconNameFromCategory(selectedCategory!);
-                  final colorName =
-                      _getColorNameFromCategory(selectedCategory!);
+                  onPressed: () async {
+                    if (taskController.text.isEmpty ||
+                        selectedCategory == null) { return; }
+                    final navigator = Navigator.of(dialogContext);
+                    final messenger = ScaffoldMessenger.of(context);
+                    final iconName =
+                        _getIconNameFromCategory(selectedCategory!);
+                    final colorName =
+                        _getColorNameFromCategory(selectedCategory!);
                     final updatedData = <String, dynamic>{
-                        'text': taskController.text,
-                        'category': selectedCategory,
-                        'iconName': iconName,
-                        'colorName': colorName,
-                        'reminderMinutes': selectedReminderMinutes,
-                        'reminderOffsetMinutes': FieldValue.delete(),
-                        'dueDate': selectedDueDate == null
-                            ? FieldValue.delete()
-                            : Timestamp.fromDate(selectedDueDate!),
+                      'text': taskController.text,
+                      'category': selectedCategory,
+                      'iconName': iconName,
+                      'colorName': colorName,
+                      'reminderMinutes': selectedReminderMinutes,
+                      'reminderOffsetMinutes': FieldValue.delete(),
+                      'dueDate': selectedDueDate == null
+                          ? FieldValue.delete()
+                          : Timestamp.fromDate(selectedDueDate!),
                     };
                     try {
-                      await tasksCollection.doc(taskId).update(updatedData);
+                      await _tasksCollection
+                          .doc(taskId)
+                          .update(updatedData);
                       await ReminderDispatcher.cancelTaskReminder(
-                        userDocRef: userDocRef,
+                        userDocRef: _userDocRef,
                         taskId: taskId,
                       );
                       await ReminderDispatcher.scheduleTaskReminder(
-                        userDocRef: userDocRef,
+                        userDocRef: _userDocRef,
                         taskId: taskId,
                         taskTitle: taskController.text,
                         dueDate: selectedDueDate,
                         reminderMinutes: selectedReminderMinutes,
                       );
                     } catch (error, stack) {
-                      debugPrint('Error al actualizar tarea $taskId: $error');
+                      debugPrint(
+                          'Error al actualizar tarea $taskId: $error');
                       debugPrint('$stack');
-                      messenger.showSnackBar(
-                        const SnackBar(
-                          content: Text('No se pudo guardar los cambios.'),
-                        ),
-                      );
+                      messenger.showSnackBar(const SnackBar(
+                        content: Text('No se pudo guardar los cambios.'),
+                      ));
                     } finally {
                       if (navigator.mounted && navigator.canPop()) {
                         navigator.pop();
@@ -1221,7 +1137,6 @@ Future<void> _showAddTaskDialog(BuildContext screenContext) async {
     );
   }
 
-  // Convierte el nombre guardado en Firestore al IconData correspondiente.
   IconData _getIconFromString(String iconName) {
     switch (iconName) {
       case 'menu_book':
@@ -1238,7 +1153,6 @@ Future<void> _showAddTaskDialog(BuildContext screenContext) async {
     }
   }
 
-  // Convierte el identificador textual al color usado en la tarjeta.
   Color _getColorFromString(String colorName) {
     switch (colorName) {
       case 'orange':
@@ -1256,7 +1170,6 @@ Future<void> _showAddTaskDialog(BuildContext screenContext) async {
     }
   }
 
-  // Helpers de selección inversa: dado una categoría, devuelve nombre de icono.
   String _getIconNameFromCategory(String category) {
     switch (category) {
       case 'Estudios':
@@ -1273,7 +1186,6 @@ Future<void> _showAddTaskDialog(BuildContext screenContext) async {
     }
   }
 
-  // Y en este helper lo mismo pero para el color.
   String _getColorNameFromCategory(String category) {
     switch (category) {
       case 'Estudios':

@@ -251,7 +251,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    const int screenIndex = 4;
+    const int screenIndex = 2;
     final pomodoro = context.watch<PomodoroService>();
     final bool isPaused = pomodoro.status == PomodoroStatus.paused;
 

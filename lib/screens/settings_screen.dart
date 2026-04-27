@@ -8,6 +8,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:organizate/screens/login_screen.dart';
 import 'package:organizate/services/notification_service.dart';
 import 'package:organizate/utils/reminder_options.dart';
+import 'package:organizate/widgets/custom_nav_bar.dart';
 
 // Declara el widget principal de ajustes como Stateful para poder reaccionar a cambios.
 class SettingsScreen extends StatefulWidget {
@@ -214,6 +215,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     // Devuelve un Scaffold que contiene la AppBar y el cuerpo con scroll.
     return Scaffold(
+      bottomNavigationBar: const CustomNavBar(initialIndex: 3),
       // Define la barra superior con el titulo descriptivo.
       appBar: AppBar(
         title: const Text('Perfil y configuracion'),

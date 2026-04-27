@@ -7,7 +7,6 @@ import 'package:organizate/services/streak_service.dart';
 import 'package:organizate/utils/date_time_helper.dart';
 import 'package:organizate/utils/reminder_helper.dart';
 import 'package:organizate/utils/reminder_options.dart';
-import 'package:organizate/widgets/custom_nav_bar.dart';
 
 // --- Convertido a StatefulWidget (para manejar la lógica) ---
 class EstudiosScreen extends StatefulWidget {
@@ -37,14 +36,11 @@ class _EstudiosScreenState extends State<EstudiosScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const int screenIndex = 1; // Índice 1 para "Estudios" en la barra
-
     return Scaffold(
-      bottomNavigationBar: const CustomNavBar(initialIndex: screenIndex), // Pasa el índice
       appBar: AppBar(
-        title: const Text('Estudios'), // Título de la pantalla
+        title: const Text('Estudios'),
         elevation: 0, backgroundColor: Colors.transparent, foregroundColor: Colors.black,
-        automaticallyImplyLeading: false, // Quita la flecha de "atrás"
+        automaticallyImplyLeading: true,
         actions: [ // Muestra Puntos/Racha/Avatar (igual que en HomeScreen)
           StreamBuilder<DocumentSnapshot>(
             stream: userDocRef.snapshots(),
