@@ -1,0 +1,74 @@
+name: organizate
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # Íconos
+  cupertino_icons: ^1.0.8
+  material_design_icons_flutter: ^7.0.7296
+  flutter_svg: ^2.0.9
+
+  # Fechas y localización en español
+  intl: ^0.20.2
+
+  # Guardar datos locales (tema, notificaciones activas, etc.)
+  shared_preferences: ^2.2.3
+
+  # Firebase
+  firebase_core: ^2.32.0
+  firebase_auth: ^4.17.4        # LOGIN
+  cloud_firestore: ^4.17.3
+  firebase_storage: ^11.7.2     # Para subir fotos en el futuro
+  firebase_messaging: ^14.9.1
+
+  # UI / Gráficos
+  fl_chart: ^1.1.1
+
+  # Notificaciones locales
+  flutter_local_notifications: ^17.1.2
+  flutter_native_timezone:
+    path: packages/flutter_native_timezone
+  timezone: ^0.9.3
+  google_sign_in: ^6.2.1
+
+  # Manejo de estado (útil para avatar, usuario, settings)
+  provider: ^6.1.2
+
+  # 🔊 AUDIO PARA POMODORO Y EJERCICIOS DE RELAJACIÓN
+  audioplayers: ^6.0.0
+  vibration: ^3.1.4
+  url_launcher: ^6.3.0
+  flutter_phone_direct_caller: ^2.1.1
+  permission_handler: ^11.3.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/images/Logo.png
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/avatars/
+    - assets/icons/
+    - assets/images/Logo.png
+    - assets/sounds/           # <--- NUEVO (carpeta donde estará bell.mp3)
+
+
