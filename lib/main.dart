@@ -108,19 +108,22 @@ class UserOnboardingGate extends StatefulWidget {
 }
 
 class _UserOnboardingGateState extends State<UserOnboardingGate> {
+  late final Stream<DocumentSnapshot<Map<String, dynamic>>> _userDocStream;
+
   @override
   void initState() {
     super.initState();
     PushNotificationService.syncUserToken(widget.user);
+    _userDocStream = FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.user.uid)
+        .snapshots();
   }
 
   @override
   Widget build(BuildContext context) {
-    final userDoc =
-        FirebaseFirestore.instance.collection('users').doc(widget.user.uid);
-
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: userDoc.snapshots(),
+      stream: _userDocStream,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(

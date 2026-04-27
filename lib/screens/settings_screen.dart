@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 // Importa el paquete material porque toda la interfaz usa widgets de Material.
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:organizate/screens/login_screen.dart';
 import 'package:organizate/services/notification_service.dart';
 import 'package:organizate/utils/reminder_options.dart';
 
@@ -73,6 +75,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _emergencyPhoneController.dispose();
     // Llama al dispose de la superclase para completar la limpieza.
     super.dispose();
+  }
+
+  Future<void> _handleLogout() async {
+    try {
+      await GoogleSignIn().signOut();
+      await FirebaseAuth.instance.signOut();
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    } catch (e, stack) {
+      debugPrint('Error al cerrar sesión: $e');
+      debugPrint('$stack');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error al cerrar sesión')),
+      );
+    }
   }
 
   // Funcion que guarda el contacto de emergencia en Firestore.
@@ -196,6 +217,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // Define la barra superior con el titulo descriptivo.
       appBar: AppBar(
         title: const Text('Perfil y configuracion'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Cerrar sesión',
+            onPressed: _handleLogout,
+          ),
+        ],
       ),
       // El cuerpo escucha los cambios del documento del usuario.
       body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(

@@ -1,9 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
 
 import 'package:organizate/screens/estudios_screen.dart';
+import 'package:organizate/screens/login_screen.dart';
 import 'package:organizate/screens/foco_screen.dart';
 import 'package:organizate/screens/hogar_screen.dart';
 import 'package:organizate/screens/meds_screen.dart';
@@ -199,8 +201,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
 Future<void> _handleLogout() async {
   try {
+    await GoogleSignIn().signOut();
     await FirebaseAuth.instance.signOut();
-    // AuthGate reacciona automáticamente al stream de authStateChanges.
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
   } catch (e, stack) {
     debugPrint('Error al cerrar sesión: $e');
     debugPrint('$stack');

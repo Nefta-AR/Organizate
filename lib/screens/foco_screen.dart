@@ -71,7 +71,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
         .orderBy('done')
         .orderBy('createdAt', descending: true)
         .snapshots();
-    _userSettingsSubscription = userDocRef.snapshots().listen((snapshot) {
+    _userSettingsSubscription = _userDocStream.listen((snapshot) {
       final data = snapshot.data() ?? {};
       if (!mounted) return;
       setState(() {

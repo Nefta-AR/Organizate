@@ -150,18 +150,32 @@ class _LoginScreenState extends State<LoginScreen> {
       final user = userCred.user;
 
       if (user != null) {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .set({
-              'name'                  : user.displayName ?? 'Usuario',
-              'email'                 : user.email,
-              'avatar'                : 'emoticon',
-              'points'                : 0,
-              'streak'                : 0,
-              'hasCompletedOnboarding': false,
-              'createdAt'             : FieldValue.serverTimestamp(),
-            }, SetOptions(merge: true));
+        final isNewUser = userCred.additionalUserInfo?.isNewUser ?? false;
+        if (isNewUser) {
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .set({
+                'name'                  : user.displayName ?? 'Usuario',
+                'email'                 : user.email,
+                'avatar'                : 'emoticon',
+                'points'                : 0,
+                'streak'                : 0,
+                'hasCompletedOnboarding': false,
+                'createdAt'             : FieldValue.serverTimestamp(),
+              });
+        } else {
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .set(
+                {
+                  'name' : user.displayName ?? 'Usuario',
+                  'email': user.email,
+                },
+                SetOptions(merge: true),
+              );
+        }
         if (user.email != null) await _saveEmail(user.email!);
         await _handleAuthSuccess(user);
       }
