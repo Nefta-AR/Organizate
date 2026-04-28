@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:organizate/screens/auth_gate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -73,7 +74,13 @@ class _LoginScreenState extends State<LoginScreen> {
   // ── Punto de extensión para ruteo por rol ─────────────────────────────────
   // La AuthGate en main.dart maneja el ruteo automáticamente via stream.
   // Este hook queda disponible para lógica adicional post-login si se necesita.
-  Future<void> _handleAuthSuccess(User user) async {}
+  Future<void> _handleAuthSuccess(User user) async {
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const AuthGate()),
+      (route) => false,
+    );
+  }
 
   // ── FIX CRÍTICO: LOGIN CON CORREO ─────────────────────────────────────────
   // El bloque finally garantiza que _isLoading SIEMPRE vuelve a false,

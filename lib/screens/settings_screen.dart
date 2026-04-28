@@ -72,12 +72,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       MaterialPageRoute(builder: (_) => const LoginScreen()),
       (route) => false,
     );
-    try {
-      await GoogleSignIn().signOut();
-      await FirebaseAuth.instance.signOut();
-    } catch (e) {
-      debugPrint('Logout error: $e');
-    }
+    try { await GoogleSignIn().signOut(); } catch (_) {}
+    try { await FirebaseAuth.instance.signOut(); } catch (_) {}
   }
 
   // ── 2. CONTACTO DE EMERGENCIA ─────────────────────────────────────────────

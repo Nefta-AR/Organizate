@@ -662,18 +662,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _handleLogout() async {
     if (!mounted) return;
-    // Navegamos primero para evitar que el stream de Firestore
-    // muestre un error de permisos en pantalla al hacer signOut.
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
       (route) => false,
     );
-    try {
-      await GoogleSignIn().signOut();
-      await FirebaseAuth.instance.signOut();
-    } catch (e) {
-      debugPrint('Logout error: $e');
-    }
+    try { await GoogleSignIn().signOut(); } catch (_) {}
+    try { await FirebaseAuth.instance.signOut(); } catch (_) {}
   }
 
   Future<void> _toggleTaskCompletion(String taskId, bool isDone) async {
