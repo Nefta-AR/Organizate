@@ -16,6 +16,7 @@ import 'services/push_notification_service.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'screens/role_selection_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,9 +51,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Organízate',
+      title: 'Simple',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0099FF)),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF4A90E2)),
         useMaterial3: true,
       ),
       localizationsDelegates: const [
@@ -136,12 +137,12 @@ class _UserOnboardingGateState extends State<UserOnboardingGate> {
           );
         }
 
-        final data = snapshot.data?.data();
+        final data       = snapshot.data?.data();
+        final role        = data?['role'] as String?;
         final hasCompleted = data?['hasCompletedOnboarding'] == true;
 
-        return hasCompleted
-            ? const HomeScreen()
-            : const OnboardingScreen();
+        if (role == null || role.isEmpty) return const RoleSelectionScreen();
+        return hasCompleted ? const HomeScreen() : const OnboardingScreen();
       },
     );
   }

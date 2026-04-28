@@ -1,123 +1,94 @@
-// Importa Cloud Firestore para leer y actualizar la informacion del usuario.
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
-// Importa FirebaseAuth para saber quien es el usuario autenticado.
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_auth/firebase_auth.dart';
-// Importa el paquete material porque toda la interfaz usa widgets de Material.
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:organizate/screens/login_screen.dart';
 import 'package:organizate/services/notification_service.dart';
 import 'package:organizate/utils/reminder_options.dart';
 import 'package:organizate/widgets/custom_nav_bar.dart';
 
-// Declara el widget principal de ajustes como Stateful para poder reaccionar a cambios.
+// ─────────────────────────────────────────────────────────────────────────────
+// Paleta Calma — misma base que login_screen.dart para coherencia visual.
+// ─────────────────────────────────────────────────────────────────────────────
+class _Palette {
+  _Palette._();
+  static const background = Color(0xFFF4F6F8);
+  static const primary    = Color(0xFF607D8B);
+  static const surface    = Colors.white;
+  static const textDark   = Color(0xFF37474F);
+  static const textMuted  = Color(0xFF78909C);
+  static const accent     = Color(0xFF7EA3BC); // azul pizarra suave
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 class SettingsScreen extends StatefulWidget {
-  // Constructor constante que acepta una clave opcional del widget.
   const SettingsScreen({super.key});
 
-  // Crea el estado concreto que renderizara la pantalla.
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-// Define el estado que administra los datos y la UI interactiva.
 class _SettingsScreenState extends State<SettingsScreen> {
-  // Guarda la referencia al documento del usuario en Firestore.
   late final DocumentReference<Map<String, dynamic>> _userDoc;
-  // Controlador que maneja el nombre del contacto de emergencia.
-  final TextEditingController _emergencyNameController = TextEditingController();
-  // Controlador que maneja el texto del telefono de emergencia.
-  final TextEditingController _emergencyPhoneController = TextEditingController();
-  // Bandera que dice si el usuario modifico los campos de contacto.
-  bool _isEmergencyDirty = false;
-  // Bandera que indica si estamos enviando esos datos a Firestore.
-  bool _isSavingEmergency = false;
-  // Opciones disponibles para el sonido del Pomodoro.
+  final _emergencyNameController  = TextEditingController();
+  final _emergencyPhoneController = TextEditingController();
+  bool _isEmergencyDirty    = false;
+  bool _isSavingEmergency   = false;
+  bool _isUploadingPhoto    = false;
+
   static const List<Map<String, String>> _pomodoroSoundOptions = [
-    {'key': 'bell', 'label': 'Campanilla clásica'},
+    {'key': 'bell',          'label': 'Campanilla clásica'},
     {'key': 'notificacion1', 'label': 'Sonido Notificación'},
   ];
-  // Lista fija con los nombres de los avatares disponibles.
+
   static const List<String> _availableAvatars = [
-    // Avatar con nombre emoticon.
-    'emoticon',
-    // Avatar con nombre koala.
-    'koala',
-    // Avatar con nombre panda.
-    'panda',
-    // Avatar con nombre pinguino.
-    'pinguino',
-    // Avatar con nombre rana.
-    'rana',
-    // Avatar con nombre tigre.
-    'tigre',
-    // Avatar con nombre unicornio.
-    'unicornio',
-    // Avatar con nombre zorro.
-    'zorro',
+    'emoticon', 'koala',    'panda',    'pinguino',
+    'rana',     'tigre',    'unicornio','zorro',
   ];
 
-  // Metodo de ciclo de vida que se ejecuta al crear el estado.
   @override
   void initState() {
-    // Llama primero al initState de la superclase.
     super.initState();
-    // Obtiene el UID del usuario actualmente logueado.
     final uid = FirebaseAuth.instance.currentUser!.uid;
-    // Crea la referencia al documento users/{uid} dentro de Firestore.
     _userDoc = FirebaseFirestore.instance.collection('users').doc(uid);
   }
 
-  // Metodo de ciclo de vida llamado cuando se libera el estado.
   @override
   void dispose() {
-    // Libera los controladores de texto para evitar fugas de memoria.
     _emergencyNameController.dispose();
     _emergencyPhoneController.dispose();
-    // Llama al dispose de la superclase para completar la limpieza.
     super.dispose();
   }
 
+  // ── 1. LOGOUT — navegamos primero para evitar flash de error de Firestore ──
   Future<void> _handleLogout() async {
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
     try {
       await GoogleSignIn().signOut();
       await FirebaseAuth.instance.signOut();
-      if (!mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-        (route) => false,
-      );
-    } catch (e, stack) {
-      debugPrint('Error al cerrar sesión: $e');
-      debugPrint('$stack');
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error al cerrar sesión')),
-      );
+    } catch (e) {
+      debugPrint('Logout error: $e');
     }
   }
 
-  // Funcion que guarda el contacto de emergencia en Firestore.
+  // ── 2. CONTACTO DE EMERGENCIA ─────────────────────────────────────────────
   Future<void> _saveEmergencyContact() async {
-    // Marca que se esta guardando para deshabilitar el boton y mostrar spinner.
     setState(() => _isSavingEmergency = true);
-    final messenger = ScaffoldMessenger.of(context);
+    final messenger   = ScaffoldMessenger.of(context);
     final trimmedName = _emergencyNameController.text.trim();
-    final trimmedPhone = _emergencyPhoneController.text.trim();
-    final Map<String, dynamic> payload = {
-      // Siempre eliminamos el campo antiguo de phone para evitar inconsistencias.
-      'phone': FieldValue.delete(),
-    };
-    if (trimmedName.isEmpty) {
-      payload['emergencyName'] = FieldValue.delete();
-    } else {
-      payload['emergencyName'] = trimmedName;
-    }
-    if (trimmedPhone.isEmpty) {
-      payload['emergencyPhone'] = FieldValue.delete();
-    } else {
-      payload['emergencyPhone'] = trimmedPhone;
-    }
+    final trimmedPhone= _emergencyPhoneController.text.trim();
+    final Map<String, dynamic> payload = {'phone': FieldValue.delete()};
+    payload['emergencyName']  = trimmedName.isEmpty  ? FieldValue.delete() : trimmedName;
+    payload['emergencyPhone'] = trimmedPhone.isEmpty ? FieldValue.delete() : trimmedPhone;
     try {
       await _userDoc.set(payload, SetOptions(merge: true));
       setState(() => _isEmergencyDirty = false);
@@ -129,57 +100,158 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SnackBar(content: Text('No se pudo guardar el contacto')),
       );
     } finally {
-      if (mounted) {
-        setState(() => _isSavingEmergency = false);
-      }
+      if (mounted) setState(() => _isSavingEmergency = false);
     }
   }
 
-  // Muestra un catalogo de avatares y guarda la seleccion en Firestore.
-  Future<void> _showAvatarPicker(String? currentAvatar) async {
-    // Permite mostrar mensajes una vez se elija un avatar.
+  // ── 3. FOTO DE PERFIL — image_picker + firebase_storage ──────────────────
+  Future<void> _uploadProfilePhoto() async {
+    final picker = ImagePicker();
+    final XFile? picked = await picker.pickImage(
+      source      : ImageSource.gallery,
+      imageQuality: 70,
+      maxWidth    : 512,
+    );
+    if (picked == null || !mounted) return;
+
+    setState(() => _isUploadingPhoto = true);
     final messenger = ScaffoldMessenger.of(context);
-    // Abre una hoja inferior que devolvera el nombre del avatar pulsado.
-    final selected = await showModalBottomSheet<String>(
-      context: context,
+
+    try {
+      final uid = FirebaseAuth.instance.currentUser!.uid;
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child('user_photos/$uid/profile.jpg');
+
+      await ref.putFile(File(picked.path));
+      final url = await ref.getDownloadURL();
+
+      await FirebaseAuth.instance.currentUser!.updatePhotoURL(url);
+      await FirebaseAuth.instance.currentUser!.reload();
+      await _userDoc.set({'photoURL': url}, SetOptions(merge: true));
+
+      if (mounted) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Foto de perfil actualizada')),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('No se pudo subir la foto. Intenta de nuevo.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUploadingPhoto = false);
+    }
+  }
+
+  // ── Menú: elegir foto de galería o avatar prediseñado ────────────────────
+  Future<void> _showPhotoOptions(String? currentAvatar) async {
+    await showModalBottomSheet<void>(
+      context        : context,
+      backgroundColor: _Palette.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width : 36, height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color        : Colors.grey.shade300,
+                  borderRadius : BorderRadius.circular(2),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined,
+                    color: _Palette.accent),
+                title: const Text('Subir foto de galería',
+                    style: TextStyle(color: _Palette.textDark)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _uploadProfilePhoto();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.face_outlined, color: _Palette.accent),
+                title: const Text('Elegir avatar prediseñado',
+                    style: TextStyle(color: _Palette.textDark)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showAvatarPicker(currentAvatar);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Selector de avatares prediseñados ─────────────────────────────────────
+  Future<void> _showAvatarPicker(String? currentAvatar) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final selected  = await showModalBottomSheet<String>(
+      context        : context,
+      backgroundColor: _Palette.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) {
-        // Usa SafeArea para que el contenido no quede debajo de la barra de gestos.
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: GridView.builder(
-              shrinkWrap: true,
-              itemCount: _availableAvatars.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
+              shrinkWrap   : true,
+              itemCount    : _availableAvatars.length,
+              gridDelegate : const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount  : 4,
                 crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
+                mainAxisSpacing : 12,
               ),
               itemBuilder: (context, index) {
-                // Obtiene el nombre del avatar en la posicion actual.
                 final avatarName = _availableAvatars[index];
-                // Comprueba si ese avatar es el que ya esta seleccionado.
                 final isSelected = avatarName == currentAvatar;
-                // Devuelve un detector de gestos para poder cerrar la hoja con la eleccion.
                 return GestureDetector(
                   onTap: () => Navigator.of(context).pop(avatarName),
                   child: Column(
                     children: [
-                      // Muestra la imagen circular del avatar.
-                      CircleAvatar(
-                        radius: 30,
-                        backgroundImage:
-                            AssetImage('assets/avatars/$avatarName.png'),
-                        child: isSelected
-                            ? const Icon(Icons.check, color: Colors.white)
-                            : null,
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          CircleAvatar(
+                            radius         : 30,
+                            backgroundColor: isSelected
+                                ? _Palette.accent.withValues(alpha: 0.15)
+                                : Colors.grey.shade100,
+                            backgroundImage:
+                                AssetImage('assets/avatars/$avatarName.png'),
+                          ),
+                          if (isSelected)
+                            Container(
+                              width : 60, height: 60,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: _Palette.accent.withValues(alpha: 0.4),
+                              ),
+                              child: const Icon(Icons.check,
+                                  color: Colors.white, size: 22),
+                            ),
+                        ],
                       ),
-                      // Agrega un pequeno espacio debajo de la imagen.
                       const SizedBox(height: 6),
-                      // Etiqueta con el nombre del avatar.
                       Text(
                         avatarName,
-                        style: const TextStyle(fontSize: 12),
+                        style: const TextStyle(
+                            fontSize: 11, color: _Palette.textMuted),
                       ),
                     ],
                   ),
@@ -191,18 +263,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
     );
 
-    // Cuando se selecciona un avatar se escribe en el documento del usuario.
     if (selected != null) {
       try {
         await _userDoc.set({'avatar': selected}, SetOptions(merge: true));
-        // Refresca el estado si el widget sigue en pantalla.
         if (mounted) setState(() {});
-        // Muestra un mensaje confirmando el cambio.
         messenger.showSnackBar(
           const SnackBar(content: Text('Avatar actualizado')),
         );
       } catch (_) {
-        // Comunica cualquier problema al intentar guardar el avatar.
         messenger.showSnackBar(
           const SnackBar(content: Text('No se pudo actualizar el avatar')),
         );
@@ -210,508 +278,498 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  // Construye la interfaz completa de la pantalla de ajustes.
+  // ── Resuelve la imagen del avatar (foto personalizada > preset > nada) ────
+  ImageProvider? _resolveAvatar(String? photoUrl, String? avatar) {
+    if (photoUrl != null && photoUrl.isNotEmpty) return NetworkImage(photoUrl);
+    if (avatar   != null && avatar.isNotEmpty)   return AssetImage('assets/avatars/$avatar.png');
+    return null;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    // Devuelve un Scaffold que contiene la AppBar y el cuerpo con scroll.
     return Scaffold(
+      backgroundColor  : _Palette.background,
       bottomNavigationBar: const CustomNavBar(initialIndex: 3),
-      // Define la barra superior con el titulo descriptivo.
       appBar: AppBar(
-        title: const Text('Perfil y configuracion'),
+        backgroundColor: _Palette.background,
+        elevation      : 0,
+        title: const Text(
+          'Perfil y configuración',
+          style: TextStyle(
+            color     : _Palette.primary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon   : const Icon(Icons.logout, color: _Palette.primary),
             tooltip: 'Cerrar sesión',
             onPressed: _handleLogout,
           ),
         ],
       ),
-      // El cuerpo escucha los cambios del documento del usuario.
       body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-        stream: _userDoc.snapshots(),
+        stream : _userDoc.snapshots(),
         builder: (context, snapshot) {
-          // Mientras llega la primera respuesta muestra un spinner.
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          // Si no hay datos disponibles se avisa al usuario.
-          if (!snapshot.hasData || snapshot.data?.data() == null) {
+          if (snapshot.hasError ||
+              !snapshot.hasData ||
+              snapshot.data?.data() == null) {
             return const Center(child: Text('No se pudo cargar tu perfil.'));
           }
 
-          // Extrae el mapa con la informacion del usuario.
           final data = snapshot.data!.data()!;
-          // Obtiene el nombre y usa un valor por defecto si falta.
-          final String name = (data['name'] as String?) ?? 'Usuario';
-          // Obtiene el correo y cae al email de FirebaseAuth si es necesario.
-          final String email =
-              (data['email'] as String?) ?? FirebaseAuth.instance.currentUser?.email ?? '';
-          // Lee el avatar almacenado (puede ser nulo).
-          final String? avatar = data['avatar'] as String?;
-          // Lee el contacto de emergencia previamente guardado.
-          final String emergencyName = (data['emergencyName'] as String?) ?? '';
-          final String emergencyPhone =
-              (data['emergencyPhone'] as String?) ?? (data['phone'] as String?) ?? '';
-          // Determina si las notificaciones de tareas estan activadas.
-          final bool notiTaskEnabled = (data['notiTaskEnabled'] as bool?) ?? true;
-          final bool hasDefaultReminderKey =
-              data.containsKey('notiTaskDefaultOffsetMinutes');
-          // Lee el tiempo por defecto para los recordatorios. Si nunca se configuró usamos el fallback.
-          final int? notiOffset = hasDefaultReminderKey
+
+          // ── 2. Nombre y correo dinámico — FirebaseAuth primero ───────────
+          final authUser     = FirebaseAuth.instance.currentUser;
+          final displayName  = authUser?.displayName;
+          final firestoreName= data['name'] as String?;
+          final name = (displayName?.isNotEmpty == true
+                  ? displayName
+                  : firestoreName) ??
+              'Usuario';
+          final email = authUser?.email ?? (data['email'] as String?) ?? '';
+
+          // Foto personalizada tiene prioridad sobre avatar prediseñado
+          final photoUrl = data['photoURL'] as String? ?? authUser?.photoURL;
+          final avatar   = data['avatar'] as String?;
+
+          final emergencyName = (data['emergencyName'] as String?) ?? '';
+          final emergencyPhone =
+              (data['emergencyPhone'] as String?) ??
+              (data['phone'] as String?) ?? '';
+
+          final notiTaskEnabled      = (data['notiTaskEnabled'] as bool?) ?? true;
+          final hasDefaultReminderKey= data.containsKey('notiTaskDefaultOffsetMinutes');
+          final notiOffset = hasDefaultReminderKey
               ? (data['notiTaskDefaultOffsetMinutes'] as num?)?.toInt()
               : kDefaultReminderMinutes;
-          // Obtiene el estado del sonido para pomodoro.
-          final bool pomodoroSoundEnabled =
-              (data['pomodoroSoundEnabled'] as bool?) ?? true;
-          // Obtiene el estado de la vibracion para pomodoro.
-          final bool pomodoroVibrationEnabled =
-              (data['pomodoroVibrationEnabled'] as bool?) ?? false;
-          final String pomodoroSoundRaw =
-              (data['pomodoroSound'] as String?) ?? 'bell';
-          final String pomodoroSound = _pomodoroSoundOptions
-                  .any((option) => option['key'] == pomodoroSoundRaw)
+
+          final pomodoroSoundEnabled    = (data['pomodoroSoundEnabled'] as bool?)    ?? true;
+          final pomodoroVibrationEnabled= (data['pomodoroVibrationEnabled'] as bool?) ?? false;
+          final pomodoroSoundRaw = (data['pomodoroSound'] as String?) ?? 'bell';
+          final pomodoroSound    = _pomodoroSoundOptions
+                  .any((o) => o['key'] == pomodoroSoundRaw)
               ? pomodoroSoundRaw
               : _pomodoroSoundOptions.first['key']!;
-          // Recupera los puntos acumulados.
-          final int points = (data['points'] as num?)?.toInt() ?? 0;
-          // Recupera la racha actual guardada.
-          final int streak = (data['streak'] as num?)?.toInt() ?? 0;
-          // Recupera la cantidad de sesiones de foco.
-          final int focusSessions =
-              (data['focusSessionsCompleted'] as num?)?.toInt() ?? 0;
-          // Recupera la cantidad total de minutos de foco.
-          final int totalFocusMinutes =
-              (data['totalFocusMinutes'] as num?)?.toInt() ?? 0;
 
-          // Si el usuario no escribio nada nuevo se sincroniza el formulario con Firestore.
+          final points          = (data['points'] as num?)?.toInt() ?? 0;
+          final streak          = (data['streak'] as num?)?.toInt() ?? 0;
+          final focusSessions   = (data['focusSessionsCompleted'] as num?)?.toInt() ?? 0;
+          final totalFocusMinutes=(data['totalFocusMinutes'] as num?)?.toInt() ?? 0;
+
           if (!_isEmergencyDirty) {
-            _emergencyNameController.text = emergencyName;
+            _emergencyNameController.text  = emergencyName;
             _emergencyPhoneController.text = emergencyPhone;
           }
 
-          // Devuelve un scroll para alojar todas las tarjetas de configuracion.
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Tarjeta interactiva para cambiar el avatar.
-                GestureDetector(
-                  onTap: () => _showAvatarPicker(avatar),
-                  child: Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          // Muestra la foto o un icono por defecto.
-                          CircleAvatar(
-                            radius: 36,
-                            backgroundImage: avatar != null
-                                ? AssetImage('assets/avatars/$avatar.png')
-                                : null,
-                            child:
-                                avatar == null ? const Icon(Icons.person, size: 32) : null,
-                          ),
-                          // Separa el avatar del texto.
-                          const SizedBox(width: 16),
-                          // Contenedor del texto con nombre y correo.
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Muestra el nombre del usuario.
-                                Text(
-                                  name,
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                // Espacio pequeño entre lineas.
-                                const SizedBox(height: 4),
-                                // Muestra el correo.
-                                Text(
-                                  email,
-                                  style: const TextStyle(color: Colors.black54),
-                                ),
-                                // Espacio pequeño adicional.
-                                const SizedBox(height: 4),
-                                // Texto guia para indicar que se puede cambiar el avatar.
-                                Text(
-                                  'Toca para cambiar avatar',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.blueGrey.shade600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                // Separador vertical entre tarjetas.
+                _buildProfileCard(name, email, photoUrl, avatar),
                 const SizedBox(height: 16),
-                // Tarjeta para editar el contacto de emergencia.
-                Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Titulo de la seccion de contacto.
-                        const Text(
-                          'Contacto de emergencia',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        // Texto auxiliar para contextualizar el campo.
-                        const SizedBox(height: 8),
-                        Text(
-                          'Numero al que llamar en caso de emergencia (opcional).',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey.shade700,
-                          ),
-                        ),
-                        // Espacio antes de los campos de texto.
-                        const SizedBox(height: 12),
-                        // Campo para el nombre del contacto.
-                        TextField(
-                          controller: _emergencyNameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Nombre del contacto (ej: Mama, Pareja, Amigo)',
-                            border: OutlineInputBorder(),
-                          ),
-                          textCapitalization: TextCapitalization.words,
-                          onChanged: (_) {
-                            if (!_isEmergencyDirty) {
-                              setState(() => _isEmergencyDirty = true);
-                            }
-                          },
-                        ),
-                        // Espacio antes del campo de telefono.
-                        const SizedBox(height: 12),
-                        // Campo donde el usuario ingresa su telefono.
-                        TextField(
-                          controller: _emergencyPhoneController,
-                          keyboardType: TextInputType.phone,
-                          decoration: const InputDecoration(
-                            labelText: 'Telefono',
-                            hintText: 'Ej: +56 9 1234 5678',
-                            border: OutlineInputBorder(),
-                          ),
-                          onChanged: (_) {
-                            if (!_isEmergencyDirty) {
-                              setState(() => _isEmergencyDirty = true);
-                            }
-                          },
-                        ),
-                        // Espacio antes del boton de guardar.
-                        const SizedBox(height: 12),
-                        // Alinea el boton de guardado a la derecha.
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: ElevatedButton.icon(
-                            onPressed: _isEmergencyDirty && !_isSavingEmergency
-                                ? _saveEmergencyContact
-                                : null,
-                            icon: _isSavingEmergency
-                                ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  )
-                                : const Icon(Icons.save),
-                            label: const Text('Guardar'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                // Separador entre secciones.
+                _buildEmergencyCard(),
                 const SizedBox(height: 16),
-                // Tarjeta para configurar notificaciones de tareas.
-                Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Titulo de la seccion de notificaciones.
-                        const Text(
-                          'Notificaciones de tareas',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        // Espacio antes del interruptor.
-                        const SizedBox(height: 12),
-                        // Switch que activa o apaga las notificaciones de tareas.
-                        SwitchListTile.adaptive(
-                          contentPadding: EdgeInsets.zero,
-                          value: notiTaskEnabled,
-                          title: const Text('Activar notificaciones de tareas'),
-                          onChanged: (value) {
-                            _userDoc.set(
-                              {'notiTaskEnabled': value},
-                              SetOptions(merge: true),
-                            );
-                          },
-                        ),
-                        // Espacio antes del Dropdown.
-                        const SizedBox(height: 8),
-                        // Selector del offset predeterminado para recordatorios.
-                        DropdownButtonFormField<int?>(
-                          key: ValueKey(notiOffset),
-                          decoration: const InputDecoration(
-                            labelText: 'Recordarme antes',
-                            border: OutlineInputBorder(),
-                          ),
-                          initialValue: notiOffset,
-                          items: kReminderOptions
-                              .map(
-                                (option) => DropdownMenuItem<int?>(
-                                  value: option['minutes'] as int?,
-                                  child: Text(option['label'] as String),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (value) {
-                            _userDoc.set(
-                              {'notiTaskDefaultOffsetMinutes': value},
-                              SetOptions(merge: true),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        // Botón para asegurar configuración de notificaciones en Android/HyperOS
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: ElevatedButton.icon(
-                            onPressed: () async {
-                              await NotificationService.ensureDeviceCanDeliverNotifications();
-                              if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Revisa permisos del sistema y optimización de batería si tu dispositivo es Xiaomi/HyperOS.',
-                                  ),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.settings_suggest),
-                            label: const Text('Optimizar entrega en mi dispositivo'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                _buildTaskNotificationsCard(notiTaskEnabled, notiOffset),
                 const SizedBox(height: 16),
-                Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Prueba de notificación',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Pulsa para asegurarte de que las notificaciones y el sonido Notificacion1.mp3 funcionan en tu dispositivo.',
-                        ),
-                        const SizedBox(height: 12),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: ElevatedButton.icon(
-                            onPressed: () async {
-                              final messenger =
-                                  ScaffoldMessenger.of(context);
-                              final result = await NotificationService
-                                  .showTestNotification(
-                                playPreviewSound: true,
-                              );
-                              if (!context.mounted) return;
-                              if (!result.notificationSent) {
-                                String failureMessage;
-                                switch (result.failure) {
-                                  case NotificationTestFailure.permissionDenied:
-                                    failureMessage =
-                                        'Debes aceptar el permiso de notificaciones para esta app.';
-                                    break;
-                                  case NotificationTestFailure
-                                      .permissionPermanentlyDenied:
-                                    failureMessage =
-                                        'Activa las notificaciones de la app desde Ajustes del sistema y vuelve a intentarlo.';
-                                    break;
-                                  default:
-                                    failureMessage = result.errorDescription !=
-                                            null
-                                        ? 'No se pudo enviar la notificación de prueba: ${result.errorDescription}'
-                                        : 'No se pudo enviar la notificación de prueba. Revisa los permisos del sistema.';
-                                }
-                                messenger.showSnackBar(
-                                  SnackBar(content: Text(failureMessage)),
-                                );
-                                return;
-                              }
-                              final message = result.previewSoundPlayed
-                                  ? 'Notificación enviada. Deberías escuchar Notificacion1.mp3.'
-                                  : 'Notificación enviada. Activa volumen o permisos para escuchar el sonido.';
-                              final fallbackHint = result.usedFallbackSound
-                                  ? '\nSe usó el sonido por defecto porque Notificacion1 no está disponible en este dispositivo. Reinstala la app tras ejecutar flutter clean para volver a probar con ese sonido.'
-                                  : '';
-                              messenger.showSnackBar(
-                                SnackBar(content: Text(message + fallbackHint)),
-                              );
-                            },
-                            icon: const Icon(Icons.notifications_active),
-                            label: const Text('Probar notificación ahora'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                // Separador previo a la tarjeta de pomodoro.
+                _buildTestNotificationCard(),
                 const SizedBox(height: 16),
-                // Tarjeta de configuraciones relacionadas con foco/pomodoro.
-                Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Titulo de la seccion de pomodoro.
-                        const Text(
-                          'Foco (Pomodoro)',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        // Espacio antes de los switches.
-                        const SizedBox(height: 12),
-                        // Switch que habilita o deshabilita el sonido.
-                        SwitchListTile.adaptive(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text('Sonido al terminar pomodoro'),
-                          value: pomodoroSoundEnabled,
-                          onChanged: (value) {
-                            _userDoc.set(
-                              {'pomodoroSoundEnabled': value},
-                              SetOptions(merge: true),
-                            );
-                          },
-                        ),
-                        // Switch que habilita o deshabilita la vibracion.
-                        SwitchListTile.adaptive(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text('Vibracion al terminar pomodoro'),
-                          value: pomodoroVibrationEnabled,
-                          onChanged: (value) {
-                            _userDoc.set(
-                              {'pomodoroVibrationEnabled': value},
-                              SetOptions(merge: true),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        DropdownButtonFormField<String>(
-                          key: ValueKey(pomodoroSound),
-                          decoration: const InputDecoration(
-                            labelText: 'Sonido del Pomodoro',
-                            border: OutlineInputBorder(),
-                          ),
-                          initialValue: pomodoroSound,
-                          items: _pomodoroSoundOptions
-                              .map(
-                                (option) => DropdownMenuItem<String>(
-                                  value: option['key'],
-                                  child: Text(option['label'] ?? ''),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: pomodoroSoundEnabled
-                              ? (value) {
-                                  if (value == null) return;
-                                  _userDoc.set(
-                                    {'pomodoroSound': value},
-                                    SetOptions(merge: true),
-                                  );
-                                }
-                              : null,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                // Separador antes del resumen de progreso.
+                _buildPomodoroCard(
+                    pomodoroSoundEnabled, pomodoroVibrationEnabled, pomodoroSound),
                 const SizedBox(height: 16),
-                // Tarjeta que muestra datos estadisticos del usuario.
-                Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Titulo del resumen.
-                        const Text(
-                          'Resumen de foco y progreso',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        // Espacio antes de los textos.
-                        const SizedBox(height: 12),
-                        // Numero de sesiones completadas.
-                        Text('Sesiones de foco completadas: $focusSessions'),
-                        // Minutos acumulados de foco.
-                        Text('Minutos totales de foco: $totalFocusMinutes'),
-                        // Puntos actuales del usuario.
-                        Text('Puntos actuales: $points'),
-                        // Racha de dias consecutivos completando tareas.
-                        Text('Racha actual: $streak dias'),
-                      ],
-                    ),
-                  ),
-                ),
+                _buildStatsCard(focusSessions, totalFocusMinutes, points, streak),
               ],
             ),
           );
         },
+      ),
+    );
+  }
+
+  // ── TARJETA DE PERFIL (Paleta Calma estricta) ─────────────────────────────
+  Widget _buildProfileCard(
+      String name, String email, String? photoUrl, String? avatar) {
+    return GestureDetector(
+      onTap: _isUploadingPhoto ? null : () => _showPhotoOptions(avatar),
+      child: Container(
+        decoration: BoxDecoration(
+          color        : _Palette.surface,
+          borderRadius : BorderRadius.circular(20),
+          boxShadow    : [
+            BoxShadow(
+              color    : Colors.black.withValues(alpha: 0.05),
+              blurRadius: 12,
+              offset   : const Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            // ── Avatar con spinner de carga superpuesto ───────────────────
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                CircleAvatar(
+                  radius          : 38,
+                  backgroundColor : const Color(0xFFE8EEF2),
+                  backgroundImage : _resolveAvatar(photoUrl, avatar),
+                  child: (photoUrl == null || photoUrl.isEmpty) &&
+                          (avatar == null || avatar.isEmpty)
+                      ? const Icon(Icons.person,
+                          size: 34, color: _Palette.textMuted)
+                      : null,
+                ),
+                if (_isUploadingPhoto)
+                  Container(
+                    width : 76, height: 76,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.black.withValues(alpha: 0.35),
+                    ),
+                    child: const Padding(
+                      padding: EdgeInsets.all(20),
+                      child  : CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color      : Colors.white,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(width: 18),
+            // ── Nombre, correo y hint ─────────────────────────────────────
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize  : 19,
+                      fontWeight: FontWeight.w700,
+                      color     : _Palette.textDark,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    email,
+                    style: const TextStyle(
+                        fontSize: 13, color: _Palette.textMuted),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.camera_alt_outlined,
+                          size : 13,
+                          color: _Palette.accent.withValues(alpha: 0.75)),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Toca para cambiar foto o avatar',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color   : _Palette.accent.withValues(alpha: 0.75),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── CONTACTO DE EMERGENCIA ────────────────────────────────────────────────
+  Widget _buildEmergencyCard() {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Contacto de emergencia',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text(
+              'Número al que llamar en caso de emergencia (opcional).',
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller           : _emergencyNameController,
+              textCapitalization   : TextCapitalization.words,
+              decoration: const InputDecoration(
+                labelText: 'Nombre del contacto (ej: Mamá, Pareja, Amigo)',
+                border   : OutlineInputBorder(),
+              ),
+              onChanged: (_) {
+                if (!_isEmergencyDirty) setState(() => _isEmergencyDirty = true);
+              },
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller  : _emergencyPhoneController,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(
+                labelText: 'Teléfono',
+                hintText : 'Ej: +56 9 1234 5678',
+                border   : OutlineInputBorder(),
+              ),
+              onChanged: (_) {
+                if (!_isEmergencyDirty) setState(() => _isEmergencyDirty = true);
+              },
+            ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerRight,
+              child: ElevatedButton.icon(
+                onPressed: _isEmergencyDirty && !_isSavingEmergency
+                    ? _saveEmergencyContact
+                    : null,
+                icon: _isSavingEmergency
+                    ? const SizedBox(
+                        width: 16, height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.save),
+                label: const Text('Guardar'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── NOTIFICACIONES DE TAREAS ──────────────────────────────────────────────
+  Widget _buildTaskNotificationsCard(bool notiTaskEnabled, int? notiOffset) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Notificaciones de tareas',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            SwitchListTile.adaptive(
+              contentPadding: EdgeInsets.zero,
+              value : notiTaskEnabled,
+              title : const Text('Activar notificaciones de tareas'),
+              onChanged: (value) {
+                _userDoc.set(
+                    {'notiTaskEnabled': value}, SetOptions(merge: true));
+              },
+            ),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<int?>(
+              key      : ValueKey(notiOffset),
+              decoration: const InputDecoration(
+                labelText: 'Recordarme antes',
+                border   : OutlineInputBorder(),
+              ),
+              initialValue: notiOffset,
+              items: kReminderOptions
+                  .map((option) => DropdownMenuItem<int?>(
+                        value: option['minutes'] as int?,
+                        child: Text(option['label'] as String),
+                      ))
+                  .toList(),
+              onChanged: (value) {
+                _userDoc.set(
+                  {'notiTaskDefaultOffsetMinutes': value},
+                  SetOptions(merge: true),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerRight,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  await NotificationService
+                      .ensureDeviceCanDeliverNotifications();
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Revisa permisos del sistema y optimización de batería '
+                        'si tu dispositivo es Xiaomi/HyperOS.',
+                      ),
+                    ),
+                  );
+                },
+                icon : const Icon(Icons.settings_suggest),
+                label: const Text('Optimizar entrega en mi dispositivo'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── PRUEBA DE NOTIFICACIÓN ────────────────────────────────────────────────
+  Widget _buildTestNotificationCard() {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Prueba de notificación',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            const Text(
+              'Pulsa para asegurarte de que las notificaciones y el sonido '
+              'Notificacion1.mp3 funcionan en tu dispositivo.',
+            ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerRight,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  final messenger = ScaffoldMessenger.of(context);
+
+                  // 5. Protección Web: las notificaciones locales son nativas.
+                  if (kIsWeb) {
+                    messenger.showSnackBar(const SnackBar(
+                      content: Text(
+                        'Modo Web: Prueba las notificaciones nativas en tu celular.',
+                      ),
+                      behavior: SnackBarBehavior.floating,
+                    ));
+                    return;
+                  }
+
+                  final result = await NotificationService.showTestNotification(
+                    playPreviewSound: true,
+                  );
+                  if (!context.mounted) return;
+                  if (!result.notificationSent) {
+                    final String msg;
+                    switch (result.failure) {
+                      case NotificationTestFailure.permissionDenied:
+                        msg = 'Debes aceptar el permiso de notificaciones.';
+                      case NotificationTestFailure.permissionPermanentlyDenied:
+                        msg = 'Activa las notificaciones desde Ajustes del '
+                            'sistema y vuelve a intentarlo.';
+                      default:
+                        msg = result.errorDescription != null
+                            ? 'No se pudo enviar: ${result.errorDescription}'
+                            : 'No se pudo enviar. Revisa los permisos.';
+                    }
+                    messenger.showSnackBar(SnackBar(content: Text(msg)));
+                    return;
+                  }
+                  final base = result.previewSoundPlayed
+                      ? 'Notificación enviada. Deberías escuchar Notificacion1.mp3.'
+                      : 'Notificación enviada. Activa el volumen para escuchar el sonido.';
+                  final hint = result.usedFallbackSound
+                      ? '\nSe usó el sonido por defecto porque Notificacion1 '
+                          'no está disponible. Ejecuta flutter clean y reinstala.'
+                      : '';
+                  messenger.showSnackBar(SnackBar(content: Text(base + hint)));
+                },
+                icon : const Icon(Icons.notifications_active),
+                label: const Text('Probar notificación ahora'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── FOCO / POMODORO ───────────────────────────────────────────────────────
+  Widget _buildPomodoroCard(
+      bool soundEnabled, bool vibrationEnabled, String sound) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Foco (Pomodoro)',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            SwitchListTile.adaptive(
+              contentPadding: EdgeInsets.zero,
+              title    : const Text('Sonido al terminar pomodoro'),
+              value    : soundEnabled,
+              onChanged: (value) {
+                _userDoc.set(
+                    {'pomodoroSoundEnabled': value}, SetOptions(merge: true));
+              },
+            ),
+            SwitchListTile.adaptive(
+              contentPadding: EdgeInsets.zero,
+              title    : const Text('Vibración al terminar pomodoro'),
+              value    : vibrationEnabled,
+              onChanged: (value) {
+                _userDoc.set(
+                    {'pomodoroVibrationEnabled': value}, SetOptions(merge: true));
+              },
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              key      : ValueKey(sound),
+              decoration: const InputDecoration(
+                labelText: 'Sonido del Pomodoro',
+                border   : OutlineInputBorder(),
+              ),
+              initialValue: sound,
+              items: _pomodoroSoundOptions
+                  .map((option) => DropdownMenuItem<String>(
+                        value: option['key'],
+                        child: Text(option['label'] ?? ''),
+                      ))
+                  .toList(),
+              onChanged: soundEnabled
+                  ? (value) {
+                      if (value == null) return;
+                      _userDoc.set(
+                          {'pomodoroSound': value}, SetOptions(merge: true));
+                    }
+                  : null,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── ESTADÍSTICAS ──────────────────────────────────────────────────────────
+  Widget _buildStatsCard(
+      int focusSessions, int totalFocusMinutes, int points, int streak) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Resumen de foco y progreso',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            Text('Sesiones de foco completadas: $focusSessions'),
+            Text('Minutos totales de foco: $totalFocusMinutes'),
+            Text('Puntos actuales: $points'),
+            Text('Racha actual: $streak días'),
+          ],
+        ),
       ),
     );
   }

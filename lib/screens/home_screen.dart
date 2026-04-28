@@ -61,7 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: _buildAppBar(),
       floatingActionButton: FloatingActionButton.large(
         onPressed: () => _showMagicBottomSheet(context),
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: const Color(0xFF7B93A3),
         foregroundColor: Colors.white,
         tooltip: 'Súper Experto',
         child: const Icon(Icons.auto_fix_high, size: 32),
@@ -92,7 +92,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 (emergencyPhone?.trim().isNotEmpty ?? false);
 
             return Row(children: [
-              const Icon(Icons.star, color: Colors.amber, size: 18),
+              const Icon(Icons.star, color: Color(0xFFD4A853), size: 18),
               const SizedBox(width: 2),
               Text(
                 '$points',
@@ -103,7 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(width: 10),
               const Icon(Icons.local_fire_department,
-                  color: Colors.deepOrange, size: 18),
+                  color: Color(0xFFBF8060), size: 18),
               const SizedBox(width: 2),
               Text(
                 '$streak',
@@ -116,7 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
               IconButton(
                 icon: Icon(
                   Icons.health_and_safety,
-                  color: hasEmergency ? Colors.red : Colors.grey.shade400,
+                  color: hasEmergency ? const Color(0xFFB05C5C) : Colors.grey.shade400,
                   size: 22,
                 ),
                 tooltip: 'Contacto de emergencia',
@@ -253,25 +253,25 @@ class _HomeScreenState extends State<HomeScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.green.shade50, Colors.teal.shade50],
+        gradient: const LinearGradient(
+          colors: [Color(0xFFEEF5F1), Color(0xFFEBF2F5)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.green.shade100),
+        border: Border.all(color: const Color(0xFFC5D8CE)),
       ),
       child: Column(
         children: [
-          Icon(Icons.check_circle_outline,
-              size: 64, color: Colors.green.shade400),
+          const Icon(Icons.check_circle_outline,
+              size: 64, color: Color(0xFF7DA88A)),
           const SizedBox(height: 16),
-          Text(
+          const Text(
             '¡Todo al día!',
             style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Colors.green.shade700),
+                color: Color(0xFF4A7A5E)),
           ),
           const SizedBox(height: 8),
           Text(
@@ -459,7 +459,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildQuickAccessItem(
               icon: Icons.menu_book,
               label: 'Estudios',
-              color: Colors.orange,
+              color: const Color(0xFFBFA67A),
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const EstudiosScreen()),
@@ -469,7 +469,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildQuickAccessItem(
               icon: Icons.cottage,
               label: 'Hogar',
-              color: Colors.green,
+              color: const Color(0xFF7DA88A),
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const HogarScreen()),
@@ -479,7 +479,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildQuickAccessItem(
               icon: Icons.medication,
               label: 'Meds',
-              color: Colors.red,
+              color: const Color(0xFFB98585),
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const MedsScreen()),
@@ -551,11 +551,11 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.deepPurple.shade50,
+                  color: const Color(0xFFE8EEF2),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: const Icon(Icons.auto_fix_high,
-                    color: Colors.deepPurple, size: 24),
+                    color: Color(0xFF7B93A3), size: 24),
               ),
               const SizedBox(width: 12),
               const Column(
@@ -572,8 +572,8 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 24),
             _buildSheetAction(
               icon: Icons.add_task,
-              iconColor: Colors.blue,
-              bgColor: Colors.blue.shade50,
+              iconColor: const Color(0xFF7EA3BC),
+              bgColor: const Color(0xFFEDF2F7),
               title: 'Nueva tarea',
               subtitle: 'Añade algo a tu lista',
               onTap: () {
@@ -584,8 +584,8 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 12),
             _buildSheetAction(
               icon: Icons.self_improvement,
-              iconColor: Colors.purple,
-              bgColor: Colors.purple.shade50,
+              iconColor: const Color(0xFF9486AD),
+              bgColor: const Color(0xFFF1EEF6),
               title: 'Iniciar sesión de Foco',
               subtitle: 'Activa el temporizador Pomodoro',
               onTap: () {
@@ -600,8 +600,8 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 12),
             _buildSheetAction(
               icon: Icons.task_alt,
-              iconColor: Colors.teal,
-              bgColor: Colors.teal.shade50,
+              iconColor: const Color(0xFF7BA8A0),
+              bgColor: const Color(0xFFEBF3F2),
               title: 'Ver todas las tareas',
               subtitle: 'Gestiona tu lista completa',
               onTap: () {
@@ -661,21 +661,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _handleLogout() async {
+    if (!mounted) return;
+    // Navegamos primero para evitar que el stream de Firestore
+    // muestre un error de permisos en pantalla al hacer signOut.
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
     try {
       await GoogleSignIn().signOut();
       await FirebaseAuth.instance.signOut();
-      if (!mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-        (route) => false,
-      );
-    } catch (e, stack) {
-      debugPrint('Error al cerrar sesión: $e');
-      debugPrint('$stack');
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error al cerrar sesión')),
-      );
+    } catch (e) {
+      debugPrint('Logout error: $e');
     }
   }
 
@@ -1155,18 +1152,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Color _getColorFromString(String colorName) {
     switch (colorName) {
-      case 'orange':
-        return Colors.orange;
-      case 'green':
-        return Colors.green;
-      case 'red':
-        return Colors.red;
-      case 'purple':
-        return Colors.purple;
-      case 'grey':
-        return Colors.grey;
-      default:
-        return Colors.blue;
+      case 'orange': return const Color(0xFFBFA67A); // ámbar tierra
+      case 'green':  return const Color(0xFF7DA88A); // verde salvia
+      case 'red':    return const Color(0xFFB98585); // terracota suave
+      case 'purple': return const Color(0xFF9486AD); // lavanda apagada
+      case 'grey':   return const Color(0xFF8B9FAE); // pizarra azul
+      default:       return const Color(0xFF7EA3BC); // azul suave
     }
   }
 
