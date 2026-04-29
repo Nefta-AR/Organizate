@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:organizate/screens/auth_gate.dart';
@@ -141,15 +142,24 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isGoogleLoading = true);
 
     try {
-      final googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) return; // usuario canceló — finally se ejecuta igual
+      final UserCredential userCred;
 
-      final googleAuth = await googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken    : googleAuth.idToken,
-      );
-      final userCred = await FirebaseAuth.instance.signInWithCredential(credential);
+      if (kIsWeb) {
+        final provider = GoogleAuthProvider()
+          ..setCustomParameters({'prompt': 'select_account'});
+        userCred = await FirebaseAuth.instance.signInWithPopup(provider);
+      } else {
+        final googleUser = await GoogleSignIn().signIn();
+        if (googleUser == null) return; // usuario canceló — finally se ejecuta igual
+
+        final googleAuth = await googleUser.authentication;
+        final credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken    : googleAuth.idToken,
+        );
+        userCred = await FirebaseAuth.instance.signInWithCredential(credential);
+      }
+
       final user     = userCred.user;
 
       if (user != null) {
