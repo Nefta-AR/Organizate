@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -140,15 +141,13 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
         debugPrint('[FOCO] Error al reproducir sonido Pomodoro: $error');
       }
     }
-    if (_pomodoroVibrationEnabled) {
+    if (_pomodoroVibrationEnabled && !kIsWeb) {
       try {
         final hasVibrator = await Vibration.hasVibrator();
         if (hasVibrator == true) {
           Vibration.vibrate(duration: 800);
         }
-      } catch (_) {
-        // Ignora fallos de vibración
-      }
+      } catch (_) {}
     }
     try {
       await userDocRef.set(

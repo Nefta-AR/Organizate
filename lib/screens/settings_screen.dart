@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_auth/firebase_auth.dart';
@@ -100,7 +98,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  // ── 3. FOTO DE PERFIL — image_picker + firebase_storage ──────────────────
+  // ── 3. FOTO DE PERFIL — putData funciona en web y móvil ─────────────────
   Future<void> _uploadProfilePhoto() async {
     final picker = ImagePicker();
     final XFile? picked = await picker.pickImage(
@@ -114,16 +112,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final messenger = ScaffoldMessenger.of(context);
 
     try {
-      final uid = FirebaseAuth.instance.currentUser!.uid;
-      final ref = FirebaseStorage.instance
-          .ref()
-          .child('user_photos/$uid/profile.jpg');
+      final uid   = FirebaseAuth.instance.currentUser!.uid;
+      final ref   = FirebaseStorage.instance
+          .ref('user_photos/$uid/profile.jpg');
 
-      await ref.putFile(File(picked.path));
+      // readAsBytes() funciona en web (blob) y móvil (ruta de archivo)
+      final bytes    = await picked.readAsBytes();
+      final metadata = SettableMetadata(contentType: 'image/jpeg');
+      await ref.putData(bytes, metadata);
+
       final url = await ref.getDownloadURL();
-
-      await FirebaseAuth.instance.currentUser!.updatePhotoURL(url);
-      await FirebaseAuth.instance.currentUser!.reload();
       await _userDoc.set({'photoURL': url}, SetOptions(merge: true));
 
       if (mounted) {
@@ -131,13 +129,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SnackBar(content: Text('Foto de perfil actualizada')),
         );
       }
-    } catch (_) {
+    } on FirebaseException catch (e) {
       if (mounted) {
-        messenger.showSnackBar(
-          const SnackBar(
-            content: Text('No se pudo subir la foto. Intenta de nuevo.'),
-          ),
-        );
+        messenger.showSnackBar(SnackBar(
+          content: Text('[${e.code}] ${e.message ?? "Error de Firebase Storage"}'),
+          duration: const Duration(seconds: 6),
+        ));
+      }
+    } catch (e) {
+      if (mounted) {
+        messenger.showSnackBar(SnackBar(
+          content: Text('Error inesperado: $e'),
+          duration: const Duration(seconds: 6),
+        ));
       }
     } finally {
       if (mounted) setState(() => _isUploadingPhoto = false);

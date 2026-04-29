@@ -52,6 +52,10 @@ dependencies:
   permission_handler: ^11.3.1
   image_picker: ^1.1.2
 
+  # IA — Gemini para el Súper Experto
+  google_generative_ai: ^0.4.3
+  flutter_dotenv: ^6.0.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -70,6 +74,7 @@ flutter:
     - assets/avatars/
     - assets/icons/
     - assets/images/Simple.png
-    - assets/sounds/           # <--- NUEVO (carpeta donde estará bell.mp3)
+    - assets/sounds/           # <--- NUEVO (carpeta donde estará bell.mp3)}
+    - .env
 
 

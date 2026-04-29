@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -59,18 +57,24 @@ class _PerfilScreenState extends State<PerfilScreen> {
           .ref()
           .child('user_photos/$uid/profile.jpg');
 
-      await ref.putFile(File(picked.path));
+      final bytes = await picked.readAsBytes();
+      await ref.putData(bytes, SettableMetadata(contentType: 'image/jpeg'));
       final url = await ref.getDownloadURL();
 
-      // Actualiza FirebaseAuth y Firestore de forma atómica.
-      await _currentUser!.updatePhotoURL(url);
-      await _currentUser!.reload();
       await _userDoc.set({'photoURL': url}, SetOptions(merge: true));
 
       if (mounted) {
         messenger.showSnackBar(const SnackBar(
           content : Text('Foto de perfil actualizada.'),
           behavior: SnackBarBehavior.floating,
+        ));
+      }
+    } on FirebaseException catch (e) {
+      if (mounted) {
+        messenger.showSnackBar(SnackBar(
+          content : Text('[${e.code}] ${e.message ?? "Error de Firebase Storage"}'),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 6),
         ));
       }
     } catch (_) {

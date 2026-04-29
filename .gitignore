@@ -48,3 +48,7 @@ app.*.map.json
 /functions/node_modules
 /functions/lib
 /functions/.runtimeconfig.json
+
+
+#api key
+.env

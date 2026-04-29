@@ -5,7 +5,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
 
 import 'package:organizate/screens/estudios_screen.dart';
-import 'package:organizate/screens/foco_screen.dart';
 import 'package:organizate/screens/hogar_screen.dart';
 import 'package:organizate/screens/login_screen.dart';
 import 'package:organizate/screens/meds_screen.dart';
@@ -17,6 +16,7 @@ import 'package:organizate/utils/date_time_helper.dart';
 import 'package:organizate/utils/emergency_contact_helper.dart';
 import 'package:organizate/utils/reminder_helper.dart';
 import 'package:organizate/utils/reminder_options.dart';
+import 'package:organizate/screens/super_experto_sheet.dart';
 import 'package:organizate/widgets/custom_nav_bar.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -60,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: const CustomNavBar(initialIndex: 0),
       appBar: _buildAppBar(),
       floatingActionButton: FloatingActionButton.large(
-        onPressed: () => _showMagicBottomSheet(context),
+        onPressed: () => SuperExpertoSheet.show(context),
         backgroundColor: const Color(0xFF7B93A3),
         foregroundColor: Colors.white,
         tooltip: 'Súper Experto',
@@ -526,139 +526,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showMagicBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (sheetCtx) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2)),
-            ),
-            const SizedBox(height: 20),
-            Row(children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE8EEF2),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(Icons.auto_fix_high,
-                    color: Color(0xFF7B93A3), size: 24),
-              ),
-              const SizedBox(width: 12),
-              const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Súper Experto',
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold)),
-                    Text('¿Qué hacemos ahora?',
-                        style:
-                            TextStyle(fontSize: 13, color: Colors.grey)),
-                  ]),
-            ]),
-            const SizedBox(height: 24),
-            _buildSheetAction(
-              icon: Icons.add_task,
-              iconColor: const Color(0xFF7EA3BC),
-              bgColor: const Color(0xFFEDF2F7),
-              title: 'Nueva tarea',
-              subtitle: 'Añade algo a tu lista',
-              onTap: () {
-                Navigator.of(sheetCtx).pop();
-                _showAddTaskDialog(context);
-              },
-            ),
-            const SizedBox(height: 12),
-            _buildSheetAction(
-              icon: Icons.self_improvement,
-              iconColor: const Color(0xFF9486AD),
-              bgColor: const Color(0xFFF1EEF6),
-              title: 'Iniciar sesión de Foco',
-              subtitle: 'Activa el temporizador Pomodoro',
-              onTap: () {
-                Navigator.of(sheetCtx).pop();
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const FocoScreen()),
-                );
-              },
-            ),
-            const SizedBox(height: 12),
-            _buildSheetAction(
-              icon: Icons.task_alt,
-              iconColor: const Color(0xFF7BA8A0),
-              bgColor: const Color(0xFFEBF3F2),
-              title: 'Ver todas las tareas',
-              subtitle: 'Gestiona tu lista completa',
-              onTap: () {
-                Navigator.of(sheetCtx).pop();
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const TareasScreen()),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSheetAction({
-    required IconData icon,
-    required Color iconColor,
-    required Color bgColor,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: iconColor, size: 22),
-          ),
-          const SizedBox(width: 14),
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title,
-                style: const TextStyle(
-                    fontSize: 15, fontWeight: FontWeight.w600)),
-            Text(subtitle,
-                style: TextStyle(
-                    fontSize: 12, color: Colors.grey.shade600)),
-          ]),
-          const Spacer(),
-          Icon(Icons.chevron_right, color: Colors.grey.shade400),
-        ]),
-      ),
-    );
-  }
 
   Future<void> _handleLogout() async {
     if (!mounted) return;
@@ -705,177 +572,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _showAddTaskDialog(BuildContext screenContext) async {
-    final TextEditingController taskController = TextEditingController();
-    final List<String> categories = [
-      'General',
-      'Estudios',
-      'Hogar',
-      'Meds',
-      'Foco'
-    ];
-    String? selectedCategory = 'General';
-    DateTime? selectedDueDate;
-    bool isSaving = false;
-    final int? defaultReminder =
-        await fetchDefaultReminderMinutes(_userDocRef);
-    int? selectedReminderMinutes = defaultReminder;
-    if (!screenContext.mounted) return;
-
-    showDialog(
-      context: screenContext,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (statefulContext, setDialogState) {
-            return AlertDialog(
-              title: const Text('Nueva tarea'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: taskController,
-                      decoration:
-                          const InputDecoration(hintText: 'Descripción'),
-                      autofocus: true,
-                    ),
-                    const SizedBox(height: 20),
-                    DropdownButtonFormField<String>(
-                      initialValue: selectedCategory,
-                      decoration:
-                          const InputDecoration(labelText: 'Categoría'),
-                      items: categories
-                          .map((cat) => DropdownMenuItem(
-                                value: cat,
-                                child: Text(cat),
-                              ))
-                          .toList(),
-                      onChanged: (value) =>
-                          setDialogState(() => selectedCategory = value),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            selectedDueDate == null
-                                ? 'Sin fecha'
-                                : 'Entrega: ${_dateTimeFormatter.format(selectedDueDate!)}',
-                            style:
-                                TextStyle(color: Colors.grey.shade600),
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.calendar_today),
-                          onPressed: () async {
-                            final picked = await pickDateTime(
-                              context: statefulContext,
-                              initialDate: selectedDueDate,
-                            );
-                            if (picked != null) {
-                              setDialogState(
-                                  () => selectedDueDate = picked);
-                            }
-                          },
-                        ),
-                        if (selectedDueDate != null)
-                          IconButton(
-                            icon: const Icon(Icons.clear, size: 18),
-                            onPressed: () => setDialogState(
-                                () => selectedDueDate = null),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<int?>(
-                      key: ValueKey(selectedReminderMinutes),
-                      decoration: const InputDecoration(
-                        labelText: 'Recordatorio',
-                        border: OutlineInputBorder(),
-                      ),
-                      initialValue: selectedReminderMinutes,
-                      items: kReminderOptions
-                          .map(
-                            (option) => DropdownMenuItem<int?>(
-                              value: option['minutes'] as int?,
-                              child: Text(option['label'] as String),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (value) => setDialogState(
-                          () => selectedReminderMinutes = value),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Cancelar'),
-                ),
-                ElevatedButton.icon(
-                  onPressed: isSaving
-                      ? null
-                      : () async {
-                          if (taskController.text.trim().isEmpty ||
-                              selectedCategory == null) { return; }
-                          setDialogState(() => isSaving = true);
-                          try {
-                            final iconName = _getIconNameFromCategory(
-                                selectedCategory!);
-                            final colorName = _getColorNameFromCategory(
-                                selectedCategory!);
-                            final data = <String, dynamic>{
-                              'text': taskController.text.trim(),
-                              'category': selectedCategory,
-                              'iconName': iconName,
-                              'colorName': colorName,
-                              'done': false,
-                              'createdAt': Timestamp.now(),
-                              'reminderMinutes': selectedReminderMinutes,
-                              if (selectedDueDate != null)
-                                'dueDate':
-                                    Timestamp.fromDate(selectedDueDate!),
-                            };
-                            final docRef =
-                                await _tasksCollection.add(data);
-                            await ReminderDispatcher.scheduleTaskReminder(
-                              userDocRef: _userDocRef,
-                              taskId: docRef.id,
-                              taskTitle: taskController.text,
-                              dueDate: selectedDueDate,
-                              reminderMinutes: selectedReminderMinutes,
-                            );
-                            if (dialogContext.mounted) {
-                              Navigator.of(dialogContext).pop();
-                              if (!screenContext.mounted) return;
-                              ScaffoldMessenger.of(screenContext)
-                                  .showSnackBar(const SnackBar(
-                                content: Text('Tarea añadida'),
-                              ));
-                            }
-                          } catch (e, stack) {
-                            debugPrint('Error al añadir tarea: $e');
-                            debugPrint('$stack');
-                            if (!screenContext.mounted) return;
-                            ScaffoldMessenger.of(screenContext)
-                                .showSnackBar(const SnackBar(
-                              content: Text('Error al crear la tarea'),
-                            ));
-                          } finally {
-                            setDialogState(() => isSaving = false);
-                          }
-                        },
-                  icon: const Icon(Icons.add),
-                  label: const Text('Añadir'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
 
   void _showTaskOptionsDialog(
     BuildContext context,
