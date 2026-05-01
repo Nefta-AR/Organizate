@@ -16,7 +16,7 @@ dependencies:
   # Íconos
   cupertino_icons: ^1.0.8
   material_design_icons_flutter: ^7.0.7296
-  flutter_svg: ^2.0.9
+  flutter_svg: ^2.2.4
 
   # Fechas y localización en español
   intl: ^0.20.2
@@ -55,6 +55,7 @@ dependencies:
   # IA — Gemini para el Súper Experto
   flutter_dotenv: ^6.0.1
   http: ^1.2.0
+  flutter_tts: ^4.2.5
 
 dev_dependencies:
   flutter_test:
@@ -74,7 +75,8 @@ flutter:
     - assets/avatars/
     - assets/icons/
     - assets/images/Simple.png
-    - assets/sounds/           # <--- NUEVO (carpeta donde estará bell.mp3)}
+    - assets/sounds/
+    - assets/images/pictogramas/
     - .env
 
 

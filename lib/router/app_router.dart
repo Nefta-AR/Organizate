@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 // Importamos las pantallas desde sus rutas correctas en 'lib/screens/'
 import '../screens/onboarding_screen.dart';
 import '../screens/home_screen.dart';
+import '../screens/pantalla_paciente_tea.dart';
 
 // --- COMENTADOS ---
 // Estas pantallas aún no existen, las activaremos cuando las creemos.
@@ -16,6 +17,7 @@ class AppRouter {
   // Nombres de rutas públicos y reutilizables
   static const String onboarding = '/onboarding';
   static const String home = '/home';
+  static const String pacienteTea = '/paciente-tea';
   
   // --- COMENTADOS ---
   // static const String tasks = '/tasks';
@@ -28,6 +30,8 @@ class AppRouter {
         return _fade(const OnboardingScreen(), settings);
       case home:
         return _fade(const HomeScreen(), settings);
+      case pacienteTea:
+        return _fade(const PantallaPacienteTEA(), settings);
       
       // --- RUTAS COMENTADAS ---
       // case tasks:
