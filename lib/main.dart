@@ -7,10 +7,10 @@ import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'firebase_options.dart';
-import 'screens/auth_gate.dart';
-import 'services/notification_service.dart';
-import 'services/pomodoro_service.dart';
-import 'services/push_notification_service.dart';
+import 'core/navigation/auth_gate.dart';
+import 'core/services/notification_service.dart';
+import 'features/tda_focus/services/pomodoro_service.dart';
+import 'core/services/push_notification_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
