@@ -4,11 +4,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import 'package:organizate/features/tutor_dashboard/screens/home_screen.dart';
-import 'package:organizate/features/auth/screens/login_screen.dart';
-import 'package:organizate/features/onboarding/screens/onboarding_screen.dart';
-import 'package:organizate/features/auth/screens/role_selection_screen.dart';
-import 'package:organizate/core/services/push_notification_service.dart';
+import 'package:simple/features/tutor_dashboard/screens/home_screen.dart';
+import 'package:simple/features/auth/screens/login_screen.dart';
+import 'package:simple/features/onboarding/screens/onboarding_screen.dart';
+import 'package:simple/features/auth/screens/role_selection_screen.dart';
+import 'package:simple/core/services/push_notification_service.dart';
 
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});

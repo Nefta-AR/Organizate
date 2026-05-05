@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import 'package:organizate/core/services/reminder_dispatcher.dart';
-import 'package:organizate/features/tda_focus/services/streak_service.dart';
-import 'package:organizate/core/utils/date_time_helper.dart';
-import 'package:organizate/core/utils/reminder_helper.dart';
-import 'package:organizate/core/utils/reminder_options.dart';
+import 'package:simple/core/services/reminder_dispatcher.dart';
+import 'package:simple/features/tda_focus/services/streak_service.dart';
+import 'package:simple/core/utils/date_time_helper.dart';
+import 'package:simple/core/utils/reminder_helper.dart';
+import 'package:simple/core/utils/reminder_options.dart';
 
 class HogarScreen extends StatefulWidget {
   const HogarScreen({super.key});

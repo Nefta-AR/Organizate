@@ -5,12 +5,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import 'package:organizate/core/services/reminder_dispatcher.dart';
-import 'package:organizate/features/tda_focus/services/streak_service.dart';
-import 'package:organizate/core/utils/date_time_helper.dart';
-import 'package:organizate/core/utils/reminder_helper.dart';
-import 'package:organizate/core/utils/reminder_options.dart';
-import 'package:organizate/core/widgets/custom_nav_bar.dart';
+import 'package:simple/core/services/reminder_dispatcher.dart';
+import 'package:simple/features/tda_focus/services/streak_service.dart';
+import 'package:simple/core/utils/date_time_helper.dart';
+import 'package:simple/core/utils/reminder_helper.dart';
+import 'package:simple/core/utils/reminder_options.dart';
+import 'package:simple/core/widgets/custom_nav_bar.dart';
 
 class TareasScreen extends StatefulWidget {
   const TareasScreen({super.key});

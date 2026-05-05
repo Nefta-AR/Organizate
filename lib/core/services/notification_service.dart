@@ -12,8 +12,7 @@ import '../utils/reminder_options.dart';
 class NotificationService {
   NotificationService._();
 
-  static final FlutterLocalNotificationsPlugin _plugin =
-      FlutterLocalNotificationsPlugin();
+  static final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
   static bool _initialized = false;
   static bool _tzInitialized = false;
   static const int _pomodoroNotificationId = 7777;
@@ -21,7 +20,7 @@ class NotificationService {
   static const AndroidNotificationChannel _channel = AndroidNotificationChannel(
     'tareas_channel',
     'Recordatorios Simple',
-    description: 'Notificaciones de tareas y Pomodoro',
+    description: 'Notificaciones de tareas y Pomodoro de la app Simple',
     importance: Importance.max,
     playSound: true,
     enableVibration: true,
@@ -48,8 +47,7 @@ class NotificationService {
     } catch (_) {}
 
     try {
-      final androidImpl = _plugin.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
+      final androidImpl = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
       await androidImpl?.requestExactAlarmsPermission();
     } catch (_) {}
   }
@@ -63,16 +61,14 @@ class NotificationService {
 
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
     const darwinInit = DarwinInitializationSettings();
-    const settings =
-        InitializationSettings(android: androidInit, iOS: darwinInit);
+    const settings = InitializationSettings(android: androidInit, iOS: darwinInit);
 
     await _plugin.initialize(
       settings,
       onDidReceiveNotificationResponse: _onNotificationResponse,
     );
 
-    final androidImpl = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final androidImpl = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
 
     await androidImpl?.createNotificationChannel(_channel);
     await androidImpl?.requestNotificationsPermission();
@@ -133,13 +129,10 @@ class NotificationService {
     if (!await _arePermissionsGranted()) return;
 
     final int notificationId = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    await _plugin.show(notificationId, title, body, _defaultDetails(),
-        payload: payload);
+    await _plugin.show(notificationId, title, body, _defaultDetails(), payload: payload);
   }
 
-  static Future<NotificationTestResult> showTestNotification({
-    bool playPreviewSound = false,
-  }) async {
+  static Future<NotificationTestResult> showTestNotification({bool playPreviewSound = false}) async {
     if (!await _arePermissionsGranted()) {
       return const NotificationTestResult(
         notificationSent: false,
@@ -164,8 +157,7 @@ class NotificationService {
       errorDescription = error.toString();
     }
 
-    final bool previewSoundPlayed =
-        playPreviewSound ? await _playTestSoundPreview() : false;
+    final bool previewSoundPlayed = playPreviewSound ? await _playTestSoundPreview() : false;
 
     return NotificationTestResult(
       notificationSent: notificationSent,
@@ -192,8 +184,7 @@ class NotificationService {
     if (kIsWeb) return;
 
     final hasExactPermission = await _arePermissionsGranted(exact: true);
-    final hasBasicPermission =
-        hasExactPermission || await _arePermissionsGranted();
+    final hasBasicPermission = hasExactPermission || await _arePermissionsGranted();
     if (!hasBasicPermission) return;
 
     final tzDateTime = tz.TZDateTime.from(endTime, tz.local);
@@ -207,8 +198,7 @@ class NotificationService {
       androidScheduleMode: hasExactPermission
           ? AndroidScheduleMode.exactAllowWhileIdle
           : AndroidScheduleMode.inexactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
+      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
       payload: 'pomodoro',
     );
   }
@@ -229,16 +219,12 @@ class NotificationService {
     if (dueDate == null || reminderMinutes == null) return;
 
     final hasExactPermission = await _arePermissionsGranted(exact: true);
-    final hasBasicPermission =
-        hasExactPermission || await _arePermissionsGranted();
+    final hasBasicPermission = hasExactPermission || await _arePermissionsGranted();
     if (!hasBasicPermission) return;
 
-    final int safeMinutes = reminderMinutes < kMinimumReminderMinutes
-        ? kMinimumReminderMinutes
-        : reminderMinutes;
+    final int safeMinutes = reminderMinutes < kMinimumReminderMinutes ? kMinimumReminderMinutes : reminderMinutes;
 
-    DateTime scheduledDateTime =
-        dueDate.subtract(Duration(minutes: safeMinutes));
+    DateTime scheduledDateTime = dueDate.subtract(Duration(minutes: safeMinutes));
     final DateTime now = DateTime.now();
     if (scheduledDateTime.isBefore(now.add(const Duration(seconds: 5)))) {
       scheduledDateTime = now.add(const Duration(seconds: 5));
@@ -256,8 +242,7 @@ class NotificationService {
         androidScheduleMode: hasExactPermission
             ? AndroidScheduleMode.exactAllowWhileIdle
             : AndroidScheduleMode.inexactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
+        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
         payload: taskId,
       );
     } catch (error) {

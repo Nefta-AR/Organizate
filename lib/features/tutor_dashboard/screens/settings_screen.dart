@@ -7,10 +7,10 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:organizate/features/auth/screens/login_screen.dart';
-import 'package:organizate/core/services/notification_service.dart';
-import 'package:organizate/core/utils/reminder_options.dart';
-import 'package:organizate/core/widgets/custom_nav_bar.dart';
+import 'package:simple/features/auth/screens/login_screen.dart';
+import 'package:simple/core/services/notification_service.dart';
+import 'package:simple/core/utils/reminder_options.dart';
+import 'package:simple/core/widgets/custom_nav_bar.dart';
 
 class _Palette {
   _Palette._();

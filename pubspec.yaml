@@ -1,4 +1,4 @@
-name: organizate
+name: simple
 description: "A new Flutter project."
 publish_to: 'none'
 
@@ -33,6 +33,7 @@ dependencies:
 
   # UI / Gráficos
   fl_chart: ^1.1.1
+  google_fonts: ^6.2.1
 
   # Notificaciones locales
   flutter_local_notifications: ^17.1.2

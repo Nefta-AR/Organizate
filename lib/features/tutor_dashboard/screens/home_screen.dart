@@ -6,21 +6,21 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
 
-import 'package:organizate/features/onboarding/screens/estudios_screen.dart';
-import 'package:organizate/features/onboarding/screens/hogar_screen.dart';
-import 'package:organizate/features/auth/screens/login_screen.dart';
-import 'package:organizate/features/onboarding/screens/meds_screen.dart';
-import 'package:organizate/features/tutor_dashboard/screens/settings_screen.dart';
-import 'package:organizate/features/tda_focus/screens/tareas_screen.dart';
-import 'package:organizate/core/services/reminder_dispatcher.dart';
-import 'package:organizate/features/tda_focus/services/streak_service.dart';
-import 'package:organizate/core/utils/date_time_helper.dart';
-import 'package:organizate/core/utils/emergency_contact_helper.dart';
-import 'package:organizate/core/utils/reminder_helper.dart';
-import 'package:organizate/core/utils/reminder_options.dart';
-import 'package:organizate/features/onboarding/screens/super_experto_sheet.dart';
-import 'package:organizate/features/tea_board/screens/pantalla_paciente_tea.dart';
-import 'package:organizate/core/widgets/custom_nav_bar.dart';
+import 'package:simple/features/onboarding/screens/estudios_screen.dart';
+import 'package:simple/features/onboarding/screens/hogar_screen.dart';
+import 'package:simple/features/auth/screens/login_screen.dart';
+import 'package:simple/features/onboarding/screens/meds_screen.dart';
+import 'package:simple/features/tutor_dashboard/screens/settings_screen.dart';
+import 'package:simple/features/tda_focus/screens/tareas_screen.dart';
+import 'package:simple/core/services/reminder_dispatcher.dart';
+import 'package:simple/features/tda_focus/services/streak_service.dart';
+import 'package:simple/core/utils/date_time_helper.dart';
+import 'package:simple/core/utils/emergency_contact_helper.dart';
+import 'package:simple/core/utils/reminder_helper.dart';
+import 'package:simple/core/utils/reminder_options.dart';
+import 'package:simple/features/onboarding/screens/super_experto_sheet.dart';
+import 'package:simple/features/tea_board/screens/pantalla_paciente_tea.dart';
+import 'package:simple/core/widgets/custom_nav_bar.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

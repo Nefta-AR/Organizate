@@ -1,9 +1,9 @@
-// lib/services/pomodoro_service.dart
+// lib/features/tda_focus/services/pomodoro_service.dart
 
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:organizate/core/services/notification_service.dart';
+import 'package:simple/core/services/notification_service.dart';
 
 enum PomodoroStatus { idle, running, paused, finished }
 

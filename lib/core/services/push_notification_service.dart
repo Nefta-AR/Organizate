@@ -76,21 +76,14 @@ class PushNotificationService {
     int? reminderMinutes,
   }) async {
     if (dueDate == null || reminderMinutes == null) {
-      throw ArgumentError(
-        'dueDate y reminderMinutes son requeridos para encolar un recordatorio remoto',
-      );
+      throw ArgumentError('dueDate y reminderMinutes son requeridos para encolar un recordatorio remoto');
     }
 
-    final normalizedMinutes = reminderMinutes < kMinimumReminderMinutes
-        ? kMinimumReminderMinutes
-        : reminderMinutes;
+    final normalizedMinutes = reminderMinutes < kMinimumReminderMinutes ? kMinimumReminderMinutes : reminderMinutes;
 
     final now = DateTime.now();
-    final scheduledAt =
-        dueDate.toLocal().subtract(Duration(minutes: normalizedMinutes));
-    final runAt = scheduledAt.isBefore(now)
-        ? now.add(const Duration(seconds: 5))
-        : scheduledAt;
+    final scheduledAt = dueDate.toLocal().subtract(Duration(minutes: normalizedMinutes));
+    final runAt = scheduledAt.isBefore(now) ? now.add(const Duration(seconds: 5)) : scheduledAt;
 
     await userDocRef.collection('notificationQueue').doc(taskId).set(
       {

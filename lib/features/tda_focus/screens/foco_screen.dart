@@ -11,16 +11,16 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:vibration/vibration.dart';
 
-import 'package:organizate/features/tutor_dashboard/screens/settings_screen.dart';
-import 'package:organizate/core/services/notification_service.dart';
-import 'package:organizate/features/tda_focus/services/pomodoro_service.dart';
-import 'package:organizate/core/services/reminder_dispatcher.dart';
-import 'package:organizate/features/tda_focus/services/streak_service.dart';
-import 'package:organizate/core/utils/date_time_helper.dart';
-import 'package:organizate/core/utils/emergency_contact_helper.dart';
-import 'package:organizate/core/utils/reminder_helper.dart';
-import 'package:organizate/core/utils/reminder_options.dart';
-import 'package:organizate/core/widgets/custom_nav_bar.dart';
+import 'package:simple/features/tutor_dashboard/screens/settings_screen.dart';
+import 'package:simple/core/services/notification_service.dart';
+import 'package:simple/features/tda_focus/services/pomodoro_service.dart';
+import 'package:simple/core/services/reminder_dispatcher.dart';
+import 'package:simple/features/tda_focus/services/streak_service.dart';
+import 'package:simple/core/utils/date_time_helper.dart';
+import 'package:simple/core/utils/emergency_contact_helper.dart';
+import 'package:simple/core/utils/reminder_helper.dart';
+import 'package:simple/core/utils/reminder_options.dart';
+import 'package:simple/core/widgets/custom_nav_bar.dart';
 
 class FocoScreen extends StatefulWidget {
   const FocoScreen({super.key});

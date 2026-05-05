@@ -1,4 +1,4 @@
-# organizate
+# simple
 
 A new Flutter project.
 
