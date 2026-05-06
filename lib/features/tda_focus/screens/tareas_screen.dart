@@ -248,16 +248,26 @@ class _TareasScreenState extends State<TareasScreen> {
             final isDone = data['done'] as bool? ?? false;
             final reminderMinutes = extractReminderMinutes(data);
 
-            return GestureDetector(
-              onLongPress: () => _showTaskOptionsDialog(
-                  context, taskId, text, category, dueDate, reminderMinutes),
-              child: _buildTaskItem(
-                taskId: taskId,
-                text: text,
-                category: category,
-                dueDate: dueDate,
-                isDone: isDone,
-                onToggle: () => _toggleTask(taskId, isDone),
+            return Dismissible(
+              key: ValueKey(taskId),
+              direction: isDone
+                  ? DismissDirection.horizontal
+                  : DismissDirection.none,
+              background: _buildDismissBackground(Alignment.centerLeft),
+              secondaryBackground:
+                  _buildDismissBackground(Alignment.centerRight),
+              onDismissed: (_) => _deleteTask(taskId, text),
+              child: GestureDetector(
+                onLongPress: () => _showTaskOptionsDialog(
+                    context, taskId, text, category, dueDate, reminderMinutes),
+                child: _buildTaskItem(
+                  taskId: taskId,
+                  text: text,
+                  category: category,
+                  dueDate: dueDate,
+                  isDone: isDone,
+                  onToggle: () => _toggleTask(taskId, isDone),
+                ),
               ),
             );
           },
@@ -357,6 +367,34 @@ class _TareasScreenState extends State<TareasScreen> {
       }
     } catch (e) {
       debugPrint('Error al actualizar tarea: $e');
+    }
+  }
+
+  Widget _buildDismissBackground(AlignmentGeometry alignment) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.red.shade400,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      alignment: alignment,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: const Icon(Icons.delete_rounded, color: Colors.white, size: 26),
+    );
+  }
+
+  Future<void> _deleteTask(String taskId, String text) async {
+    try {
+      await _tasksCollection.doc(taskId).delete();
+      await ReminderDispatcher.cancelTaskReminder(
+          userDocRef: _userDocRef, taskId: taskId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('"$text" eliminada')),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error al eliminar tarea: $e');
     }
   }
 
