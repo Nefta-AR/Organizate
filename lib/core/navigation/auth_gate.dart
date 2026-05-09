@@ -8,6 +8,8 @@ import 'package:simple/features/tutor_dashboard/screens/home_screen.dart';
 import 'package:simple/features/auth/screens/login_screen.dart';
 import 'package:simple/features/onboarding/screens/onboarding_screen.dart';
 import 'package:simple/features/auth/screens/role_selection_screen.dart';
+import 'package:simple/features/tda_focus/screens/foco_screen.dart';
+import 'package:simple/features/tea_board/screens/pantalla_paciente_tea.dart';
 import 'package:simple/core/services/push_notification_service.dart';
 
 class AuthGate extends StatelessWidget {
@@ -77,8 +79,28 @@ class _UserOnboardingGateState extends State<_UserOnboardingGate> {
         final hasCompleted = data?['hasCompletedOnboarding'] == true;
 
         if (role == null || role.isEmpty) return const RoleSelectionScreen();
-        return hasCompleted ? const HomeScreen() : const OnboardingScreen();
+        if (!hasCompleted) return const OnboardingScreen();
+
+        return RoleDispatcher(role: role);
       },
     );
+  }
+}
+
+class RoleDispatcher extends StatelessWidget {
+  final String role;
+
+  const RoleDispatcher({super.key, required this.role});
+
+  @override
+  Widget build(BuildContext context) {
+    switch (role) {
+      case 'paciente':
+        return const PantallaPacienteTEA();
+      case 'tutor':
+        return const HomeScreen();
+      default:
+        return const HomeScreen();
+    }
   }
 }

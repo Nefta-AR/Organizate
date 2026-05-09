@@ -11,6 +11,7 @@ class _Palette {
   static const background = Color(0xFFF5F7FA);
   static const surface = Colors.white;
   static const accent = Color(0xFF7C5CBF);
+  static const accentLight = Color(0xFFEDE7F6);
   static const textDark = Color(0xFF2D3748);
   static const textMuted = Color(0xFF718096);
   static const success = Color(0xFF48BB78);
@@ -405,36 +406,116 @@ class _SuperExpertoSheetState extends State<SuperExpertoSheet> {
         onPressed: habilitado ? _generarPlan : null,
         style: ElevatedButton.styleFrom(
           backgroundColor: _Palette.accent,
-          disabledBackgroundColor: _Palette.accent.withValues(alpha: 0.35),
+          disabledBackgroundColor: _cargando
+              ? _Palette.accent.withValues(alpha: 0.35)
+              : _Palette.accent.withValues(alpha: 0.35),
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           elevation: 0,
         ),
-        icon: const Icon(Icons.auto_fix_high_rounded, size: 20),
-        label: const Text(
-          'Generar Plan',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        icon: _cargando
+            ? SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2.5,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white.withValues(alpha: 0.9)),
+                ),
+              )
+            : const Icon(Icons.auto_fix_high_rounded, size: 20),
+        label: Text(
+          _cargando ? 'Generando...' : 'Generar Plan',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
     );
   }
 
   Widget _buildCargando() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 36),
-      child: Center(
-        child: Column(
-          children: [
-            CircularProgressIndicator(color: _Palette.accent, strokeWidth: 3),
-            SizedBox(height: 16),
-            Text(
-              'Consultando al experto...',
-              style: TextStyle(color: _Palette.textMuted, fontSize: 14),
-            ),
-          ],
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: _Palette.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: _Palette.accent.withValues(alpha: 0.15),
+          width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: _Palette.accent.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          SizedBox(
+            height: 64,
+            width: 64,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: 1),
+                  duration: const Duration(seconds: 2),
+                  builder: (context, value, _) => Transform.rotate(
+                    angle: value * 2 * 3.14159,
+                    child: CustomPaint(
+                      painter: _DashedRingPainter(
+                        color: _Palette.accent.withValues(alpha: 0.2),
+                        strokeWidth: 2,
+                      ),
+                      size: const Size(64, 64),
+                    ),
+                  ),
+                ),
+                Container(
+                  height: 48,
+                  width: 48,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _Palette.accentLight,
+                    boxShadow: [
+                      BoxShadow(
+                        color: _Palette.accent.withValues(alpha: 0.08),
+                        blurRadius: 12,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.auto_fix_high_rounded,
+                    color: _Palette.accent,
+                    size: 24,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Consultando al experto...',
+            style: TextStyle(
+              color: _Palette.textMuted,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Dividiendo tu tarea en pasos simples',
+            style: TextStyle(
+              color: _Palette.textMuted,
+              fontSize: 12,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -617,4 +698,39 @@ class _SuperExpertoSheetState extends State<SuperExpertoSheet> {
       ),
     );
   }
+}
+
+class _DashedRingPainter extends CustomPainter {
+  final Color color;
+  final double strokeWidth;
+
+  _DashedRingPainter({required this.color, this.strokeWidth = 2});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - strokeWidth) / 2;
+
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+
+    const dashAngle = 0.12;
+    const gapAngle = 0.08;
+    const step = dashAngle + gapAngle;
+
+    for (var angle = 0.0; angle < 2 * 3.14159; angle += step) {
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        angle,
+        dashAngle,
+        false,
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashedRingPainter oldDelegate) => false;
 }

@@ -30,6 +30,7 @@ dependencies:
   cloud_firestore: ^4.17.3
   firebase_storage: ^11.7.2     # Para subir fotos en el futuro
   firebase_messaging: ^14.9.1
+  cloud_functions: ^4.7.4       # Cloud Functions para IA segura
 
   # UI / Gráficos
   fl_chart: ^1.1.1
@@ -41,21 +42,25 @@ dependencies:
     path: packages/flutter_native_timezone
   timezone: ^0.9.3
   google_sign_in: ^6.2.1
+  googleapis: ^13.2.0
+  http: ^1.5.0
+  path: ^1.9.0
 
   # Manejo de estado (útil para avatar, usuario, settings)
   provider: ^6.1.2
 
   # 🔊 AUDIO PARA POMODORO Y EJERCICIOS DE RELAJACIÓN
   audioplayers: ^6.0.0
+  path_provider: ^2.1.2
+  crypto: ^3.0.3
   vibration: ^3.1.4
   url_launcher: ^6.3.0
   flutter_phone_direct_caller: ^2.1.1
   permission_handler: ^11.3.1
   image_picker: ^1.1.2
+  image_cropper: ^8.1.0
 
-  # IA — Gemini para el Súper Experto
-  flutter_dotenv: ^6.0.1
-  http: ^1.2.0
+  # IA — Gemini vía Cloud Functions (API Key protegida)
   flutter_tts: ^4.2.5
 
 dev_dependencies:
@@ -67,7 +72,12 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: assets/images/Logo.png
+  image_path: "assets/images/Simple.png"
+  adaptive_icon_background: "#F5F5DC"
+  adaptive_icon_foreground: "assets/images/Simple.png"
+  adaptive_icon_monochrome: "assets/images/Simple.png"
+  min_sdk_android: 21
+  remove_alpha_ios: true
 
 flutter:
   uses-material-design: true
@@ -79,5 +89,4 @@ flutter:
     - assets/sounds/
     - assets/images/pictogramas/
     - .env
-
 

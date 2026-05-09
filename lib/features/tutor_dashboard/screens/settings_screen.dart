@@ -7,8 +7,10 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:simple/features/auth/screens/login_screen.dart';
 import 'package:simple/core/services/notification_service.dart';
+import 'package:simple/core/services/google_drive_service.dart';
 import 'package:simple/core/utils/reminder_options.dart';
 import 'package:simple/core/widgets/custom_nav_bar.dart';
 
@@ -36,6 +38,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isEmergencyDirty = false;
   bool _isSavingEmergency = false;
   bool _isUploadingPhoto = false;
+  bool _isBackingUp = false;
+  double? _backupProgress;
+  DateTime? _lastSync;
 
   static const List<Map<String, String>> _pomodoroSoundOptions = [
     {'key': 'bell', 'label': 'Campanilla clásica'},
@@ -58,6 +63,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     final uid = FirebaseAuth.instance.currentUser!.uid;
     _userDoc = FirebaseFirestore.instance.collection('users').doc(uid);
+    _loadLastSync();
+  }
+
+  Future<void> _loadLastSync() async {
+    final lastSync = await GoogleDriveService.instance.getLastSyncTime();
+    if (mounted) {
+      setState(() => _lastSync = lastSync);
+    }
   }
 
   @override
@@ -388,6 +401,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 16),
                 _buildStatsCard(
                     focusSessions, totalFocusMinutes, points, streak),
+                const SizedBox(height: 16),
+                _buildBackupCard(),
               ],
             ),
           );
@@ -768,5 +783,263 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildBackupCard() {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.cloud_outlined, color: _Palette.primary, size: 22),
+                const SizedBox(width: 10),
+                const Text(
+                  'Respaldo y Seguridad',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Tus pictogramas y configuraciones se guardan en tu Google Drive personal. Sin costes de servidor.',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey.shade700,
+                height: 1.4,
+              ),
+            ),
+            if (_lastSync != null) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(Icons.access_time,
+                      size: 14, color: _Palette.textMuted),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Última sincronización: ${_formatSyncDate(_lastSync!)}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: _Palette.textMuted,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildBackupButton(
+                    label: 'Sincronizar con Google Drive',
+                    icon: Icons.cloud_upload_outlined,
+                    onPressed: _isBackingUp ? null : _handleBackup,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildBackupButton(
+                    label: 'Restaurar desde Drive',
+                    icon: Icons.cloud_download_outlined,
+                    onPressed: _isBackingUp ? null : _handleRestore,
+                    isSecondary: true,
+                  ),
+                ),
+              ],
+            ),
+            if (_isBackingUp) ...[
+              const SizedBox(height: 16),
+              Center(
+                child: SizedBox(
+                  width: 48,
+                  height: 48,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SizedBox(
+                        width: 48,
+                        height: 48,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 3,
+                          value: _backupProgress,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            _Palette.primary,
+                          ),
+                        ),
+                      ),
+                      Icon(
+                        Icons.sync,
+                        size: 20,
+                        color: _Palette.primary,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBackupButton({
+    required String label,
+    required IconData icon,
+    required VoidCallback? onPressed,
+    bool isSecondary = false,
+  }) {
+    return ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 18),
+      label: Text(
+        label,
+        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+      ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: isSecondary ? _Palette.surface : _Palette.primary,
+        foregroundColor: isSecondary ? _Palette.primary : Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: isSecondary
+              ? BorderSide(color: _Palette.primary.withValues(alpha: 0.3))
+              : BorderSide.none,
+        ),
+        elevation: isSecondary ? 0 : 2,
+      ),
+    );
+  }
+
+  String _formatSyncDate(DateTime date) {
+    final now = DateTime.now();
+    final diff = now.difference(date);
+
+    if (diff.inMinutes < 1) return 'Justo ahora';
+    if (diff.inMinutes < 60) return 'Hace ${diff.inMinutes} min';
+    if (diff.inHours < 24) return 'Hace ${diff.inHours}h';
+
+    return DateFormat('dd/MM/yyyy HH:mm', 'es_ES').format(date);
+  }
+
+  Future<void> _handleBackup() async {
+    if (!mounted) return;
+
+    setState(() {
+      _isBackingUp = true;
+      _backupProgress = null;
+    });
+
+    final messenger = ScaffoldMessenger.of(context);
+
+    try {
+      final result = await GoogleDriveService.instance.backupToDrive();
+
+      if (!mounted) return;
+
+      setState(() {
+        _isBackingUp = false;
+        if (result.success) {
+          _lastSync = result.timestamp;
+        }
+      });
+
+      messenger.showSnackBar(SnackBar(
+        content: Text(result.message),
+        backgroundColor: result.success ? Colors.green.shade700 : Colors.red.shade700,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isBackingUp = false);
+      messenger.showSnackBar(SnackBar(
+        content: Text('Error: $e'),
+        backgroundColor: Colors.red.shade700,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ));
+    }
+  }
+
+  Future<void> _handleRestore() async {
+    if (!mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+
+    try {
+      final isCloudNewer = await GoogleDriveService.instance.isCloudNewerThanLocal();
+
+      if (!mounted) return;
+
+      if (isCloudNewer) {
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Text('Actualizar desde la Nube'),
+            content: const Text(
+              'Se encontró una versión más reciente en Google Drive. '
+              '¿Deseas restaurar tu configuración y pictogramas?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _Palette.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('Restaurar'),
+              ),
+            ],
+          ),
+        );
+
+        if (confirm != true || !mounted) return;
+      }
+
+      setState(() {
+        _isBackingUp = true;
+        _backupProgress = null;
+      });
+
+      final result = await GoogleDriveService.instance.restoreFromDrive(force: true);
+
+      if (!mounted) return;
+
+      setState(() {
+        _isBackingUp = false;
+        if (result.success) {
+          _lastSync = DateTime.now();
+        }
+      });
+
+      messenger.showSnackBar(SnackBar(
+        content: Text(result.message),
+        backgroundColor: result.success ? Colors.green.shade700 : Colors.red.shade700,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isBackingUp = false);
+      messenger.showSnackBar(SnackBar(
+        content: Text('Error: $e'),
+        backgroundColor: Colors.red.shade700,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ));
+    }
   }
 }

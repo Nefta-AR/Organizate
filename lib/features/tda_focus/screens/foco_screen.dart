@@ -1,26 +1,22 @@
-// lib/screens/foco_screen.dart
-
 import 'dart:async';
+import 'dart:math';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:vibration/vibration.dart';
 
-import 'package:simple/features/tutor_dashboard/screens/settings_screen.dart';
-import 'package:simple/core/services/notification_service.dart';
-import 'package:simple/features/tda_focus/services/pomodoro_service.dart';
-import 'package:simple/core/services/reminder_dispatcher.dart';
-import 'package:simple/features/tda_focus/services/streak_service.dart';
-import 'package:simple/core/utils/date_time_helper.dart';
-import 'package:simple/core/utils/emergency_contact_helper.dart';
-import 'package:simple/core/utils/reminder_helper.dart';
-import 'package:simple/core/utils/reminder_options.dart';
-import 'package:simple/core/widgets/custom_nav_bar.dart';
+import '../../../core/services/reminder_dispatcher.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/date_time_helper.dart';
+import '../../../core/utils/reminder_helper.dart';
+import '../../../core/utils/reminder_options.dart';
+import '../../../core/widgets/custom_nav_bar.dart';
+import '../services/pomodoro_service.dart';
+import '../services/streak_service.dart';
 
 class FocoScreen extends StatefulWidget {
   const FocoScreen({super.key});
@@ -37,13 +33,6 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
 
   final DateFormat _dateFormatter = DateFormat('dd MMM, HH:mm', 'es_ES');
   final AudioPlayer _audioPlayer = AudioPlayer();
-
-  bool _pomodoroSoundEnabled = true;
-  bool _pomodoroVibrationEnabled = false;
-  String _pomodoroSoundKey = 'bell';
-
-  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>?
-      _userSettingsSubscription;
 
   final List<Duration> _quickDurations = const [
     Duration(minutes: 5),
@@ -77,17 +66,6 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
         .orderBy('createdAt', descending: true)
         .snapshots();
 
-    _userSettingsSubscription = _userDocStream.listen((snapshot) {
-      final data = snapshot.data() ?? {};
-      if (!mounted) return;
-      setState(() {
-        _pomodoroSoundEnabled = (data['pomodoroSoundEnabled'] as bool?) ?? true;
-        _pomodoroVibrationEnabled =
-            (data['pomodoroVibrationEnabled'] as bool?) ?? false;
-        _pomodoroSoundKey = (data['pomodoroSound'] as String?) ?? 'bell';
-      });
-    });
-
     _breathController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 14),
@@ -97,16 +75,12 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
       TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.0), weight: 4),
       TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.7), weight: 6),
     ]).animate(
-        CurvedAnimation(parent: _breathController, curve: Curves.easeInOut));
+      CurvedAnimation(parent: _breathController, curve: Curves.easeInOut),
+    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _attachPomodoroListener();
-      _requestPermissions();
     });
-  }
-
-  Future<void> _requestPermissions() async {
-    await NotificationService.requestPermissions();
   }
 
   void _attachPomodoroListener() {
@@ -120,14 +94,15 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
     _breathingTimer?.cancel();
     _breathController.dispose();
     _audioPlayer.dispose();
-    _userSettingsSubscription?.cancel();
     _pomodoroService?.removeListener(_onPomodoroStatusChanged);
     super.dispose();
   }
 
   void _onPomodoroStatusChanged() {
     final service = _pomodoroService;
-    if (service == null) return;
+    if (service == null) {
+      return;
+    }
     if (_lastPomodoroStatus != PomodoroStatus.finished &&
         service.status == PomodoroStatus.finished) {
       _handlePomodoroFinished(service);
@@ -136,46 +111,48 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _handlePomodoroFinished(PomodoroService service) async {
-    if (_pomodoroSoundEnabled) {
-      final assetPath = _pomodoroSoundKey == 'notificacion1'
-          ? 'sounds/Notificacion1.mp3'
-          : 'sounds/bell.mp3';
-      try {
-        await _audioPlayer.play(AssetSource(assetPath));
-      } catch (error) {
-        debugPrint('[FOCO] Error al reproducir sonido Pomodoro: $error');
-      }
-    }
-    if (_pomodoroVibrationEnabled && !kIsWeb) {
-      try {
-        final hasVibrator = await Vibration.hasVibrator();
-        if (hasVibrator == true) Vibration.vibrate(duration: 800);
-      } catch (_) {}
-    }
     try {
       await userDocRef.set({
         'focusSessionsCompleted': FieldValue.increment(1),
-        'totalFocusMinutes':
-            FieldValue.increment(service.totalDuration.inMinutes),
+        'totalFocusMinutes': FieldValue.increment(service.totalDuration.inMinutes),
       }, SetOptions(merge: true));
     } catch (_) {}
     if (mounted) {
+      HapticFeedback.mediumImpact();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Tiempo finalizado. ¡Toma un descanso!')),
+        SnackBar(
+          content: Text(
+            'Sesión completada. Buen trabajo.',
+            style: AppTheme.getTheme().textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.warmCream,
+                ),
+          ),
+          backgroundColor: AppTheme.sageGreen,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+          ),
+        ),
       );
     }
   }
 
   void _selectDuration(Duration duration, PomodoroService pomodoro) {
     if (pomodoro.status == PomodoroStatus.running ||
-        pomodoro.status == PomodoroStatus.paused) return;
+        pomodoro.status == PomodoroStatus.paused) {
+      return;
+    }
+    HapticFeedback.selectionClick();
     setState(() => _selectedDuration = duration);
   }
 
-  Future<void> _startPomodoro(PomodoroService pomodoro) async =>
-      pomodoro.start(_selectedDuration);
+  Future<void> _startPomodoro(PomodoroService pomodoro) async {
+    HapticFeedback.lightImpact();
+    await pomodoro.start(_selectedDuration);
+  }
 
   Future<void> _pauseOrResume(PomodoroService pomodoro) async {
+    HapticFeedback.lightImpact();
     if (pomodoro.status == PomodoroStatus.running) {
       await pomodoro.pause();
     } else if (pomodoro.status == PomodoroStatus.paused) {
@@ -183,8 +160,10 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
     }
   }
 
-  Future<void> _cancelPomodoro(PomodoroService pomodoro) async =>
-      pomodoro.cancel();
+  Future<void> _cancelPomodoro(PomodoroService pomodoro) async {
+    HapticFeedback.lightImpact();
+    await pomodoro.cancel();
+  }
 
   String _formattedRemaining(PomodoroService pomodoro) {
     final current = pomodoro.status == PomodoroStatus.idle
@@ -199,12 +178,14 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
 
   double _pomodoroProgress(PomodoroService pomodoro) {
     if (pomodoro.totalDuration.inSeconds == 0) return 0;
-    return 1 -
-        (pomodoro.remaining.inSeconds / pomodoro.totalDuration.inSeconds);
+    return 1 - (pomodoro.remaining.inSeconds / pomodoro.totalDuration.inSeconds);
   }
 
   void _startBreathingExercise() {
-    if (_breathingActive) return;
+    if (_breathingActive) {
+      return;
+    }
+    HapticFeedback.lightImpact();
     setState(() {
       _breathingActive = true;
       _breathingSecondsLeft = 60;
@@ -241,269 +222,440 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final pomodoro = context.watch<PomodoroService>();
-    final isPaused = pomodoro.status == PomodoroStatus.paused;
 
     return Scaffold(
+      backgroundColor: AppTheme.warmCream,
       bottomNavigationBar: const CustomNavBar(initialIndex: 2),
-      appBar: AppBar(
-        title: const Text('Foco'),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.black,
-        automaticallyImplyLeading: false,
-        actions: [
-          StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-            stream: _userDocStream,
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) return const SizedBox();
-              final userData = snapshot.data?.data() ?? {};
-              final int points = (userData['points'] as num?)?.toInt() ?? 0;
-              final int streak = (userData['streak'] as num?)?.toInt() ?? 0;
-              final String? avatarName = userData['avatar'] as String?;
-              return Row(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8),
-                    child: Row(children: [
-                      const Icon(Icons.star, color: Colors.amber, size: 20),
-                      const SizedBox(width: 4),
-                      Text('$points',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: Colors.black87)),
-                    ]),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(children: [
-                      const Icon(Icons.local_fire_department,
-                          color: Colors.deepOrange, size: 20),
-                      const SizedBox(width: 4),
-                      Text('$streak',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: Colors.black87)),
-                    ]),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: avatarName != null
-                        ? CircleAvatar(
-                            radius: 15,
-                            backgroundImage:
-                                AssetImage('assets/avatars/$avatarName.png'),
-                            onBackgroundImageError: (_, __) {},
-                          )
-                        : const CircleAvatar(
-                            radius: 15, backgroundColor: Colors.grey),
-                  ),
-                ],
-              );
-            },
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddTaskDialog(context),
-        backgroundColor: Colors.purple,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
+      appBar: _buildAppBar(),
+      floatingActionButton: _buildFab(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Modo Foco',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            _buildPomodoroCard(pomodoro, isPaused),
-            const SizedBox(height: 24),
+            _buildTimerSection(pomodoro),
+            const SizedBox(height: 32),
             _buildBreathingCard(),
-            const SizedBox(height: 24),
-            const Text('Tareas de Foco',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            _buildTasksStream(),
-            const SizedBox(height: 24),
-            _buildEmergencyQuickButton(),
+            const SizedBox(height: 32),
+            _buildTasksSection(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPomodoroCard(PomodoroService pomodoro, bool isPaused) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.purple.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Sesiones Pomodoro',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: _quickDurations
-                .map((duration) => ChoiceChip(
-                      label: Text('${duration.inMinutes} min'),
-                      selected: _selectedDuration == duration,
-                      onSelected: (_) => _selectDuration(duration, pomodoro),
-                    ))
-                .toList(),
-          ),
-          const SizedBox(height: 16),
-          Center(
-            child: Column(
-              children: [
-                Text(
-                  _formattedRemaining(pomodoro),
-                  style: const TextStyle(
-                      fontSize: 40, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 160,
-                  width: 160,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      TweenAnimationBuilder<double>(
-                        tween:
-                            Tween(begin: 0, end: _pomodoroProgress(pomodoro)),
-                        duration: const Duration(milliseconds: 400),
-                        builder: (context, value, _) =>
-                            CircularProgressIndicator(
-                          value: value,
-                          strokeWidth: 10,
-                          backgroundColor: Colors.white,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.purple.shade400),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: AppTheme.warmCream,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      centerTitle: true,
+      title: Text(
+        'Foco',
+        style: AppTheme.getTheme().textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: AppTheme.warmCharcoal,
+              letterSpacing: 0.5,
             ),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              Expanded(
-                child: _buildPomodoroButton(
-                  label: 'Iniciar',
-                  icon: Icons.play_arrow,
-                  color: Colors.green,
-                  onTap: () => _startPomodoro(pomodoro),
-                ),
+      ),
+      actions: [
+        StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+          stream: _userDocStream,
+          builder: (context, snapshot) {
+            final userData = snapshot.data?.data() ?? {};
+            final int points = (userData['points'] as num?)?.toInt() ?? 0;
+            final int streak = (userData['streak'] as num?)?.toInt() ?? 0;
+            return Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildStatBadge(
+                    icon: Icons.star_rounded,
+                    value: '$points',
+                    color: const Color(0xFFD4A853),
+                  ),
+                  const SizedBox(width: 8),
+                  _buildStatBadge(
+                    icon: Icons.local_fire_department_rounded,
+                    value: '$streak',
+                    color: const Color(0xFFBF8060),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildPomodoroButton(
-                  label: isPaused ? 'Reanudar' : 'Pausar',
-                  icon: isPaused ? Icons.play_arrow : Icons.pause,
-                  color: Colors.orange,
-                  onTap: () => _pauseOrResume(pomodoro),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildPomodoroButton(
-                  label: 'Reiniciar',
-                  icon: Icons.refresh,
-                  color: Colors.redAccent,
-                  onTap: () => _cancelPomodoro(pomodoro),
-                ),
-              ),
-            ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatBadge({
+    required IconData icon,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 14),
+          const SizedBox(width: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+              color: color,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildPomodoroButton({
-    required String label,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color.withValues(alpha: 0.15),
-        foregroundColor: color,
-        minimumSize: const Size(120, 72),
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 0,
-      ),
-      onPressed: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 22),
-          const SizedBox(height: 8),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              label,
-              maxLines: 1,
-              softWrap: false,
-              overflow: TextOverflow.visible,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-            ),
+  Widget _buildFab() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.softBlue.withOpacity(0.25),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
+      ),
+      child: FloatingActionButton(
+        onPressed: () => _showAddTaskDialog(context),
+        backgroundColor: AppTheme.softBlue,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+        ),
+        child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+      ),
+    );
+  }
+
+  Widget _buildTimerSection(PomodoroService pomodoro) {
+    final isRunning = pomodoro.status == PomodoroStatus.running;
+    final isPaused = pomodoro.status == PomodoroStatus.paused;
+    final isFinished = pomodoro.status == PomodoroStatus.finished;
+    final progress = _pomodoroProgress(pomodoro);
+
+    return Column(
+      children: [
+        _buildProgressRing(pomodoro, progress, isFinished),
+        const SizedBox(height: 32),
+        Text(
+          _formattedRemaining(pomodoro),
+          style: AppTheme.getTheme().textTheme.displaySmall?.copyWith(
+                fontWeight: FontWeight.w300,
+                color: isFinished ? AppTheme.sageGreen : AppTheme.warmCharcoal,
+                letterSpacing: 2,
+              ),
+        ),
+        if (isFinished) ...[
+          const SizedBox(height: 8),
+          Text(
+            'Sesión completada',
+            style: AppTheme.getTheme().textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.sageGreen,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+        ],
+        const SizedBox(height: 36),
+        _buildDurationChips(pomodoro),
+        const SizedBox(height: 28),
+        _buildControlButtons(pomodoro, isRunning, isPaused, isFinished),
+      ],
+    );
+  }
+
+  Widget _buildProgressRing(
+    PomodoroService pomodoro,
+    double progress,
+    bool isFinished,
+  ) {
+    return SizedBox(
+      height: 260,
+      width: 260,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: progress),
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeOutCubic,
+            builder: (context, value, _) => CustomPaint(
+              painter: _ProgressRingPainter(
+                progress: value,
+                trackColor: AppTheme.outlineVariant.withOpacity(0.3),
+                progressColor: isFinished
+                    ? AppTheme.sageGreen
+                    : AppTheme.softBlue,
+                strokeWidth: 12,
+              ),
+              size: const Size(260, 260),
+            ),
+          ),
+          if (pomodoro.status == PomodoroStatus.running)
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 1.0, end: 1.03),
+              duration: const Duration(seconds: 2),
+              builder: (context, value, child) => Transform.scale(
+                scale: value,
+                child: child,
+              ),
+              child: Container(
+                height: 248,
+                width: 248,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.softBlue.withOpacity(0.06),
+                      blurRadius: 20,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDurationChips(PomodoroService pomodoro) {
+    final isDisabled = pomodoro.status == PomodoroStatus.running ||
+        pomodoro.status == PomodoroStatus.paused;
+
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 10,
+      runSpacing: 10,
+      children: _quickDurations.map((duration) {
+        final isSelected = _selectedDuration == duration;
+        return GestureDetector(
+          onTap: isDisabled ? null : () => _selectDuration(duration, pomodoro),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? AppTheme.softBlueContainer
+                  : AppTheme.surfaceVariant,
+              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+              border: Border.all(
+                color: isSelected
+                    ? AppTheme.softBlue.withOpacity(0.4)
+                    : Colors.transparent,
+                width: 1,
+              ),
+            ),
+            child: Text(
+              '${duration.inMinutes} min',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected
+                    ? AppTheme.softBlueDark
+                    : AppTheme.mutedText,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildControlButtons(
+    PomodoroService pomodoro,
+    bool isRunning,
+    bool isPaused,
+    bool isFinished,
+  ) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _buildPrimaryButton(
+          icon: isRunning
+              ? Icons.pause_rounded
+              : isFinished
+                  ? Icons.replay_rounded
+                  : Icons.play_arrow_rounded,
+          label: isRunning
+              ? 'Pausar'
+              : isFinished
+                  ? 'Reiniciar'
+                  : 'Iniciar',
+          onTap: isFinished
+              ? () => _cancelPomodoro(pomodoro)
+              : isRunning || isPaused
+                  ? () => _pauseOrResume(pomodoro)
+                  : () => _startPomodoro(pomodoro),
+        ),
+        const SizedBox(width: 16),
+        _buildSecondaryButton(
+          icon: Icons.refresh_rounded,
+          label: 'Reiniciar',
+          onTap: () => _cancelPomodoro(pomodoro),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPrimaryButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 16),
+        decoration: BoxDecoration(
+          color: AppTheme.softBlue,
+          borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.softBlue.withOpacity(0.2),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: Colors.white, size: 22),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSecondaryButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceVariant,
+          borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+          border: Border.all(
+            color: AppTheme.outlineSoft,
+            width: 1,
+          ),
+        ),
+        child: Icon(icon, color: AppTheme.mutedText, size: 22),
       ),
     );
   }
 
   Widget _buildBreathingCard() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.blue.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(24),
+        color: AppTheme.surfaceWhite,
+        borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
+        border: Border.all(
+          color: AppTheme.outlineVariant.withOpacity(0.5),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Respiración guiada (1 min)',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(
+                Icons.self_improvement_rounded,
+                color: AppTheme.softLavender,
+                size: 22,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Respiración guiada',
+                style: AppTheme.getTheme().textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.warmCharcoal,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
           Text(
             'Inhala 4s – Mantén 4s – Exhala 6s',
-            style: TextStyle(color: Colors.blueGrey.shade600),
+            style: AppTheme.getTheme().textTheme.bodySmall?.copyWith(
+                  color: AppTheme.mutedText,
+                ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           Center(
             child: ScaleTransition(
               scale: _breathAnimation,
               child: Container(
-                height: 180,
-                width: 180,
+                height: 140,
+                width: 140,
                 alignment: Alignment.center,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
-                    colors: [Color(0xFF7AD2F3), Color(0xFF4B9CD3)],
+                    colors: [
+                      AppTheme.softBlueContainer,
+                      AppTheme.softBlue.withOpacity(0.3),
+                    ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
+                  border: Border.all(
+                    color: AppTheme.softBlue.withOpacity(0.2),
+                    width: 2,
+                  ),
                 ),
-                child: Text(
-                  _breathingActive ? _breathingInstruction : 'Pulsa iniciar',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    _breathingActive
+                        ? _breathingInstruction
+                        : 'Pulsa iniciar',
+                    textAlign: TextAlign.center,
+                    style: AppTheme.getTheme().textTheme.bodyMedium?.copyWith(
+                          color: AppTheme.softBlueDark,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
                 ),
               ),
             ),
@@ -514,21 +666,36 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
               _breathingActive
                   ? '${_breathingSecondsLeft}s restantes'
                   : '1 minuto total',
-              style: const TextStyle(fontWeight: FontWeight.w600),
+              style: AppTheme.getTheme().textTheme.labelMedium?.copyWith(
+                    color: AppTheme.mutedText,
+                  ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Center(
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueAccent,
-                minimumSize: const Size(180, 48),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
+            child: GestureDetector(
+              onTap: _startBreathingExercise,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                decoration: BoxDecoration(
+                  color: _breathingActive
+                      ? AppTheme.surfaceVariant
+                      : AppTheme.lavenderContainer,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                ),
+                child: Text(
+                  _breathingActive ? 'En progreso' : 'Iniciar',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: _breathingActive
+                        ? AppTheme.mutedText
+                        : AppTheme.softLavender,
+                    letterSpacing: 0.3,
+                  ),
+                ),
               ),
-              onPressed: _startBreathingExercise,
-              icon: const Icon(Icons.self_improvement),
-              label: Text(_breathingActive ? 'En progreso' : 'Iniciar'),
             ),
           ),
         ],
@@ -536,194 +703,243 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildTasksStream() {
-    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: _focusTasksStream,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Padding(
-            padding: EdgeInsets.all(32),
-            child: Center(child: CircularProgressIndicator()),
-          );
-        }
-        if (snapshot.hasError) {
-          return const Padding(
-            padding: EdgeInsets.all(32),
-            child: Text('Error al cargar tareas'),
-          );
-        }
-        final docs = snapshot.data?.docs ?? [];
-        if (docs.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.all(32),
-            child: Text(
-              'No tienes tareas de foco.\nCrea una con el botón +',
-              textAlign: TextAlign.center,
-            ),
-          );
-        }
-        return ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: docs.length,
-          itemBuilder: (context, index) {
-            final taskData = docs[index].data();
-            final taskId = docs[index].id;
-            final String text = taskData['text'] ?? '';
-            final Timestamp? dueDate = taskData['dueDate'] as Timestamp?;
-            final bool isDone = taskData['done'] ?? false;
-            final int? reminderMinutes = extractReminderMinutes(taskData);
-            return GestureDetector(
-              onLongPress: () => _showTaskOptionsDialog(
-                  context, taskId, text, 'Foco', dueDate, reminderMinutes),
-              child: _buildGoalItem(
-                icon: Icons.psychology,
-                iconColor: Colors.purple,
-                text: text,
-                isDone: isDone,
-                dueDate: dueDate,
-                onDonePressed: () async {
-                  final pointsChange = isDone ? -10 : 10;
-                  final batch = FirebaseFirestore.instance.batch();
-                  batch.update(docs[index].reference, {'done': !isDone});
-                  batch.update(userDocRef,
-                      {'points': FieldValue.increment(pointsChange)});
-                  try {
-                    await batch.commit();
-                    if (!isDone) {
-                      await ReminderDispatcher.cancelTaskReminder(
-                          userDocRef: userDocRef, taskId: taskId);
-                      await StreakService.updateStreakOnTaskCompletion(
-                          userDocRef);
-                    }
-                  } catch (error) {
-                    debugPrint('Error al actualizar: $error');
-                  }
-                },
+  Widget _buildTasksSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Tareas de Foco',
+          style: AppTheme.getTheme().textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppTheme.warmCharcoal,
               ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildEmergencyQuickButton() {
-    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: _userDocStream,
-      builder: (context, snapshot) {
-        final isLoading = snapshot.connectionState == ConnectionState.waiting;
-        final data = snapshot.data?.data();
-        final String? emergencyName = data?['emergencyName'] as String?;
-        final String? emergencyPhone =
-            data?['emergencyPhone'] as String? ?? data?['phone'] as String?;
-        final String? trimmedName = (emergencyName?.trim().isEmpty ?? true)
-            ? null
-            : emergencyName!.trim();
-        final String? trimmedPhone = (emergencyPhone?.trim().isEmpty ?? true)
-            ? null
-            : emergencyPhone!.trim();
-        final helperText = isLoading
-            ? 'Cargando contacto...'
-            : trimmedPhone != null
-                ? 'Tu contacto está listo por si necesitas ayuda.'
-                : 'Configura un contacto desde tu perfil.';
-
-        return Column(
-          children: [
-            Text(
-              helperText,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 13, color: Colors.black54),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: 220,
-              child: OutlinedButton.icon(
-                onPressed: () => handleEmergencyContactAction(
-                  context,
-                  emergencyName: trimmedName ?? emergencyName,
-                  emergencyPhone: trimmedPhone ?? emergencyPhone,
-                  onNavigateToProfile: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
+        ),
+        const SizedBox(height: 12),
+        StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          stream: _focusTasksStream,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              );
+            }
+            if (snapshot.hasError) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Text(
+                    'Error al cargar tareas',
+                    style: AppTheme.getTheme().textTheme.bodyMedium?.copyWith(
+                          color: AppTheme.mutedText,
+                        ),
                   ),
                 ),
-                icon: const Icon(Icons.phone_in_talk),
-                label: const Text('Necesito ayuda'),
-              ),
-            ),
-          ],
-        );
-      },
+              );
+            }
+            final docs = snapshot.data?.docs ?? [];
+            if (docs.isEmpty) {
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 40),
+                decoration: BoxDecoration(
+                  color: AppTheme.surfaceWhite,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
+                  border: Border.all(
+                    color: AppTheme.outlineVariant.withOpacity(0.5),
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.task_alt_rounded,
+                      size: 48,
+                      color: AppTheme.outlineSoft,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Sin tareas de foco',
+                      style: AppTheme.getTheme().textTheme.bodyMedium?.copyWith(
+                            color: AppTheme.mutedText,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Usa el botón + para añadir una',
+                      style: AppTheme.getTheme().textTheme.bodySmall?.copyWith(
+                            color: AppTheme.mutedText,
+                          ),
+                    ),
+                  ],
+                ),
+              );
+            }
+            return ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: docs.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (context, index) {
+                final taskData = docs[index].data();
+                final taskId = docs[index].id;
+                final String text = taskData['text'] ?? '';
+                final Timestamp? dueDate = taskData['dueDate'] as Timestamp?;
+                final bool isDone = taskData['done'] ?? false;
+                final int? reminderMinutes = extractReminderMinutes(taskData);
+                return _buildTaskItem(
+                  text: text,
+                  isDone: isDone,
+                  dueDate: dueDate,
+                  onDonePressed: () => _toggleTask(
+                    docs[index].reference,
+                    taskId,
+                    isDone,
+                    text,
+                    reminderMinutes,
+                  ),
+                  onEdit: () => _showTaskOptionsDialog(
+                    context,
+                    taskId,
+                    text,
+                    dueDate,
+                    reminderMinutes,
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ],
     );
   }
 
-  Widget _buildGoalItem({
-    required IconData icon,
-    required Color iconColor,
+  Widget _buildTaskItem({
     required String text,
     required bool isDone,
     required VoidCallback onDonePressed,
+    required VoidCallback onEdit,
     Timestamp? dueDate,
   }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Icon(icon, color: iconColor, size: 28),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  text,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: isDone ? Colors.grey : Colors.black87,
-                    decoration: isDone
-                        ? TextDecoration.lineThrough
-                        : TextDecoration.none,
+    return GestureDetector(
+      onLongPress: onEdit,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceWhite,
+          borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+          border: Border.all(
+            color: AppTheme.outlineVariant.withOpacity(0.4),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            GestureDetector(
+              onTap: onDonePressed,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isDone
+                      ? AppTheme.sageGreen
+                      : AppTheme.surfaceVariant,
+                  border: Border.all(
+                    color: isDone
+                        ? AppTheme.sageGreen
+                        : AppTheme.outlineSoft,
+                    width: 1.5,
                   ),
                 ),
-                if (dueDate != null) ...[
-                  const SizedBox(height: 4),
+                child: isDone
+                    ? const Icon(
+                        Icons.check_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      )
+                    : null,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    'Entrega: ${_dateFormatter.format(dueDate.toDate())}',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                    text,
+                    style: AppTheme.getTheme().textTheme.bodyMedium?.copyWith(
+                          color: isDone
+                              ? AppTheme.mutedText
+                              : AppTheme.warmCharcoal,
+                          decoration: isDone
+                              ? TextDecoration.lineThrough
+                              : TextDecoration.none,
+                        ),
                   ),
+                  if (dueDate != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'Entrega: ${_dateFormatter.format(dueDate.toDate())}',
+                      style:
+                          AppTheme.getTheme().textTheme.bodySmall?.copyWith(
+                                color: AppTheme.mutedText,
+                              ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-          const SizedBox(width: 16),
-          ElevatedButton(
-            onPressed: onDonePressed,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isDone
-                  ? Colors.grey.shade300
-                  : Colors.purple.withValues(alpha: 0.2),
-              foregroundColor:
-                  isDone ? Colors.grey.shade600 : Colors.purple.shade800,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-            ),
-            child: Text(isDone ? 'Deshacer' : 'Hecho'),
-          ),
-        ],
+          ],
+        ),
       ),
     );
+  }
+
+  Future<void> _toggleTask(
+    DocumentReference<Map<String, dynamic>> taskRef,
+    String taskId,
+    bool isDone,
+    String taskTitle,
+    int? reminderMinutes,
+  ) async {
+    HapticFeedback.selectionClick();
+    final pointsChange = isDone ? -10 : 10;
+    final batch = FirebaseFirestore.instance.batch();
+    batch.update(taskRef, {'done': !isDone});
+    batch.update(userDocRef, {'points': FieldValue.increment(pointsChange)});
+    try {
+      await batch.commit();
+      if (!isDone) {
+        await ReminderDispatcher.cancelTaskReminder(
+          userDocRef: userDocRef,
+          taskId: taskId,
+        );
+        await StreakService.updateStreakOnTaskCompletion(userDocRef);
+      }
+    } catch (error) {
+      debugPrint('Error al actualizar: $error');
+    }
   }
 
   Future<void> _showAddTaskDialog(BuildContext context) async {
     final TextEditingController taskController = TextEditingController();
     DateTime? selectedDueDate;
-    const String fixedCategory = 'Foco';
     final int? defaultReminder = await fetchDefaultReminderMinutes(userDocRef);
     int? selectedReminderMinutes = defaultReminder;
-    if (!context.mounted) return;
+    if (!context.mounted) {
+      return;
+    }
 
     showDialog(
       context: context,
@@ -731,7 +947,17 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('Nueva tarea de foco'),
+              backgroundColor: AppTheme.surfaceWhite,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
+              ),
+              title: Text(
+                'Nueva tarea de foco',
+                style: AppTheme.getTheme().textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.warmCharcoal,
+                    ),
+              ),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -739,7 +965,8 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                     TextField(
                       controller: taskController,
                       decoration: const InputDecoration(
-                          hintText: 'Describe tu práctica'),
+                        hintText: 'Describe tu práctica',
+                      ),
                       autofocus: true,
                     ),
                     const SizedBox(height: 20),
@@ -750,14 +977,23 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                             selectedDueDate == null
                                 ? 'Sin fecha'
                                 : 'Entrega: ${_dateFormatter.format(selectedDueDate!)}',
-                            style: TextStyle(color: Colors.grey.shade600),
+                            style: TextStyle(
+                              color: AppTheme.mutedText,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.calendar_today),
+                          icon: Icon(
+                            Icons.calendar_today_rounded,
+                            color: AppTheme.softBlue,
+                            size: 20,
+                          ),
                           onPressed: () async {
                             final picked = await pickDateTime(
-                                context: context, initialDate: selectedDueDate);
+                              context: context,
+                              initialDate: selectedDueDate,
+                            );
                             if (picked != null) {
                               setDialogState(() => selectedDueDate = picked);
                             }
@@ -765,7 +1001,11 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                         ),
                         if (selectedDueDate != null)
                           IconButton(
-                            icon: const Icon(Icons.clear, size: 18),
+                            icon: Icon(
+                              Icons.close_rounded,
+                              color: AppTheme.mutedText,
+                              size: 18,
+                            ),
                             onPressed: () =>
                                 setDialogState(() => selectedDueDate = null),
                           ),
@@ -775,8 +1015,8 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                     DropdownButtonFormField<int?>(
                       key: ValueKey(selectedReminderMinutes),
                       decoration: const InputDecoration(
-                          labelText: 'Recordatorio',
-                          border: OutlineInputBorder()),
+                        labelText: 'Recordatorio',
+                      ),
                       initialValue: selectedReminderMinutes,
                       items: kReminderOptions
                           .map((o) => DropdownMenuItem<int?>(
@@ -793,14 +1033,19 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancelar'),
+                  child: Text(
+                    'Cancelar',
+                    style: TextStyle(color: AppTheme.mutedText),
+                  ),
                 ),
                 TextButton(
                   onPressed: () async {
-                    if (taskController.text.isEmpty) return;
+                    if (taskController.text.isEmpty) {
+                      return;
+                    }
                     final data = <String, dynamic>{
                       'text': taskController.text,
-                      'category': fixedCategory,
+                      'category': 'Foco',
                       'iconName': 'psychology',
                       'colorName': 'purple',
                       'done': false,
@@ -819,7 +1064,13 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                     );
                     if (context.mounted) Navigator.of(context).pop();
                   },
-                  child: const Text('Añadir'),
+                  child: Text(
+                    'Añadir',
+                    style: TextStyle(
+                      color: AppTheme.softBlue,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
               ],
             );
@@ -833,7 +1084,6 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
     BuildContext context,
     String taskId,
     String currentText,
-    String? currentCategory,
     Timestamp? currentDueDate,
     int? reminderMinutes,
   ) {
@@ -841,22 +1091,48 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: Text('Opciones:\n"$currentText"'),
+          backgroundColor: AppTheme.surfaceWhite,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
+          ),
+          title: Text(
+            'Opciones',
+            style: AppTheme.getTheme().textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.warmCharcoal,
+                ),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.edit),
-                title: const Text('Editar'),
+                leading: Icon(Icons.edit_rounded, color: AppTheme.softBlue),
+                title: Text(
+                  'Editar',
+                  style: AppTheme.getTheme().textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.warmCharcoal,
+                      ),
+                ),
                 onTap: () {
                   Navigator.of(dialogContext).pop();
-                  _showEditTaskDialog(context, taskId, currentText,
-                      currentCategory, currentDueDate, reminderMinutes);
+                  _showEditTaskDialog(
+                    context,
+                    taskId,
+                    currentText,
+                    currentDueDate,
+                    reminderMinutes,
+                  );
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.delete),
-                title: const Text('Eliminar'),
+                leading:
+                    Icon(Icons.delete_rounded, color: AppTheme.errorMuted),
+                title: Text(
+                  'Eliminar',
+                  style: AppTheme.getTheme().textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.errorMuted,
+                      ),
+                ),
                 onTap: () async {
                   final navigator = Navigator.of(dialogContext);
                   final messenger = ScaffoldMessenger.of(dialogContext);
@@ -864,15 +1140,33 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                     await tasksCollection.doc(taskId).delete();
                     try {
                       await ReminderDispatcher.cancelTaskReminder(
-                          userDocRef: userDocRef, taskId: taskId);
+                        userDocRef: userDocRef,
+                        taskId: taskId,
+                      );
                     } catch (_) {}
                     if (navigator.mounted) navigator.pop();
                     messenger.showSnackBar(
-                        SnackBar(content: Text('"$currentText" eliminada')));
+                      SnackBar(
+                        content: Text('"$currentText" eliminada'),
+                        backgroundColor: AppTheme.warmCharcoal,
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radiusMedium),
+                        ),
+                      ),
+                    );
                   } catch (error) {
                     if (navigator.mounted) navigator.pop();
                     messenger.showSnackBar(
-                        SnackBar(content: Text('Error al eliminar: $error')));
+                      SnackBar(
+                        content: Text('Error al eliminar: $error'),
+                        backgroundColor: AppTheme.warmCharcoal,
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radiusMedium),
+                        ),
+                      ),
+                    );
                   }
                 },
               ),
@@ -881,7 +1175,10 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancelar'),
+              child: Text(
+                'Cancelar',
+                style: TextStyle(color: AppTheme.mutedText),
+              ),
             ),
           ],
         );
@@ -893,7 +1190,6 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
     BuildContext context,
     String taskId,
     String currentText,
-    String? currentCategory,
     Timestamp? currentDueDate,
     int? currentReminderMinutes,
   ) {
@@ -908,15 +1204,24 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('Editar tarea'),
+              backgroundColor: AppTheme.surfaceWhite,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
+              ),
+              title: Text(
+                'Editar tarea',
+                style: AppTheme.getTheme().textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.warmCharcoal,
+                    ),
+              ),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     TextField(
                       controller: taskController,
-                      decoration:
-                          const InputDecoration(hintText: 'Nuevo texto'),
+                      decoration: const InputDecoration(hintText: 'Nuevo texto'),
                       autofocus: true,
                     ),
                     const SizedBox(height: 20),
@@ -927,14 +1232,23 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                             selectedDueDate == null
                                 ? 'Sin fecha'
                                 : 'Entrega: ${_dateFormatter.format(selectedDueDate!)}',
-                            style: TextStyle(color: Colors.grey.shade600),
+                            style: TextStyle(
+                              color: AppTheme.mutedText,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.calendar_today),
+                          icon: Icon(
+                            Icons.calendar_today_rounded,
+                            color: AppTheme.softBlue,
+                            size: 20,
+                          ),
                           onPressed: () async {
                             final picked = await pickDateTime(
-                                context: context, initialDate: selectedDueDate);
+                              context: context,
+                              initialDate: selectedDueDate,
+                            );
                             if (picked != null) {
                               setDialogState(() => selectedDueDate = picked);
                             }
@@ -942,7 +1256,11 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                         ),
                         if (selectedDueDate != null)
                           IconButton(
-                            icon: const Icon(Icons.clear, size: 18),
+                            icon: Icon(
+                              Icons.close_rounded,
+                              color: AppTheme.mutedText,
+                              size: 18,
+                            ),
                             onPressed: () =>
                                 setDialogState(() => selectedDueDate = null),
                           ),
@@ -952,8 +1270,8 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                     DropdownButtonFormField<int?>(
                       key: ValueKey(selectedReminderMinutes),
                       decoration: const InputDecoration(
-                          labelText: 'Recordatorio',
-                          border: OutlineInputBorder()),
+                        labelText: 'Recordatorio',
+                      ),
                       initialValue: selectedReminderMinutes,
                       items: kReminderOptions
                           .map((o) => DropdownMenuItem<int?>(
@@ -970,7 +1288,10 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Cancelar'),
+                  child: Text(
+                    'Cancelar',
+                    style: TextStyle(color: AppTheme.mutedText),
+                  ),
                 ),
                 TextButton(
                   onPressed: () async {
@@ -981,7 +1302,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                     }
                     final updatedData = <String, dynamic>{
                       'text': taskController.text,
-                      'category': currentCategory ?? 'Foco',
+                      'category': 'Foco',
                       'iconName': 'psychology',
                       'colorName': 'purple',
                       'reminderMinutes': selectedReminderMinutes,
@@ -993,7 +1314,9 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                     try {
                       await tasksCollection.doc(taskId).update(updatedData);
                       await ReminderDispatcher.cancelTaskReminder(
-                          userDocRef: userDocRef, taskId: taskId);
+                        userDocRef: userDocRef,
+                        taskId: taskId,
+                      );
                       await ReminderDispatcher.scheduleTaskReminder(
                         userDocRef: userDocRef,
                         taskId: taskId,
@@ -1001,12 +1324,18 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                         dueDate: selectedDueDate,
                         reminderMinutes: selectedReminderMinutes,
                       );
-                    } catch (_) {
-                    } finally {
+                    } catch (_) {}
+                    finally {
                       navigator.pop();
                     }
                   },
-                  child: const Text('Guardar'),
+                  child: Text(
+                    'Guardar',
+                    style: TextStyle(
+                      color: AppTheme.softBlue,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
               ],
             );
@@ -1015,4 +1344,53 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
       },
     );
   }
+}
+
+class _ProgressRingPainter extends CustomPainter {
+  final double progress;
+  final Color trackColor;
+  final Color progressColor;
+  final double strokeWidth;
+
+  _ProgressRingPainter({
+    required this.progress,
+    required this.trackColor,
+    required this.progressColor,
+    this.strokeWidth = 12,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (min(size.width, size.height) - strokeWidth) / 2;
+
+    final trackPaint = Paint()
+      ..color = trackColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawCircle(center, radius, trackPaint);
+
+    if (progress > 0) {
+      final progressPaint = Paint()
+        ..color = progressColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.round;
+
+      final sweepAngle = 2 * pi * progress.clamp(0.0, 1.0);
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        -pi / 2,
+        sweepAngle,
+        false,
+        progressPaint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_ProgressRingPainter oldDelegate) =>
+      oldDelegate.progress != progress;
 }
