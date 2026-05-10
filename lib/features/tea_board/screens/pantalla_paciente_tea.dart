@@ -551,56 +551,56 @@ class _PantallaPacienteTEAState extends State<PantallaPacienteTEA>
             ],
           ),
         ),
-        body: Stack(
+        body: Column(
           children: [
-            Column(
-              children: [
-                Expanded(
-                  child: StreamBuilder<List<PictogramaDisplay>>(
-                    stream: _pictogramasStream,
-                    builder: (context, snapshot) {
-                      final todos = snapshot.data ?? [];
+            Expanded(
+              child: StreamBuilder<List<PictogramaDisplay>>(
+                stream: _pictogramasStream,
+                builder: (context, snapshot) {
+                  final todos = snapshot.data ?? [];
 
-                      return TabBarView(
-                        children: [
-                          _GridCategoriaDisplay(
-                            key: const PageStorageKey('tab_rutina'),
-                            pictogramas: _filtrarPorCategoria(todos, _catHoraria),
-                            onAgregar: (p, origen) => _agregarAFraseDisplay(p, origen),
-                            tiraLlena: _tiraLlena,
-                            nombreRutina: _nombreRutina,
-                            iconoRutina: _iconoRutina,
-                          ),
-                          _GridCategoriaDisplay(
-                            key: const PageStorageKey('tab_comida'),
-                            pictogramas: _filtrarPorCategoria(todos, 'Comida'),
-                            onAgregar: (p, origen) => _agregarAFraseDisplay(p, origen),
-                            tiraLlena: _tiraLlena,
-                          ),
-                          _GridCategoriaDisplay(
-                            key: const PageStorageKey('tab_emociones'),
-                            pictogramas: _filtrarPorCategoria(todos, 'Emociones'),
-                            onAgregar: (p, origen) => _agregarAFraseDisplay(p, origen),
-                            tiraLlena: _tiraLlena,
-                          ),
-                          _GridCategoriaDisplay(
-                            key: const PageStorageKey('tab_acciones'),
-                            pictogramas: _filtrarPorCategoria(todos, 'Acciones'),
-                            onAgregar: (p, origen) => _agregarAFraseDisplay(p, origen),
-                            tiraLlena: _tiraLlena,
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-                _buildSentenceStrip(colors),
-              ],
+                  return TabBarView(
+                    children: [
+                      _GridCategoriaDisplay(
+                        key: const PageStorageKey('tab_rutina'),
+                        pictogramas: _filtrarPorCategoria(todos, _catHoraria),
+                        onAgregar: (p, origen) =>
+                            _agregarAFraseDisplay(p, origen),
+                        tiraLlena: _tiraLlena,
+                        nombreRutina: _nombreRutina,
+                        iconoRutina: _iconoRutina,
+                      ),
+                      _GridCategoriaDisplay(
+                        key: const PageStorageKey('tab_comida'),
+                        pictogramas: _filtrarPorCategoria(todos, 'Comida'),
+                        onAgregar: (p, origen) =>
+                            _agregarAFraseDisplay(p, origen),
+                        tiraLlena: _tiraLlena,
+                      ),
+                      _GridCategoriaDisplay(
+                        key: const PageStorageKey('tab_emociones'),
+                        pictogramas:
+                            _filtrarPorCategoria(todos, 'Emociones'),
+                        onAgregar: (p, origen) =>
+                            _agregarAFraseDisplay(p, origen),
+                        tiraLlena: _tiraLlena,
+                      ),
+                      _GridCategoriaDisplay(
+                        key: const PageStorageKey('tab_acciones'),
+                        pictogramas: _filtrarPorCategoria(todos, 'Acciones'),
+                        onAgregar: (p, origen) =>
+                            _agregarAFraseDisplay(p, origen),
+                        tiraLlena: _tiraLlena,
+                      ),
+                    ],
+                  );
+                },
+              ),
             ),
+            _buildAyudaRow(colors),
+            _buildSentenceStrip(colors),
           ],
         ),
-        floatingActionButton: _buildFabAyuda(colors),
-        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         bottomNavigationBar: const CustomNavBar(initialIndex: 2),
       ),
     );
@@ -836,21 +836,34 @@ class _PantallaPacienteTEAState extends State<PantallaPacienteTEA>
     );
   }
 
-  Widget _buildFabAyuda(ColorScheme colors) {
-    return FloatingActionButton.extended(
-      heroTag: 'fab_ayuda_tea',
-      onPressed: () => _hablar('Necesito ayuda, por favor'),
-      backgroundColor: colors.errorContainer,
-      label: Text(
-        'AYUDA',
-        style: TextStyle(
-          color: colors.onErrorContainer,
-          fontWeight: FontWeight.w800,
-          fontSize: 13,
-          letterSpacing: 1.5,
+  Widget _buildAyudaRow(ColorScheme colors) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: () => _hablar('Necesito ayuda, por favor'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: colors.errorContainer,
+            foregroundColor: colors.onErrorContainer,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14)),
+          ),
+          icon: Icon(Icons.warning_rounded,
+              color: colors.onErrorContainer, size: 20),
+          label: Text(
+            'AYUDA',
+            style: TextStyle(
+              color: colors.onErrorContainer,
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
+              letterSpacing: 1.5,
+            ),
+          ),
         ),
       ),
-      icon: Icon(Icons.warning_rounded, color: colors.onErrorContainer),
     );
   }
 }

@@ -319,13 +319,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: _Palette.primary),
-            tooltip: 'Cerrar sesión',
-            onPressed: _handleLogout,
-          ),
-        ],
       ),
       body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
         stream: _userDoc.snapshots(),
@@ -411,6 +404,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(height: 16),
                 ],
                 _buildBackupCard(),
+                const SizedBox(height: 16),
+                _buildLogoutCard(),
+                const SizedBox(height: 8),
               ],
             ),
           );
@@ -833,6 +829,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildLogoutCard() {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: ListTile(
+        leading: const Icon(Icons.logout, color: Colors.redAccent),
+        title: const Text(
+          'Cerrar sesión',
+          style: TextStyle(
+              color: Colors.redAccent, fontWeight: FontWeight.w600),
+        ),
+        onTap: _confirmLogout,
+      ),
+    );
+  }
+
+  Future<void> _confirmLogout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Cerrar sesión'),
+        content:
+            const Text('¿Estás seguro de que quieres cerrar sesión?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Cerrar sesión'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) _handleLogout();
   }
 
   Widget _buildBackupCard() {
