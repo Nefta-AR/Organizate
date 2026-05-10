@@ -1,13 +1,15 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:vibration/vibration.dart';
 
-import '../../../core/services/audio_service.dart';
+import 'package:flutter_tts/flutter_tts.dart';
+
 import '../../../core/services/pictogram_service.dart';
 import '../../../core/widgets/custom_nav_bar.dart';
 import 'crear_pictograma_sheet.dart';
@@ -72,7 +74,7 @@ class Pictograma {
   });
 }
 
-// ─── Banco de pictogramas (sin duplicados entre categorías) ───────────────────
+// ─── Banco de pictogramas ─────────────────────────────────────────────────────
 const List<Pictograma> _banco = [
   Pictograma(
     id: 'm1',
@@ -289,29 +291,59 @@ class PantallaPacienteTEA extends StatefulWidget {
 
 class _PantallaPacienteTEAState extends State<PantallaPacienteTEA>
     with TickerProviderStateMixin {
-  final _audioService = AudioService.instance;
-  final List<Pictograma> _frase = [];
-  static const int _maxPictogramas = 6;
+  late final FlutterTts _tts;
 
-  OverlayEntry? _flyOverlay;
-  final GlobalKey _stripKey = GlobalKey();
-
-  bool get _tiraLlena => _frase.length >= _maxPictogramas;
+  final Map<String, String> _localOverrides = {};
 
   bool _transicionNotificada = false;
-  bool _audioPlaying = false;
 
   Stream<List<PictogramaDisplay>>? _pictogramasStream;
 
   @override
   void initState() {
     super.initState();
-    _audioService.setOnPlayingChanged((playing) {
-      if (mounted) {
-        setState(() => _audioPlaying = playing);
-      }
-    });
+    _tts = FlutterTts();
+    _initTts();
     _pictogramasStream = _buildPictogramasStream();
+  }
+
+  Future<void> _initTts() async {
+    await _tts.setVolume(1.0);
+    await _tts.setSpeechRate(0.42);
+    await _tts.setPitch(0.92);
+    await _tts.setLanguage('es-ES');
+
+    // Intentar seleccionar la mejor voz española disponible (neural/enhanced)
+    try {
+      final rawVoices = await _tts.getVoices;
+      if (rawVoices != null) {
+        final voices = (rawVoices as List)
+            .map((v) => Map<String, String>.from(v as Map))
+            .where((v) =>
+                (v['locale'] ?? '').toLowerCase().startsWith('es') ||
+                (v['name'] ?? '').toLowerCase().contains('spanish') ||
+                (v['name'] ?? '').toLowerCase().contains('español'))
+            .toList();
+
+        if (voices.isNotEmpty) {
+          // Priorizar voces neural/enhanced/wavenet
+          final best = voices.firstWhere(
+            (v) {
+              final n = (v['name'] ?? '').toLowerCase();
+              return n.contains('neural') ||
+                  n.contains('enhanced') ||
+                  n.contains('wavenet') ||
+                  n.contains('quality#enhanced');
+            },
+            orElse: () => voices.first,
+          );
+          await _tts.setVoice({
+            'name': best['name'] ?? '',
+            'locale': best['locale'] ?? 'es-ES',
+          });
+        }
+      }
+    } catch (_) {}
   }
 
   Stream<List<PictogramaDisplay>> _buildPictogramasStream() {
@@ -337,20 +369,66 @@ class _PantallaPacienteTEAState extends State<PantallaPacienteTEA>
   }
 
   Future<void> _hablar(String texto) async {
-    await _audioService.playText(texto);
+    await _tts.stop();
+    await _tts.speak(texto);
   }
 
-  Future<void> _hablarFraseCompleta() async {
-    if (_frase.isEmpty) return;
-    await _audioService.stop();
-    final textoCompleto = _frase.map((p) => p.textoTts).join('. ');
-    await _audioService.playText(textoCompleto);
+  void _hablarPictograma(PictogramaDisplay picto) {
+    HapticFeedback.lightImpact();
+    final texto = _localOverrides[picto.id] ?? picto.textoTts;
+    _hablar(texto);
+  }
+
+  Future<void> _editarTexto(PictogramaDisplay picto) async {
+    final currentText = _localOverrides[picto.id] ?? picto.textoTts;
+    final controller = TextEditingController(text: currentText);
+
+    final newText = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('¿Qué dirá este pictograma?'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: 'Escribe lo que dirá'),
+          textCapitalization: TextCapitalization.sentences,
+          onSubmitted: (v) => Navigator.of(ctx).pop(v.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(null),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+
+    controller.dispose();
+    if (newText == null || newText.isEmpty || !mounted) return;
+
+    if (picto.esPersonalizado) {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) return;
+      final firestoreId = picto.id.replaceFirst('custom_', '');
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('pictograms')
+          .doc(firestoreId)
+          .update({'textoTts': newText});
+    } else {
+      if (mounted) setState(() => _localOverrides[picto.id] = newText);
+    }
   }
 
   @override
   void dispose() {
-    _audioService.stop();
-    _flyOverlay?.remove();
+    _tts.stop();
     super.dispose();
   }
 
@@ -385,73 +463,6 @@ class _PantallaPacienteTEAState extends State<PantallaPacienteTEA>
   List<PictogramaDisplay> _filtrarPorCategoria(
       List<PictogramaDisplay> todos, String cat) {
     return todos.where((p) => p.categoria == cat).toList();
-  }
-
-  void _agregarAFraseDisplay(PictogramaDisplay picto, Offset origenGlobal) {
-    if (_tiraLlena) {
-      HapticFeedback.heavyImpact();
-      return;
-    }
-
-    HapticFeedback.lightImpact();
-
-    _audioService.playText(picto.textoTts);
-
-    final renderBox =
-        _stripKey.currentContext?.findRenderObject() as RenderBox?;
-    if (renderBox == null) {
-      setState(() {
-        _frase.add(Pictograma(
-          id: picto.id,
-          rutaSvg: picto.rutaSvg ?? '',
-          etiqueta: picto.etiqueta,
-          textoTts: picto.textoTts,
-          categoria: picto.categoria,
-        ));
-      });
-      return;
-    }
-
-    final destinoGlobal = renderBox.localToGlobal(Offset.zero);
-    final tamanoStrip = renderBox.size;
-
-    _flyOverlay?.remove();
-
-    _flyOverlay = OverlayEntry(
-      builder: (context) => _FlyAnimationDisplay(
-        pictograma: picto,
-        origen: origenGlobal,
-        destino: Offset(destinoGlobal.dx + tamanoStrip.width / 2,
-            destinoGlobal.dy + tamanoStrip.height / 2),
-        onEnd: () {
-          setState(() {
-            _frase.add(Pictograma(
-              id: picto.id,
-              rutaSvg: picto.rutaSvg ?? '',
-              etiqueta: picto.etiqueta,
-              textoTts: picto.textoTts,
-              categoria: picto.categoria,
-            ));
-          });
-          _flyOverlay?.remove();
-          _flyOverlay = null;
-        },
-      ),
-    );
-
-    Overlay.of(context).insert(_flyOverlay!);
-  }
-
-  void _eliminarUltimo() {
-    if (_frase.isEmpty) return;
-    HapticFeedback.selectionClick();
-    setState(() => _frase.removeLast());
-  }
-
-  void _limpiarFrase() {
-    if (_frase.isEmpty) return;
-    HapticFeedback.mediumImpact();
-    setState(() => _frase.clear());
   }
 
   void _onTransicionCercana() {
@@ -564,33 +575,28 @@ class _PantallaPacienteTEAState extends State<PantallaPacienteTEA>
                       _GridCategoriaDisplay(
                         key: const PageStorageKey('tab_rutina'),
                         pictogramas: _filtrarPorCategoria(todos, _catHoraria),
-                        onAgregar: (p, origen) =>
-                            _agregarAFraseDisplay(p, origen),
-                        tiraLlena: _tiraLlena,
+                        onTap: _hablarPictograma,
+                        onLongPress: _editarTexto,
                         nombreRutina: _nombreRutina,
                         iconoRutina: _iconoRutina,
                       ),
                       _GridCategoriaDisplay(
                         key: const PageStorageKey('tab_comida'),
                         pictogramas: _filtrarPorCategoria(todos, 'Comida'),
-                        onAgregar: (p, origen) =>
-                            _agregarAFraseDisplay(p, origen),
-                        tiraLlena: _tiraLlena,
+                        onTap: _hablarPictograma,
+                        onLongPress: _editarTexto,
                       ),
                       _GridCategoriaDisplay(
                         key: const PageStorageKey('tab_emociones'),
-                        pictogramas:
-                            _filtrarPorCategoria(todos, 'Emociones'),
-                        onAgregar: (p, origen) =>
-                            _agregarAFraseDisplay(p, origen),
-                        tiraLlena: _tiraLlena,
+                        pictogramas: _filtrarPorCategoria(todos, 'Emociones'),
+                        onTap: _hablarPictograma,
+                        onLongPress: _editarTexto,
                       ),
                       _GridCategoriaDisplay(
                         key: const PageStorageKey('tab_acciones'),
                         pictogramas: _filtrarPorCategoria(todos, 'Acciones'),
-                        onAgregar: (p, origen) =>
-                            _agregarAFraseDisplay(p, origen),
-                        tiraLlena: _tiraLlena,
+                        onTap: _hablarPictograma,
+                        onLongPress: _editarTexto,
                       ),
                     ],
                   );
@@ -598,7 +604,6 @@ class _PantallaPacienteTEAState extends State<PantallaPacienteTEA>
               ),
             ),
             _buildAyudaRow(colors),
-            _buildSentenceStrip(colors),
           ],
         ),
         bottomNavigationBar: const CustomNavBar(initialIndex: 2),
@@ -606,239 +611,9 @@ class _PantallaPacienteTEAState extends State<PantallaPacienteTEA>
     );
   }
 
-  Widget _buildSentenceStrip(ColorScheme colors) {
-    final isFull = _tiraLlena;
-
-    return GestureDetector(
-      onLongPress: _limpiarFrase,
-      child: Container(
-        key: _stripKey,
-        margin: const EdgeInsets.fromLTRB(12, 4, 12, 8),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        decoration: BoxDecoration(
-          color: isFull
-              ? colors.primaryContainer.withValues(alpha: 0.12)
-              : colors.surfaceContainerHighest.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isFull
-                ? colors.primary.withValues(alpha: 0.4)
-                : colors.outlineVariant.withValues(alpha: 0.3),
-            width: isFull ? 1.5 : 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 12,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: _frase.isEmpty
-                  ? _buildPlaceholder(colors)
-                  : _buildMiniPictogramas(colors),
-            ),
-            const SizedBox(width: 6),
-            _buildStripActions(colors),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPlaceholder(ColorScheme colors) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Row(
-        children: [
-          Icon(
-            Icons.touch_app_rounded,
-            size: 18,
-            color: colors.onSurfaceVariant.withValues(alpha: 0.5),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            'Toca pictogramas para armar tu frase',
-            style: TextStyle(
-              fontSize: 12,
-              color: colors.onSurfaceVariant.withValues(alpha: 0.5),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMiniPictogramas(ColorScheme colors) {
-    return ListView.separated(
-      scrollDirection: Axis.horizontal,
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      itemCount: _frase.length,
-      separatorBuilder: (_, __) => const SizedBox(width: 6),
-      itemBuilder: (_, index) {
-        final picto = _frase[index];
-        return GestureDetector(
-          onTap: () {
-            HapticFeedback.selectionClick();
-            setState(() => _frase.removeAt(index));
-          },
-          child: _buildMiniPicto(picto, colors),
-        );
-      },
-    );
-  }
-
-  Widget _buildMiniPicto(Pictograma picto, ColorScheme colors) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeOutBack,
-      width: 56,
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: colors.primary.withValues(alpha: 0.2),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: colors.shadow.withValues(alpha: 0.05),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(6, 6, 6, 3),
-            child: SvgPicture.asset(
-              picto.rutaSvg,
-              width: 32,
-              height: 32,
-              fit: BoxFit.contain,
-              placeholderBuilder: (_) => Icon(
-                Icons.image_not_supported_rounded,
-                size: 20,
-                color: colors.outlineVariant,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
-            child: Text(
-              picto.etiqueta,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 6.5,
-                fontWeight: FontWeight.w700,
-                color: colors.primary,
-                letterSpacing: 0.3,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWaveIndicator(ColorScheme colors) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(3, (i) {
-        return TweenAnimationBuilder<double>(
-          tween: Tween(begin: 0.4, end: 1.0),
-          duration: Duration(milliseconds: 400 + (i * 150)),
-          builder: (_, value, __) {
-            return Container(
-              width: 3,
-              height: 12 * value,
-              margin: const EdgeInsets.symmetric(horizontal: 1.5),
-              decoration: BoxDecoration(
-                color: colors.onPrimary,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            );
-          },
-        );
-      }),
-    );
-  }
-
-  Widget _buildStripActions(ColorScheme colors) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        GestureDetector(
-          onTap: _frase.isNotEmpty
-              ? (_audioPlaying ? _audioService.stop : _hablarFraseCompleta)
-              : null,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: _frase.isNotEmpty
-                  ? colors.primary
-                  : colors.surfaceContainerHighest,
-              boxShadow: _frase.isNotEmpty
-                  ? [
-                      BoxShadow(
-                        color: colors.primary.withValues(alpha: 0.25),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ]
-                  : null,
-            ),
-            child: _audioPlaying
-                ? _buildWaveIndicator(colors)
-                : Icon(
-                    Icons.volume_up_rounded,
-                    color: _frase.isNotEmpty
-                        ? colors.onPrimary
-                        : colors.onSurfaceVariant,
-                    size: 20,
-                  ),
-          ),
-        ),
-        const SizedBox(height: 4),
-        GestureDetector(
-          onTap: _frase.isNotEmpty ? _eliminarUltimo : null,
-          child: Container(
-            width: 40,
-            height: 32,
-            decoration: BoxDecoration(
-              color: _frase.isNotEmpty
-                  ? colors.errorContainer.withValues(alpha: 0.3)
-                  : colors.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              Icons.backspace_rounded,
-              size: 16,
-              color: _frase.isNotEmpty
-                  ? colors.onErrorContainer
-                  : colors.onSurfaceVariant,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildAyudaRow(ColorScheme colors) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
       child: SizedBox(
         width: double.infinity,
         child: ElevatedButton.icon(
@@ -1128,139 +903,19 @@ class _ArcoProgresoPainter extends CustomPainter {
       oldDelegate.progreso != progreso || oldDelegate.color != color;
 }
 
-// ─── Animación de vuelo del pictograma a la tira ──────────────────────────────
-class _FlyAnimation extends StatefulWidget {
-  final Pictograma pictograma;
-  final Offset origen;
-  final Offset destino;
-  final VoidCallback onEnd;
-
-  const _FlyAnimation({
-    required this.pictograma,
-    required this.origen,
-    required this.destino,
-    required this.onEnd,
-  });
-
-  @override
-  State<_FlyAnimation> createState() => _FlyAnimationState();
-}
-
-class _FlyAnimationState extends State<_FlyAnimation>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<Offset> _position;
-  late final Animation<double> _scale;
-  late final Animation<double> _opacity;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 350),
-      vsync: this,
-    );
-
-    _position = Tween<Offset>(
-      begin: widget.origen,
-      end: widget.destino,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOutCubic,
-    ));
-
-    _scale = Tween<double>(begin: 1.0, end: 0.5).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeIn,
-    ));
-
-    _opacity = Tween<double>(begin: 1.0, end: 0.7).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    ));
-
-    _controller.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        widget.onEnd();
-      }
-    });
-
-    _controller.forward();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        final pos = _position.value;
-        return Positioned(
-          left: pos.dx - 30,
-          top: pos.dy - 30,
-          child: Opacity(
-            opacity: _opacity.value,
-            child: Transform.scale(
-              scale: _scale.value,
-              child: Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: colors.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: colors.primary.withValues(alpha: 0.4),
-                    width: 2,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: colors.primary.withValues(alpha: 0.2),
-                      blurRadius: 16,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: SvgPicture.asset(
-                    widget.pictograma.rutaSvg,
-                    fit: BoxFit.contain,
-                    placeholderBuilder: (_) => Icon(
-                      Icons.image_not_supported_rounded,
-                      color: colors.outlineVariant,
-                      size: 24,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-// ─── Grid por categoría (unificado: SVG + fotos) ─────────────────────────────
+// ─── Grid por categoría ───────────────────────────────────────────────────────
 class _GridCategoriaDisplay extends StatefulWidget {
   final List<PictogramaDisplay> pictogramas;
-  final void Function(PictogramaDisplay, Offset) onAgregar;
-  final bool tiraLlena;
+  final void Function(PictogramaDisplay) onTap;
+  final void Function(PictogramaDisplay) onLongPress;
   final String? nombreRutina;
   final IconData? iconoRutina;
 
   const _GridCategoriaDisplay({
     super.key,
     required this.pictogramas,
-    required this.onAgregar,
-    required this.tiraLlena,
+    required this.onTap,
+    required this.onLongPress,
     this.nombreRutina,
     this.iconoRutina,
   });
@@ -1344,10 +999,8 @@ class _GridCategoriaDisplayState extends State<_GridCategoriaDisplay>
                     final picto = widget.pictogramas[i];
                     return _TarjetaPictogramaDisplay(
                       pictograma: picto,
-                      onTap: widget.tiraLlena
-                          ? null
-                          : (origen) => widget.onAgregar(picto, origen),
-                      deshabilitado: widget.tiraLlena,
+                      onTap: () => widget.onTap(picto),
+                      onLongPress: () => widget.onLongPress(picto),
                     );
                   },
                 ),
@@ -1357,16 +1010,16 @@ class _GridCategoriaDisplayState extends State<_GridCategoriaDisplay>
   }
 }
 
-// ─── Tarjeta de pictograma (SVG o foto) ──────────────────────────────────────
+// ─── Tarjeta de pictograma ────────────────────────────────────────────────────
 class _TarjetaPictogramaDisplay extends StatefulWidget {
   final PictogramaDisplay pictograma;
-  final void Function(Offset)? onTap;
-  final bool deshabilitado;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
 
   const _TarjetaPictogramaDisplay({
     required this.pictograma,
     this.onTap,
-    this.deshabilitado = false,
+    this.onLongPress,
   });
 
   @override
@@ -1378,6 +1031,13 @@ class _TarjetaPictogramaDisplayState extends State<_TarjetaPictogramaDisplay>
     with SingleTickerProviderStateMixin {
   late final AnimationController _pressController;
   late final Animation<double> _scaleAnimation;
+
+  Timer? _progressTimer;
+  bool _isLongPressing = false;
+  double _longPressProgress = 0.0;
+
+  static const _longPressDurationMs = 5000;
+  static const _tickMs = 50;
 
   @override
   void initState() {
@@ -1398,31 +1058,55 @@ class _TarjetaPictogramaDisplayState extends State<_TarjetaPictogramaDisplay>
 
   @override
   void dispose() {
+    _progressTimer?.cancel();
     _pressController.dispose();
     super.dispose();
   }
 
-  void _handleTapDown(TapDownDetails details) {
-    if (widget.deshabilitado || widget.onTap == null) return;
-    _pressController.forward();
+  void _startLongPress(LongPressStartDetails _) {
+    if (widget.onLongPress == null) return;
+
+    int elapsed = 0;
+    setState(() {
+      _isLongPressing = true;
+      _longPressProgress = 0.0;
+    });
+
+    _progressTimer?.cancel();
+    _progressTimer = Timer.periodic(const Duration(milliseconds: _tickMs), (t) {
+      elapsed += _tickMs;
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
+      setState(() => _longPressProgress = elapsed / _longPressDurationMs);
+      if (elapsed >= _longPressDurationMs) {
+        t.cancel();
+        _triggerLongPress();
+      }
+    });
   }
 
-  void _handleTapUp(TapUpDetails details) {
-    if (widget.deshabilitado || widget.onTap == null) return;
-    _pressController.reverse();
-
-    final renderBox = context.findRenderObject() as RenderBox;
-    final globalPosition = renderBox.localToGlobal(Offset.zero);
-    final center = Offset(
-      globalPosition.dx + renderBox.size.width / 2,
-      globalPosition.dy + renderBox.size.height / 2,
-    );
-    widget.onTap!(center);
+  void _cancelLongPress() {
+    _progressTimer?.cancel();
+    _progressTimer = null;
+    if (!mounted) return;
+    setState(() {
+      _isLongPressing = false;
+      _longPressProgress = 0.0;
+    });
   }
 
-  void _handleTapCancel() {
-    if (_pressController.isAnimating) return;
-    _pressController.reverse();
+  void _triggerLongPress() {
+    _progressTimer?.cancel();
+    _progressTimer = null;
+    if (!mounted) return;
+    setState(() {
+      _isLongPressing = false;
+      _longPressProgress = 0.0;
+    });
+    HapticFeedback.mediumImpact();
+    widget.onLongPress?.call();
   }
 
   Widget _buildImagen(ColorScheme colors) {
@@ -1479,236 +1163,107 @@ class _TarjetaPictogramaDisplayState extends State<_TarjetaPictogramaDisplay>
     final colors = Theme.of(context).colorScheme;
 
     return GestureDetector(
-      onTapDown: _handleTapDown,
-      onTapUp: _handleTapUp,
-      onTapCancel: _handleTapCancel,
+      onTapDown: (_) => _pressController.forward(),
+      onTap: () {
+        _pressController.reverse();
+        widget.onTap?.call();
+      },
+      onTapCancel: () => _pressController.reverse(),
+      onLongPressStart: _startLongPress,
+      onLongPressEnd: (_) => _cancelLongPress(),
+      onLongPressCancel: _cancelLongPress,
       child: ScaleTransition(
         scale: _scaleAnimation,
-        child: AnimatedOpacity(
-          duration: const Duration(milliseconds: 150),
-          opacity: widget.deshabilitado ? 0.4 : 1.0,
-          child: Container(
-            decoration: BoxDecoration(
-              color: colors.surface,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: widget.pictograma.esPersonalizado
-                    ? colors.secondary.withValues(alpha: widget.deshabilitado ? 0.15 : 0.35)
-                    : widget.deshabilitado
-                        ? colors.outlineVariant.withValues(alpha: 0.2)
-                        : colors.outlineVariant.withValues(alpha: 0.4),
-                width: widget.pictograma.esPersonalizado ? 1.5 : 1.0,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: colors.shadow
-                      .withValues(alpha: widget.deshabilitado ? 0.02 : 0.06),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+        child: Container(
+          decoration: BoxDecoration(
+            color: colors.surface,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: widget.pictograma.esPersonalizado
+                  ? colors.secondary.withValues(alpha: 0.35)
+                  : colors.outlineVariant.withValues(alpha: 0.4),
+              width: widget.pictograma.esPersonalizado ? 1.5 : 1.0,
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: Column(
-                children: [
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
-                      child: _buildImagen(colors),
+            boxShadow: [
+              BoxShadow(
+                color: colors.shadow.withValues(alpha: 0.06),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Stack(
+              children: [
+                Column(
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
+                        child: _buildImagen(colors),
+                      ),
                     ),
-                  ),
-                  Container(
-                    width: double.infinity,
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 7, horizontal: 6),
-                    decoration: BoxDecoration(
-                      color: widget.pictograma.esPersonalizado
-                          ? colors.secondaryContainer.withValues(alpha: 0.2)
-                          : colors.primaryContainer.withValues(alpha: 0.15),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (widget.pictograma.esPersonalizado)
-                          Icon(
-                            Icons.photo_camera_rounded,
-                            size: 8,
-                            color: colors.secondary.withValues(alpha: 0.6),
-                          ),
-                        if (widget.pictograma.esPersonalizado)
-                          const SizedBox(width: 3),
-                        Flexible(
-                          child: Text(
-                            widget.pictograma.etiqueta,
-                            textAlign: TextAlign.center,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: widget.pictograma.esPersonalizado ? 8 : 9,
-                              fontWeight: FontWeight.w800,
-                              color: widget.pictograma.esPersonalizado
-                                  ? colors.secondary
-                                  : colors.primary,
-                              letterSpacing: 0.5,
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 7, horizontal: 6),
+                      decoration: BoxDecoration(
+                        color: widget.pictograma.esPersonalizado
+                            ? colors.secondaryContainer.withValues(alpha: 0.2)
+                            : colors.primaryContainer.withValues(alpha: 0.15),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (widget.pictograma.esPersonalizado)
+                            Icon(
+                              Icons.photo_camera_rounded,
+                              size: 8,
+                              color: colors.secondary.withValues(alpha: 0.6),
+                            ),
+                          if (widget.pictograma.esPersonalizado)
+                            const SizedBox(width: 3),
+                          Flexible(
+                            child: Text(
+                              widget.pictograma.etiqueta,
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize:
+                                    widget.pictograma.esPersonalizado ? 8 : 9,
+                                fontWeight: FontWeight.w800,
+                                color: widget.pictograma.esPersonalizado
+                                    ? colors.secondary
+                                    : colors.primary,
+                                letterSpacing: 0.5,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Animación de vuelo (unificada: SVG + fotos) ─────────────────────────────
-class _FlyAnimationDisplay extends StatefulWidget {
-  final PictogramaDisplay pictograma;
-  final Offset origen;
-  final Offset destino;
-  final VoidCallback onEnd;
-
-  const _FlyAnimationDisplay({
-    required this.pictograma,
-    required this.origen,
-    required this.destino,
-    required this.onEnd,
-  });
-
-  @override
-  State<_FlyAnimationDisplay> createState() => _FlyAnimationDisplayState();
-}
-
-class _FlyAnimationDisplayState extends State<_FlyAnimationDisplay>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<Offset> _position;
-  late final Animation<double> _scale;
-  late final Animation<double> _opacity;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 350),
-      vsync: this,
-    );
-
-    _position = Tween<Offset>(
-      begin: widget.origen,
-      end: widget.destino,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOutCubic,
-    ));
-
-    _scale = Tween<double>(begin: 1.0, end: 0.5).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeIn,
-    ));
-
-    _opacity = Tween<double>(begin: 1.0, end: 0.7).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    ));
-
-    _controller.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        widget.onEnd();
-      }
-    });
-
-    _controller.forward();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Widget _buildImagenContent(ColorScheme colors) {
-    if (widget.pictograma.esPersonalizado &&
-        widget.pictograma.imageUrl != null) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(14),
-        child: Image.network(
-          widget.pictograma.imageUrl!,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Icon(
-            Icons.broken_image_rounded,
-            color: colors.outlineVariant,
-            size: 24,
-          ),
-        ),
-      );
-    }
-
-    return SvgPicture.asset(
-      widget.pictograma.rutaSvg ?? '',
-      fit: BoxFit.contain,
-      placeholderBuilder: (_) => Icon(
-        Icons.image_not_supported_rounded,
-        color: colors.outlineVariant,
-        size: 24,
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        final pos = _position.value;
-        return Positioned(
-          left: pos.dx - 30,
-          top: pos.dy - 30,
-          child: Opacity(
-            opacity: _opacity.value,
-            child: Transform.scale(
-              scale: _scale.value,
-              child: Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: colors.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: widget.pictograma.esPersonalizado
-                        ? colors.secondary.withValues(alpha: 0.4)
-                        : colors.primary.withValues(alpha: 0.4),
-                    width: 2,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: (widget.pictograma.esPersonalizado
-                              ? colors.secondary
-                              : colors.primary)
-                          .withValues(alpha: 0.2),
-                      blurRadius: 16,
-                      spreadRadius: 2,
+                        ],
+                      ),
                     ),
                   ],
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: _buildImagenContent(colors),
-                ),
-              ),
+                if (_isLongPressing)
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: LinearProgressIndicator(
+                      value: _longPressProgress,
+                      minHeight: 3,
+                      backgroundColor: colors.outlineVariant.withValues(alpha: 0.2),
+                      color: colors.primary,
+                    ),
+                  ),
+              ],
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

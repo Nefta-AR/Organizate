@@ -3,12 +3,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
 
 import 'package:simple/features/onboarding/screens/estudios_screen.dart';
 import 'package:simple/features/onboarding/screens/hogar_screen.dart';
-import 'package:simple/features/auth/screens/login_screen.dart';
 import 'package:simple/features/onboarding/screens/meds_screen.dart';
 import 'package:simple/features/tutor_dashboard/screens/settings_screen.dart';
 import 'package:simple/features/tda_focus/screens/tareas_screen.dart';
@@ -133,11 +131,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     MaterialPageRoute(builder: (_) => const SettingsScreen()),
                   ),
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.logout, size: 20),
-                tooltip: 'Cerrar sesión',
-                onPressed: _handleLogout,
               ),
             ]);
           },
@@ -501,20 +494,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> _handleLogout() async {
-    if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-      (route) => false,
-    );
-    try {
-      await GoogleSignIn().signOut();
-    } catch (_) {}
-    try {
-      await FirebaseAuth.instance.signOut();
-    } catch (_) {}
   }
 
   Future<void> _toggleTaskCompletion(String taskId, bool isDone) async {
