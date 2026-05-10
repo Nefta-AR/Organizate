@@ -6,9 +6,7 @@ import 'package:flutter/material.dart';
 
 import 'package:simple/features/tutor_dashboard/screens/home_screen.dart';
 import 'package:simple/features/auth/screens/login_screen.dart';
-import 'package:simple/features/onboarding/screens/onboarding_screen.dart';
 import 'package:simple/features/auth/screens/role_selection_screen.dart';
-import 'package:simple/features/tda_focus/screens/foco_screen.dart';
 import 'package:simple/features/tea_board/screens/pantalla_paciente_tea.dart';
 import 'package:simple/core/services/push_notification_service.dart';
 
@@ -76,10 +74,8 @@ class _UserOnboardingGateState extends State<_UserOnboardingGate> {
         }
         final data = snapshot.data?.data();
         final role = data?['role'] as String?;
-        final hasCompleted = data?['hasCompletedOnboarding'] == true;
 
         if (role == null || role.isEmpty) return const RoleSelectionScreen();
-        if (!hasCompleted) return const OnboardingScreen();
 
         return RoleDispatcher(role: role);
       },
@@ -95,10 +91,8 @@ class RoleDispatcher extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     switch (role) {
-      case 'paciente':
+      case 'paciente_tea':
         return const PantallaPacienteTEA();
-      case 'tutor':
-        return const HomeScreen();
       default:
         return const HomeScreen();
     }

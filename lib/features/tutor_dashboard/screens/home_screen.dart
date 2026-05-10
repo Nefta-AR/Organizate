@@ -153,6 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context, snapshot) {
         final userData = snapshot.data?.data() ?? {};
         final name = (userData['name'] as String?)?.split(' ').first ?? 'amigo';
+        final role = userData['role'] as String?;
 
         return SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
@@ -164,8 +165,10 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildPriorityTaskCard(),
               const SizedBox(height: 28),
               _buildQuickAccess(),
-              const SizedBox(height: 20),
-              _buildTeaButton(),
+              if (role == 'paciente_tea') ...[
+                const SizedBox(height: 20),
+                _buildTeaButton(),
+              ],
             ],
           ),
         );

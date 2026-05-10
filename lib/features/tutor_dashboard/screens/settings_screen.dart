@@ -9,6 +9,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:simple/features/auth/screens/login_screen.dart';
+import 'package:simple/features/auth/screens/role_selection_screen.dart';
 import 'package:simple/core/services/notification_service.dart';
 import 'package:simple/core/services/google_drive_service.dart';
 import 'package:simple/core/utils/reminder_options.dart';
@@ -371,6 +372,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ? pomodoroSoundRaw
                   : _pomodoroSoundOptions.first['key']!;
 
+          final role = (data['role'] as String?) ?? '';
           final points = (data['points'] as num?)?.toInt() ?? 0;
           final streak = (data['streak'] as num?)?.toInt() ?? 0;
           final focusSessions =
@@ -389,6 +391,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildProfileCard(name, email, photoUrl, avatar),
+                const SizedBox(height: 16),
+                _buildRoleCard(role),
                 const SizedBox(height: 16),
                 _buildEmergencyCard(),
                 const SizedBox(height: 16),
@@ -498,6 +502,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRoleCard(String currentRole) {
+    final roleLabel = switch (currentRole) {
+      'usuario_general' => 'Usuario General',
+      'tutor' => 'Tutor',
+      'paciente_tdah' => 'Paciente TDAH',
+      'paciente_tea' => 'Paciente TEA',
+      _ => currentRole.isEmpty ? 'Sin rol asignado' : currentRole,
+    };
+
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: ListTile(
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: const Icon(Icons.manage_accounts_outlined,
+            color: _Palette.accent, size: 28),
+        title: const Text('Rol actual',
+            style: TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: Text(roleLabel,
+            style: const TextStyle(color: _Palette.textDark, fontSize: 14)),
+        trailing: TextButton(
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const RoleSelectionScreen()),
+          ),
+          child: const Text('Cambiar'),
         ),
       ),
     );

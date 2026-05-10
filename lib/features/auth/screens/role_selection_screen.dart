@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../tutor_dashboard/screens/home_screen.dart';
+import '../../tea_board/screens/pantalla_paciente_tea.dart';
 
 class _Palette {
   _Palette._();
@@ -37,13 +38,15 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
       await FirebaseFirestore.instance
           .collection('users')
           .doc(uid)
-          .set({'role': role}, SetOptions(merge: true));
+          .set({'role': role, 'hasCompletedOnboarding': true}, SetOptions(merge: true));
 
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) => const HomeScreen(),
+          pageBuilder: (_, __, ___) => role == 'paciente_tea'
+              ? const PantallaPacienteTEA()
+              : const HomeScreen(),
           transitionsBuilder: (_, anim, __, child) =>
               FadeTransition(opacity: anim, child: child),
           transitionDuration: const Duration(milliseconds: 300),
@@ -93,39 +96,51 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
               ),
               const Spacer(),
               _RoleCard(
-                role: 'estudiante',
-                label: 'Estudiante',
-                description: 'Organiza tareas, horarios y estudios',
-                icon: Icons.school_rounded,
+                role: 'usuario_general',
+                label: 'Usuario General',
+                description: 'Organiza tareas, horarios y tu día a día',
+                icon: Icons.person_rounded,
                 cardColor: const Color(0xFFEDF2F7),
                 accentColor: const Color(0xFF7EA3BC),
-                isLoading: _loadingRole == 'estudiante',
+                isLoading: _loadingRole == 'usuario_general',
                 isDisabled: _loadingRole != null,
-                onTap: () => _selectRole('estudiante'),
+                onTap: () => _selectRole('usuario_general'),
               ),
               const SizedBox(height: 16),
               _RoleCard(
-                role: 'cuidador',
-                label: 'Cuidador',
+                role: 'tutor',
+                label: 'Tutor',
                 description: 'Acompaña y supervisa\na quien cuidas',
                 icon: Icons.favorite_rounded,
                 cardColor: const Color(0xFFEEF5F1),
                 accentColor: const Color(0xFF7DA88A),
-                isLoading: _loadingRole == 'cuidador',
+                isLoading: _loadingRole == 'tutor',
                 isDisabled: _loadingRole != null,
-                onTap: () => _selectRole('cuidador'),
+                onTap: () => _selectRole('tutor'),
               ),
               const SizedBox(height: 16),
               _RoleCard(
-                role: 'paciente',
-                label: 'Paciente',
-                description: 'Gestiona medicación,\ncitas y bienestar',
-                icon: Icons.accessibility_new_rounded,
+                role: 'paciente_tdah',
+                label: 'Paciente TDAH',
+                description: 'Gestiona tu foco, rutinas\ny bienestar diario',
+                icon: Icons.bolt_rounded,
+                cardColor: const Color(0xFFF5F1EE),
+                accentColor: const Color(0xFFB89270),
+                isLoading: _loadingRole == 'paciente_tdah',
+                isDisabled: _loadingRole != null,
+                onTap: () => _selectRole('paciente_tdah'),
+              ),
+              const SizedBox(height: 16),
+              _RoleCard(
+                role: 'paciente_tea',
+                label: 'Paciente TEA',
+                description: 'Comunicación con pictogramas\ny voz',
+                icon: Icons.record_voice_over_rounded,
                 cardColor: const Color(0xFFF1EEF6),
                 accentColor: const Color(0xFF9B8DB2),
-                isLoading: _loadingRole == 'paciente',
+                isLoading: _loadingRole == 'paciente_tea',
                 isDisabled: _loadingRole != null,
-                onTap: () => _selectRole('paciente'),
+                onTap: () => _selectRole('paciente_tea'),
               ),
               const Spacer(),
               const Text(
