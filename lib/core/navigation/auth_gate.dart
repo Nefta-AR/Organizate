@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:simple/features/tutor_dashboard/screens/home_screen.dart';
 import 'package:simple/features/auth/screens/login_screen.dart';
 import 'package:simple/features/auth/screens/role_selection_screen.dart';
-import 'package:simple/features/tea_board/screens/pantalla_paciente_tea.dart';
 import 'package:simple/core/services/push_notification_service.dart';
 
 class AuthGate extends StatelessWidget {
@@ -90,11 +89,6 @@ class RoleDispatcher extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    switch (role) {
-      case 'paciente_tea':
-        return const PantallaPacienteTEA();
-      default:
-        return const HomeScreen();
-    }
+    return const HomeScreen();
   }
 }

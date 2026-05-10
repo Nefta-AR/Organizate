@@ -9,6 +9,7 @@ import 'package:vibration/vibration.dart';
 
 import '../../../core/services/audio_service.dart';
 import '../../../core/services/pictogram_service.dart';
+import '../../../core/widgets/custom_nav_bar.dart';
 import 'crear_pictograma_sheet.dart';
 
 // ─── Modelo unificado de pictograma ──────────────────────────────────────────
@@ -600,6 +601,7 @@ class _PantallaPacienteTEAState extends State<PantallaPacienteTEA>
         ),
         floatingActionButton: _buildFabAyuda(colors),
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+        bottomNavigationBar: const CustomNavBar(initialIndex: 2),
       ),
     );
   }

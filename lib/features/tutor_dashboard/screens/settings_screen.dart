@@ -396,16 +396,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 16),
                 _buildEmergencyCard(),
                 const SizedBox(height: 16),
-                _buildTaskNotificationsCard(notiTaskEnabled, notiOffset),
+                _buildNotificacionesCard(notiTaskEnabled, notiOffset),
                 const SizedBox(height: 16),
-                _buildTestNotificationCard(),
-                const SizedBox(height: 16),
-                _buildPomodoroCard(pomodoroSoundEnabled,
-                    pomodoroVibrationEnabled, pomodoroSound),
-                const SizedBox(height: 16),
-                _buildStatsCard(
-                    focusSessions, totalFocusMinutes, points, streak),
-                const SizedBox(height: 16),
+                if (role != 'paciente_tea') ...[
+                  _buildFocoCard(
+                    pomodoroSoundEnabled,
+                    pomodoroVibrationEnabled,
+                    pomodoroSound,
+                    focusSessions,
+                    totalFocusMinutes,
+                    points,
+                    streak,
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 _buildBackupCard(),
               ],
             ),
@@ -603,7 +607,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildTaskNotificationsCard(bool notiTaskEnabled, int? notiOffset) {
+  Widget _buildNotificacionesCard(bool notiTaskEnabled, int? notiOffset) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
@@ -611,7 +615,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Notificaciones de tareas',
+            const Text('Notificaciones',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             SwitchListTile.adaptive(
@@ -644,26 +648,81 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 );
               },
             ),
+            const SizedBox(height: 16),
+            const Divider(height: 1),
             const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerRight,
-              child: ElevatedButton.icon(
-                onPressed: () async {
-                  await NotificationService
-                      .ensureDeviceCanDeliverNotifications();
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Revisa permisos del sistema y optimización de batería '
-                        'si tu dispositivo es Xiaomi/HyperOS.',
-                      ),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.settings_suggest),
-                label: const Text('Optimizar entrega en mi dispositivo'),
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      await NotificationService
+                          .ensureDeviceCanDeliverNotifications();
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Revisa permisos del sistema y optimización '
+                            'de batería si usas Xiaomi/HyperOS.',
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.settings_suggest, size: 16),
+                    label: const Text('Optimizar entrega',
+                        style: TextStyle(fontSize: 12)),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      if (kIsWeb) {
+                        messenger.showSnackBar(const SnackBar(
+                          content: Text(
+                              'Modo Web: Prueba en tu celular.'),
+                          behavior: SnackBarBehavior.floating,
+                        ));
+                        return;
+                      }
+                      final result =
+                          await NotificationService.showTestNotification(
+                        playPreviewSound: true,
+                      );
+                      if (!mounted) return;
+                      if (!result.notificationSent) {
+                        final String msg;
+                        switch (result.failure) {
+                          case NotificationTestFailure.permissionDenied:
+                            msg =
+                                'Debes aceptar el permiso de notificaciones.';
+                          case NotificationTestFailure
+                                .permissionPermanentlyDenied:
+                            msg = 'Activa las notificaciones desde Ajustes.';
+                          default:
+                            msg = result.errorDescription != null
+                                ? 'No se pudo enviar: ${result.errorDescription}'
+                                : 'No se pudo enviar. Revisa los permisos.';
+                        }
+                        messenger.showSnackBar(SnackBar(content: Text(msg)));
+                        return;
+                      }
+                      final base = result.previewSoundPlayed
+                          ? 'Notificación enviada con sonido.'
+                          : 'Notificación enviada. Activa el volumen.';
+                      final hint = result.usedFallbackSound
+                          ? '\nSe usó el sonido por defecto.'
+                          : '';
+                      messenger
+                          .showSnackBar(SnackBar(content: Text(base + hint)));
+                    },
+                    icon: const Icon(Icons.notifications_active, size: 16),
+                    label: const Text('Probar notificación',
+                        style: TextStyle(fontSize: 12)),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -671,7 +730,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildTestNotificationCard() {
+  Widget _buildFocoCard(
+    bool soundEnabled,
+    bool vibrationEnabled,
+    String sound,
+    int focusSessions,
+    int totalFocusMinutes,
+    int points,
+    int streak,
+  ) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
@@ -679,77 +746,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Prueba de notificación',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            const Text(
-              'Pulsa para asegurarte de que las notificaciones y el sonido '
-              'Notificacion1.mp3 funcionan en tu dispositivo.',
-            ),
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerRight,
-              child: ElevatedButton.icon(
-                onPressed: () async {
-                  final messenger = ScaffoldMessenger.of(context);
-                  if (kIsWeb) {
-                    messenger.showSnackBar(const SnackBar(
-                      content: Text(
-                        'Modo Web: Prueba las notificaciones nativas en tu celular.',
-                      ),
-                      behavior: SnackBarBehavior.floating,
-                    ));
-                    return;
-                  }
-                  final result = await NotificationService.showTestNotification(
-                    playPreviewSound: true,
-                  );
-                  if (!context.mounted) return;
-                  if (!result.notificationSent) {
-                    final String msg;
-                    switch (result.failure) {
-                      case NotificationTestFailure.permissionDenied:
-                        msg = 'Debes aceptar el permiso de notificaciones.';
-                      case NotificationTestFailure.permissionPermanentlyDenied:
-                        msg = 'Activa las notificaciones desde Ajustes del '
-                            'sistema y vuelve a intentarlo.';
-                      default:
-                        msg = result.errorDescription != null
-                            ? 'No se pudo enviar: ${result.errorDescription}'
-                            : 'No se pudo enviar. Revisa los permisos.';
-                    }
-                    messenger.showSnackBar(SnackBar(content: Text(msg)));
-                    return;
-                  }
-                  final base = result.previewSoundPlayed
-                      ? 'Notificación enviada. Deberías escuchar Notificacion1.mp3.'
-                      : 'Notificación enviada. Activa el volumen para escuchar el sonido.';
-                  final hint = result.usedFallbackSound
-                      ? '\nSe usó el sonido por defecto porque Notificacion1 '
-                          'no está disponible. Ejecuta flutter clean y reinstala.'
-                      : '';
-                  messenger.showSnackBar(SnackBar(content: Text(base + hint)));
-                },
-                icon: const Icon(Icons.notifications_active),
-                label: const Text('Probar notificación ahora'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPomodoroCard(
-      bool soundEnabled, bool vibrationEnabled, String sound) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Foco (Pomodoro)',
+            const Text('Modo Foco',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             SwitchListTile.adaptive(
@@ -770,7 +767,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     SetOptions(merge: true));
               },
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             DropdownButtonFormField<String>(
               key: ValueKey(sound),
               decoration: const InputDecoration(
@@ -792,30 +789,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     }
                   : null,
             ),
+            const SizedBox(height: 16),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+            const Text(
+              'Registros',
+              style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: _Palette.textMuted),
+            ),
+            const SizedBox(height: 8),
+            _buildStatRow(
+                Icons.self_improvement, 'Sesiones completadas', '$focusSessions'),
+            _buildStatRow(
+                Icons.timer, 'Minutos de foco', '$totalFocusMinutes'),
+            _buildStatRow(Icons.star, 'Puntos actuales', '$points'),
+            _buildStatRow(
+                Icons.local_fire_department, 'Racha actual', '$streak días'),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildStatsCard(
-      int focusSessions, int totalFocusMinutes, int points, int streak) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Resumen de foco y progreso',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            Text('Sesiones de foco completadas: $focusSessions'),
-            Text('Minutos totales de foco: $totalFocusMinutes'),
-            Text('Puntos actuales: $points'),
-            Text('Racha actual: $streak días'),
-          ],
-        ),
+  Widget _buildStatRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: _Palette.textMuted),
+          const SizedBox(width: 8),
+          Text(label,
+              style: const TextStyle(fontSize: 13, color: _Palette.textDark)),
+          const Spacer(),
+          Text(
+            value,
+            style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: _Palette.textDark),
+          ),
+        ],
       ),
     );
   }

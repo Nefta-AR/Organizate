@@ -19,7 +19,6 @@ import 'package:simple/core/utils/emergency_contact_helper.dart';
 import 'package:simple/core/utils/reminder_helper.dart';
 import 'package:simple/core/utils/reminder_options.dart';
 import 'package:simple/features/onboarding/screens/super_experto_sheet.dart';
-import 'package:simple/features/tea_board/screens/pantalla_paciente_tea.dart';
 import 'package:simple/core/widgets/custom_nav_bar.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -153,7 +152,6 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context, snapshot) {
         final userData = snapshot.data?.data() ?? {};
         final name = (userData['name'] as String?)?.split(' ').first ?? 'amigo';
-        final role = userData['role'] as String?;
 
         return SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
@@ -165,10 +163,6 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildPriorityTaskCard(),
               const SizedBox(height: 28),
               _buildQuickAccess(),
-              if (role == 'paciente_tea') ...[
-                const SizedBox(height: 20),
-                _buildTeaButton(),
-              ],
             ],
           ),
         );
@@ -504,60 +498,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTeaButton() {
-    return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const PantallaPacienteTEA()),
-      ),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF5B8FD4), Color(0xFF3A6BBF)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF3A6BBF).withOpacity(0.30),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: const Row(
-          children: [
-            Icon(Icons.record_voice_over, color: Colors.white, size: 28),
-            SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Modo TEA',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    'Pictogramas con voz para comunicación',
-                    style: TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 16),
-          ],
         ),
       ),
     );
