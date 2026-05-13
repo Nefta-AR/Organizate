@@ -2,10 +2,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ─────────────────────────────────────────────────────────────
-    // HELPERS — Funciones reutilizables de validación
-    // ─────────────────────────────────────────────────────────────
-
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -23,7 +19,7 @@ service cloud.firestore {
     }
 
     function isPaciente() {
-      return isAuthenticated() && getUserRole() == 'paciente';
+      return isAuthenticated() && (getUserRole() == 'paciente_tdah' || getUserRole() == 'paciente_tea' || getUserRole() == 'paciente');
     }
 
     function isOwner(userId) {
@@ -31,10 +27,11 @@ service cloud.firestore {
     }
 
     function isLinkedPatient(tutorId, patientId) {
-      return exists(/databases/$(database)/documents/users/$(tutorId)/linkedPatients/$(patientId)) &&
-        get(/databases/$(database)/documents/users/$(tutorId)/linkedPatients/$(patientId)).data.status == 'active';
+      return exists(/databases/$(database)/documents/users/$(patientId)/linkedTutors/$(tutorId)) &&
+        get(/databases/$(database)/documents/users/$(patientId)/linkedTutors/$(tutorId)).data.status == 'active';
     }
 
+    // Permite al paciente leer el perfil del tutor con quien está vinculado
     function isLinkedTutor(patientId, tutorId) {
       return exists(/databases/$(database)/documents/users/$(patientId)/linkedTutors/$(tutorId)) &&
         get(/databases/$(database)/documents/users/$(patientId)/linkedTutors/$(tutorId)).data.status == 'active';
@@ -42,49 +39,33 @@ service cloud.firestore {
 
     function canReadUser(userId) {
       return isOwner(userId) ||
-        (isTutor() && isLinkedPatient(request.auth.uid, userId));
+        (isTutor() && isLinkedPatient(request.auth.uid, userId)) ||
+        isLinkedTutor(request.auth.uid, userId);
     }
 
-    function canWriteOwnProfile(userId) {
-      return isOwner(userId);
-    }
-
-    // ─────────────────────────────────────────────────────────────
-    // COLECCIÓN PRINCIPAL: /users/{userId}
-    // ─────────────────────────────────────────────────────────────
-
+    // ─── /users/{userId} ──────────────────────────────────────────
     match /users/{userId} {
 
       allow create: if isAuthenticated() && request.auth.uid == userId &&
         request.resource.data.keys().hasAny(['role', 'name', 'email']) &&
-        request.resource.data.role in ['tutor', 'paciente'];
+        request.resource.data.role in ['tutor', 'paciente_tdah', 'paciente_tea', 'usuario_general'];
 
       allow read: if canReadUser(userId);
-
-      allow update: if canWriteOwnProfile(userId);
-
+      allow update: if isOwner(userId);
       allow delete: if isOwner(userId);
 
-      // ───────────────────────────────────────────────────────────
-      // SUBCOLECCIONES del usuario
-      // ───────────────────────────────────────────────────────────
-
       match /tasks/{taskId} {
-        allow read: if canReadUser(userId);
-        allow create, update: if canReadUser(userId);
-        allow delete: if canReadUser(userId);
+        allow read, create, update, delete: if canReadUser(userId);
       }
 
       match /progress/{progressId} {
         allow read: if canReadUser(userId);
-        allow create, update: if isOwner(userId);
-        allow delete: if isOwner(userId);
+        allow create, update, delete: if isOwner(userId);
       }
 
       match /communications/{commId} {
         allow read: if canReadUser(userId);
-        allow create: if isOwner(userId);
-        allow update, delete: if isOwner(userId);
+        allow create, update, delete: if isOwner(userId);
       }
 
       match /pictograms/{pictogramId} {
@@ -93,39 +74,44 @@ service cloud.firestore {
           (isTutor() && isLinkedPatient(request.auth.uid, userId));
       }
 
-      match /linkedPatients/{patientId} {
-        allow read: if isOwner(userId);
-        allow create, update, delete: if isOwner(userId) && isTutor();
+      match /activityLog/{logId} {
+        allow read: if canReadUser(userId);
+        allow create: if isOwner(userId);
       }
 
-      match /linkedTutors/{tutorId} {
+      match /pictogramSettings/{settingId} {
+        allow read: if canReadUser(userId);
+        allow write: if isOwner(userId) ||
+          (isTutor() && isLinkedPatient(request.auth.uid, userId));
+      }
+
+      // El tutor gestiona su lista; el paciente puede añadir su propia entrada
+      match /linkedPatients/{patientId} {
         allow read: if isOwner(userId);
-        allow create: if isOwner(userId) && isPaciente();
-        allow update, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) ||
+          (isAuthenticated() && patientId == request.auth.uid);
+        allow delete: if isOwner(userId);
+      }
+
+      // El paciente gestiona sus propios tutores vinculados.
+      // El tutor puede actualizar su propia entrada para desvincular.
+      match /linkedTutors/{tutorId} {
+        allow read, write: if isOwner(userId);
+        allow update: if isAuthenticated() && tutorId == request.auth.uid;
       }
 
       match /invitationCodes/{codeId} {
-        allow read: if isOwner(userId) && isTutor();
-        allow create, update, delete: if isOwner(userId) && isTutor();
+        allow read, write: if isOwner(userId) && isTutor();
       }
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // COLECCIÓN: /sensitiveData/{patientId}
-    // Datos médicos y evaluaciones — SOLO TUTOR VINCULADO
-    // ─────────────────────────────────────────────────────────────
-
+    // ─── /sensitiveData ───────────────────────────────────────────
     match /sensitiveData/{patientId} {
-      allow read: if isTutor() && isLinkedPatient(request.auth.uid, patientId);
-      allow create, update: if isTutor() && isLinkedPatient(request.auth.uid, patientId);
-      allow delete: if isTutor() && isLinkedPatient(request.auth.uid, patientId);
+      allow read, create, update, delete: if isTutor() &&
+        isLinkedPatient(request.auth.uid, patientId);
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // COLECCIÓN: /invitationCodes/{code}
-    // Códigos globales de invitación (para vinculación cruzada)
-    // ─────────────────────────────────────────────────────────────
-
+    // ─── /invitationCodes (global) ────────────────────────────────
     match /invitationCodes/{code} {
       allow read: if isAuthenticated();
 
@@ -134,18 +120,20 @@ service cloud.firestore {
         request.resource.data.tutorId == request.auth.uid &&
         getUserRole() == 'tutor';
 
-      allow update: if isAuthenticated() &&
-        get(/databases/$(database)/documents/invitationCodes/$(code)).data.tutorId == request.auth.uid;
+      // resource.data = estado actual del doc (sin get() extra, funciona en transacciones)
+      allow update: if isAuthenticated() && (
+        resource.data.tutorId == request.auth.uid
+        ||
+        (resource.data.status == 'active' &&
+         request.resource.data.status == 'used' &&
+         request.resource.data.usedBy == request.auth.uid)
+      );
 
       allow delete: if isAuthenticated() &&
-        get(/databases/$(database)/documents/invitationCodes/$(code)).data.tutorId == request.auth.uid;
+        resource.data.tutorId == request.auth.uid;
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // COLECCIÓN: /pictogramTemplates/{templateId}
-    // Plantillas de pictogramas base (lectura pública para autenticados)
-    // ─────────────────────────────────────────────────────────────
-
+    // ─── /pictogramTemplates ──────────────────────────────────────
     match /pictogramTemplates/{templateId} {
       allow read: if isAuthenticated();
       allow create, update, delete: if isTutor();

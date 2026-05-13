@@ -65,6 +65,74 @@ class PictogramService {
   static CollectionReference<Map<String, dynamic>> get _pictogramsRef =>
       _firestore.collection('users').doc(_userId).collection('pictograms');
 
+  static CollectionReference<Map<String, dynamic>> _pictogramsRefFor(String userId) =>
+      _firestore.collection('users').doc(userId).collection('pictograms');
+
+  static Stream<List<PictogramaPersonalizado>> getCustomPictogramsStreamFor(String userId) {
+    return _pictogramsRefFor(userId)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((s) => s.docs.map(PictogramaPersonalizado.fromFirestore).toList());
+  }
+
+  static Future<PictogramaPersonalizado> createPictogramFor({
+    required String userId,
+    required String etiqueta,
+    required String textoTts,
+    String imageUrl = '',
+    String categoria = 'Personalizado',
+  }) async {
+    final docRef = await _pictogramsRefFor(userId).add({
+      'imageUrl': imageUrl,
+      'etiqueta': etiqueta.trim().toUpperCase(),
+      'textoTts': textoTts.trim(),
+      'categoria': categoria,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+    final doc = await docRef.get();
+    return PictogramaPersonalizado.fromFirestore(doc);
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // CONFIGURACIÓN: categoría y visibilidad por pictograma
+  // ─────────────────────────────────────────────────────────────
+
+  static CollectionReference<Map<String, dynamic>> _settingsRefFor(String userId) =>
+      _firestore.collection('users').doc(userId).collection('pictogramSettings');
+
+  static Stream<Map<String, Map<String, dynamic>>> getPictogramSettingsStreamFor(String userId) {
+    return _settingsRefFor(userId).snapshots().map(
+      (s) => {for (final doc in s.docs) doc.id: doc.data()},
+    );
+  }
+
+  static Future<void> updatePictogramSettingFor({
+    required String userId,
+    required String pictoId,
+    String? categoria,
+    bool? visible,
+  }) async {
+    final updates = <String, dynamic>{};
+    if (categoria != null) updates['categoria'] = categoria;
+    if (visible != null) updates['visible'] = visible;
+    if (updates.isEmpty) return;
+    await _settingsRefFor(userId).doc(pictoId).set(updates, SetOptions(merge: true));
+  }
+
+  static Future<void> deletePictogramFor(String userId, String pictogramId) async {
+    final docRef = _pictogramsRefFor(userId).doc(pictogramId);
+    final doc = await docRef.get();
+    if (doc.exists) {
+      final imageUrl = doc.data()?['imageUrl'] as String?;
+      if (imageUrl != null && imageUrl.isNotEmpty) {
+        try {
+          await _storage.refFromURL(imageUrl).delete();
+        } catch (_) {}
+      }
+    }
+    await docRef.delete();
+  }
+
   // ─────────────────────────────────────────────────────────────
   // CAPTURA DE IMAGEN
   // ─────────────────────────────────────────────────────────────
@@ -108,7 +176,7 @@ class PictogramService {
           lockAspectRatio: true,
           hideBottomControls: false,
           showCropGrid: true,
-          statusBarColor: const Color(0xFF5A9ABF),
+          statusBarLight: true,
           activeControlsWidgetColor: const Color(0xFF7BB3D0),
           dimmedLayerColor: Colors.black.withValues(alpha: 0.5),
           cropFrameColor: const Color(0xFF7BB3D0),

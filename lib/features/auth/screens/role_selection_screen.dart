@@ -3,9 +3,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:simple/core/services/auth_service.dart';
 
-import '../../tutor_dashboard/screens/home_screen.dart';
-import '../../tea_board/screens/pantalla_paciente_tea.dart';
 
 class _Palette {
   _Palette._();
@@ -35,23 +34,20 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) throw Exception('Sin usuario autenticado');
 
+      final userRole = switch (role) {
+        'tutor' => UserRole.tutor,
+        'paciente_tdah' => UserRole.paciente_tdah,
+        'paciente_tea' => UserRole.paciente_tea,
+        _ => UserRole.usuario_general,
+      };
+
+      await AuthService.setRole(userRole);
+
       await FirebaseFirestore.instance
           .collection('users')
           .doc(uid)
-          .set({'role': role, 'hasCompletedOnboarding': true}, SetOptions(merge: true));
-
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (_, __, ___) => role == 'paciente_tea'
-              ? const PantallaPacienteTEA()
-              : const HomeScreen(),
-          transitionsBuilder: (_, anim, __, child) =>
-              FadeTransition(opacity: anim, child: child),
-          transitionDuration: const Duration(milliseconds: 300),
-        ),
-      );
+          .set({'hasCompletedOnboarding': true}, SetOptions(merge: true));
+      // La navegación la maneja automáticamente el stream de AuthGate
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

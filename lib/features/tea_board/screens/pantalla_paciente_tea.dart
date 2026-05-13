@@ -10,9 +10,11 @@ import 'package:vibration/vibration.dart';
 
 import 'package:flutter_tts/flutter_tts.dart';
 
+import '../../../core/services/activity_log_service.dart';
 import '../../../core/services/pictogram_service.dart';
 import '../../../core/widgets/custom_nav_bar.dart';
 import 'crear_pictograma_sheet.dart';
+import 'pictogram_manager_screen.dart';
 
 // ─── Modelo unificado de pictograma ──────────────────────────────────────────
 class PictogramaDisplay {
@@ -294,6 +296,8 @@ class _PantallaPacienteTEAState extends State<PantallaPacienteTEA>
   late final FlutterTts _tts;
 
   final Map<String, String> _localOverrides = {};
+  Map<String, Map<String, dynamic>> _pictoSettings = {};
+  StreamSubscription<Map<String, Map<String, dynamic>>>? _settingsSub;
 
   bool _transicionNotificada = false;
 
@@ -305,6 +309,11 @@ class _PantallaPacienteTEAState extends State<PantallaPacienteTEA>
     _tts = FlutterTts();
     _initTts();
     _pictogramasStream = _buildPictogramasStream();
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      _settingsSub = PictogramService.getPictogramSettingsStreamFor(uid)
+          .listen((s) { if (mounted) setState(() => _pictoSettings = s); });
+    }
   }
 
   Future<void> _initTts() async {
@@ -365,7 +374,31 @@ class _PantallaPacienteTEAState extends State<PantallaPacienteTEA>
     final result = await CrearPictogramaSheet.show(context);
     if (result != null && mounted) {
       setState(() => _pictogramasStream = _buildPictogramasStream());
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        await ActivityLogService.log(
+          userId: uid,
+          type: ActivityType.pictogramCreated,
+          description: 'Pictograma creado: "${result.etiqueta}"',
+          metadata: {'pictogramId': result.id},
+        );
+      }
     }
+  }
+
+  void _abrirManager() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PictogramManagerScreen(
+          userId: uid,
+          userName: 'mis pictogramas',
+          builtins: kBancoBuiltins,
+        ),
+      ),
+    );
   }
 
   Future<void> _hablar(String texto) async {
@@ -428,6 +461,7 @@ class _PantallaPacienteTEAState extends State<PantallaPacienteTEA>
 
   @override
   void dispose() {
+    _settingsSub?.cancel();
     _tts.stop();
     super.dispose();
   }
@@ -462,7 +496,12 @@ class _PantallaPacienteTEAState extends State<PantallaPacienteTEA>
 
   List<PictogramaDisplay> _filtrarPorCategoria(
       List<PictogramaDisplay> todos, String cat) {
-    return todos.where((p) => p.categoria == cat).toList();
+    return todos.where((p) {
+      final s = _pictoSettings[p.id];
+      if (s?['visible'] == false) return false;
+      final categoriaEfectiva = s?['categoria'] as String? ?? p.categoria;
+      return categoriaEfectiva == cat;
+    }).toList();
   }
 
   void _onTransicionCercana() {
@@ -529,6 +568,11 @@ class _PantallaPacienteTEAState extends State<PantallaPacienteTEA>
                 ),
           ),
           actions: [
+            IconButton(
+              icon: const Icon(Icons.tune_rounded),
+              tooltip: 'Organizar pictogramas',
+              onPressed: _abrirManager,
+            ),
             IconButton(
               icon: const Icon(Icons.add_photo_alternate_rounded),
               tooltip: 'Crear pictograma',

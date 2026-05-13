@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-enum UserRole { tutor, paciente }
+enum UserRole { tutor, paciente_tdah, paciente_tea, usuario_general }
 
 class AuthService {
   AuthService._();
@@ -59,7 +59,7 @@ class AuthService {
         'invitationCodes': {},
         'kioskModeEnabled': false,
       },
-      if (role == UserRole.paciente) ...{
+      if (role == UserRole.paciente_tdah || role == UserRole.paciente_tea) ...{
         'linkedTutors': {},
         'acceptedInvitationCode': null,
       },
@@ -109,7 +109,7 @@ class AuthService {
       await _firestore.collection(_usersCollection).doc(user.uid).set({
         'name': user.displayName ?? 'Usuario de Simple',
         'email': user.email,
-        'role': UserRole.paciente.name,
+        'role': UserRole.usuario_general.name,
         'avatar': 'emoticon',
         'points': 0,
         'streak': 0,
@@ -132,10 +132,61 @@ class AuthService {
     if (user == null) return null;
 
     final doc = await _firestore.collection(_usersCollection).doc(user.uid).get();
-    final roleStr = doc.data()?['role'] as String?;
-    if (roleStr == null) return null;
+    final data = doc.data();
+    var roleStr = data?['role'] as String?;
 
-    return roleStr == 'tutor' ? UserRole.tutor : UserRole.paciente;
+    if (roleStr == null || roleStr.isEmpty) {
+      final hasTutorFields = data?.containsKey('linkedPatients') ?? false;
+      final hasPatientFields = data?.containsKey('linkedTutors') ?? false;
+      final hasTeaFields = data?.containsKey('pictograms') ?? false;
+
+      if (hasTutorFields) {
+        roleStr = 'tutor';
+      } else if (hasTeaFields) {
+        roleStr = 'paciente_tea';
+      } else if (hasPatientFields) {
+        roleStr = 'paciente_tdah';
+      } else {
+        roleStr = 'usuario_general';
+      }
+
+      await _firestore.collection(_usersCollection).doc(user.uid).set(
+        {
+          'role': roleStr,
+          if (roleStr == 'tutor') ...{
+            'linkedPatients': {},
+            'invitationCodes': {},
+            'kioskModeEnabled': false,
+          },
+          if (roleStr == 'paciente_tdah' || roleStr == 'paciente_tea') ...{
+            'linkedTutors': {},
+            'acceptedInvitationCode': null,
+          },
+        },
+        SetOptions(merge: true),
+      );
+    }
+
+    if (roleStr == 'paciente') {
+      await _firestore.collection(_usersCollection).doc(user.uid).set(
+        {'role': 'paciente_tdah', 'linkedTutors': {}, 'acceptedInvitationCode': null},
+        SetOptions(merge: true),
+      );
+      roleStr = 'paciente_tdah';
+    }
+
+    switch (roleStr) {
+      case 'tutor':
+        return UserRole.tutor;
+      case 'paciente_tdah':
+        return UserRole.paciente_tdah;
+      case 'paciente_tea':
+        return UserRole.paciente_tea;
+      case 'usuario_general':
+        return UserRole.usuario_general;
+      default:
+        return UserRole.usuario_general;
+    }
   }
 
   static Stream<UserRole?> getUserRoleStream() {
@@ -146,10 +197,62 @@ class AuthService {
         .collection(_usersCollection)
         .doc(user.uid)
         .snapshots()
-        .map((snapshot) {
-      final roleStr = snapshot.data()?['role'] as String?;
-      if (roleStr == null) return null;
-      return roleStr == 'tutor' ? UserRole.tutor : UserRole.paciente;
+        .asyncMap((snapshot) async {
+      final data = snapshot.data();
+      var roleStr = data?['role'] as String?;
+
+      if (roleStr == null || roleStr.isEmpty) {
+        final hasTutorFields = data?.containsKey('linkedPatients') ?? false;
+        final hasPatientFields = data?.containsKey('linkedTutors') ?? false;
+        final hasTeaFields = data?.containsKey('pictograms') ?? false;
+
+        if (hasTutorFields) {
+          roleStr = 'tutor';
+        } else if (hasTeaFields) {
+          roleStr = 'paciente_tea';
+        } else if (hasPatientFields) {
+          roleStr = 'paciente_tdah';
+        } else {
+          roleStr = 'usuario_general';
+        }
+
+        await _firestore.collection(_usersCollection).doc(user.uid).set(
+          {
+            'role': roleStr,
+            if (roleStr == 'tutor') ...{
+              'linkedPatients': {},
+              'invitationCodes': {},
+              'kioskModeEnabled': false,
+            },
+            if (roleStr == 'paciente_tdah' || roleStr == 'paciente_tea') ...{
+              'linkedTutors': {},
+              'acceptedInvitationCode': null,
+            },
+          },
+          SetOptions(merge: true),
+        );
+      }
+
+      if (roleStr == 'paciente') {
+        await _firestore.collection(_usersCollection).doc(user.uid).set(
+          {'role': 'paciente_tdah', 'linkedTutors': {}, 'acceptedInvitationCode': null},
+          SetOptions(merge: true),
+        );
+        roleStr = 'paciente_tdah';
+      }
+
+      switch (roleStr) {
+        case 'tutor':
+          return UserRole.tutor;
+        case 'paciente_tdah':
+          return UserRole.paciente_tdah;
+        case 'paciente_tea':
+          return UserRole.paciente_tea;
+        case 'usuario_general':
+          return UserRole.usuario_general;
+        default:
+          return UserRole.usuario_general;
+      }
     });
   }
 
@@ -191,9 +294,14 @@ class AuthService {
 
     final code = _generateRandomCode();
 
+    // tutorName se guarda en el código para que el paciente no necesite
+    // leer users/{tutorId} (que tendría permiso denegado antes de vincular).
+    final tutorName = user.displayName ?? 'Tutor';
+
     await _firestore.collection(_codesCollection).doc(code).set({
       'code': code,
       'tutorId': user.uid,
+      'tutorName': tutorName,
       'createdAt': FieldValue.serverTimestamp(),
       'status': 'active',
       'usedBy': null,
@@ -221,8 +329,8 @@ class AuthService {
       return {'valid': false, 'reason': 'Código expirado.'};
     }
 
-    final tutorDoc = await _firestore.collection(_usersCollection).doc(data['tutorId'] as String).get();
-    final tutorName = tutorDoc.data()?['name'] as String? ?? 'Tutor';
+    // El nombre ya viene en el código; no hace falta leer users/{tutorId}.
+    final tutorName = data['tutorName'] as String? ?? 'Tutor';
 
     return {
       'valid': true,
@@ -235,11 +343,6 @@ class AuthService {
     final patient = _auth.currentUser;
     if (patient == null) throw Exception('No hay usuario autenticado.');
 
-    final role = await getUserRole();
-    if (role != UserRole.paciente) {
-      throw Exception('Solo los pacientes pueden aceptar códigos de invitación.');
-    }
-
     final validation = await validateInvitationCode(code);
     if (validation == null || validation['valid'] != true) {
       throw Exception(validation?['reason'] ?? 'Código inválido.');
@@ -248,72 +351,68 @@ class AuthService {
     final tutorId = validation['tutorId'] as String;
     final normalizedCode = code.trim().toUpperCase();
 
-    await _firestore.runTransaction((transaction) async {
-      final codeRef = _firestore.collection(_codesCollection).doc(normalizedCode);
-      final codeDoc = await transaction.get(codeRef);
+    // Verifica el estado del código antes del batch (sin transacción para
+    // evitar problemas de permisos en transacciones multi-documento).
+    final codeSnap = await _firestore.collection(_codesCollection).doc(normalizedCode).get();
+    if (codeSnap.data()?['status'] != 'active') {
+      throw Exception('El código ya fue utilizado por otro paciente.');
+    }
 
-      if (codeDoc.data()?['status'] != 'active') {
-        throw Exception('El código ya fue utilizado por otro paciente.');
-      }
+    final batch = _firestore.batch();
 
-      transaction.update(codeRef, {
+    batch.update(
+      _firestore.collection(_codesCollection).doc(normalizedCode),
+      {
         'status': 'used',
         'usedBy': patient.uid,
         'usedAt': FieldValue.serverTimestamp(),
-      });
+      },
+    );
 
-      transaction.set(
-        _firestore.collection(_usersCollection).doc(patient.uid).collection('linkedTutors').doc(tutorId),
-        {
-          'tutorId': tutorId,
-          'linkedAt': FieldValue.serverTimestamp(),
-          'status': 'active',
-        },
-        SetOptions(merge: true),
-      );
+    batch.set(
+      _firestore.collection(_usersCollection).doc(patient.uid).collection('linkedTutors').doc(tutorId),
+      {
+        'tutorId': tutorId,
+        'linkedAt': FieldValue.serverTimestamp(),
+        'status': 'active',
+      },
+      SetOptions(merge: true),
+    );
 
-      transaction.set(
-        _firestore.collection(_usersCollection).doc(tutorId).collection('linkedPatients').doc(patient.uid),
-        {
-          'patientId': patient.uid,
-          'linkedAt': FieldValue.serverTimestamp(),
-          'status': 'active',
-        },
-        SetOptions(merge: true),
-      );
+    batch.set(
+      _firestore.collection(_usersCollection).doc(patient.uid),
+      {'acceptedInvitationCode': normalizedCode},
+      SetOptions(merge: true),
+    );
 
-      transaction.set(
-        _firestore.collection(_usersCollection).doc(patient.uid),
-        {
-          'acceptedInvitationCode': normalizedCode,
-        },
-        SetOptions(merge: true),
-      );
-    });
+    await batch.commit();
   }
 
   static Future<void> removePatientLink(String patientId) async {
     final user = _auth.currentUser;
     if (user == null) throw Exception('No hay usuario autenticado.');
 
-    final role = await getUserRole();
-    if (role != UserRole.tutor) {
-      throw Exception('Solo los tutores pueden desvincular pacientes.');
+    // Marca el linkedTutors del paciente como inactivo (el tutor puede hacerlo
+    // porque el doc ID coincide con su uid) y desactiva el código de invitación.
+    final batch = _firestore.batch();
+
+    batch.set(
+      _firestore.collection(_usersCollection).doc(patientId).collection('linkedTutors').doc(user.uid),
+      {'status': 'inactive'},
+      SetOptions(merge: true),
+    );
+
+    final codesSnap = await _firestore
+        .collection(_codesCollection)
+        .where('tutorId', isEqualTo: user.uid)
+        .where('usedBy', isEqualTo: patientId)
+        .get();
+
+    for (final doc in codesSnap.docs) {
+      batch.update(doc.reference, {'status': 'deactivated'});
     }
 
-    await _firestore.runTransaction((transaction) async {
-      transaction.set(
-        _firestore.collection(_usersCollection).doc(user.uid).collection('linkedPatients').doc(patientId),
-        {'status': 'inactive'},
-        SetOptions(merge: true),
-      );
-
-      transaction.set(
-        _firestore.collection(_usersCollection).doc(patientId).collection('linkedTutors').doc(user.uid),
-        {'status': 'inactive'},
-        SetOptions(merge: true),
-      );
-    });
+    await batch.commit();
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -324,22 +423,24 @@ class AuthService {
     final user = _auth.currentUser;
     if (user == null) return Stream.value([]);
 
+    // Descubre pacientes vinculados consultando los códigos de invitación
+    // usados por este tutor, evitando escribir en subcolecciones del tutor.
     return _firestore
-        .collection(_usersCollection)
-        .doc(user.uid)
-        .collection('linkedPatients')
-        .where('status', isEqualTo: 'active')
+        .collection(_codesCollection)
+        .where('tutorId', isEqualTo: user.uid)
+        .where('status', isEqualTo: 'used')
         .snapshots()
         .asyncMap((snapshot) async {
       final patients = <Map<String, dynamic>>[];
       for (final doc in snapshot.docs) {
-        final patientId = doc.data()['patientId'] as String;
+        final patientId = doc.data()['usedBy'] as String?;
+        if (patientId == null) continue;
         final patientDoc = await _firestore.collection(_usersCollection).doc(patientId).get();
         if (patientDoc.exists) {
           patients.add({
             'id': patientId,
             ...patientDoc.data()!,
-            'linkedAt': doc.data()['linkedAt'],
+            'linkedAt': doc.data()['usedAt'],
           });
         }
       }

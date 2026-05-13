@@ -299,7 +299,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
       ),
       child: Row(
@@ -326,7 +326,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
         borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.softBlue.withOpacity(0.25),
+            color: AppTheme.softBlue.withValues(alpha: 0.25),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -398,7 +398,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
             builder: (context, value, _) => CustomPaint(
               painter: _ProgressRingPainter(
                 progress: value,
-                trackColor: AppTheme.outlineVariant.withOpacity(0.3),
+                trackColor: AppTheme.outlineVariant.withValues(alpha: 0.3),
                 progressColor: isFinished
                     ? AppTheme.sageGreen
                     : AppTheme.softBlue,
@@ -422,7 +422,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.softBlue.withOpacity(0.06),
+                      color: AppTheme.softBlue.withValues(alpha: 0.06),
                       blurRadius: 20,
                       spreadRadius: 2,
                     ),
@@ -457,7 +457,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
               borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
               border: Border.all(
                 color: isSelected
-                    ? AppTheme.softBlue.withOpacity(0.4)
+                    ? AppTheme.softBlue.withValues(alpha: 0.4)
                     : Colors.transparent,
                 width: 1,
               ),
@@ -528,7 +528,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
           borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.softBlue.withOpacity(0.2),
+              color: AppTheme.softBlue.withValues(alpha: 0.2),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),
@@ -583,12 +583,12 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
         color: AppTheme.surfaceWhite,
         borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
         border: Border.all(
-          color: AppTheme.outlineVariant.withOpacity(0.5),
+          color: AppTheme.outlineVariant.withValues(alpha: 0.5),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 15,
             offset: const Offset(0, 4),
           ),
@@ -634,13 +634,13 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                   gradient: LinearGradient(
                     colors: [
                       AppTheme.softBlueContainer,
-                      AppTheme.softBlue.withOpacity(0.3),
+                      AppTheme.softBlue.withValues(alpha: 0.3),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   border: Border.all(
-                    color: AppTheme.softBlue.withOpacity(0.2),
+                    color: AppTheme.softBlue.withValues(alpha: 0.2),
                     width: 2,
                   ),
                 ),
@@ -748,7 +748,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                   color: AppTheme.surfaceWhite,
                   borderRadius: BorderRadius.circular(AppTheme.radiusXLarge),
                   border: Border.all(
-                    color: AppTheme.outlineVariant.withOpacity(0.5),
+                    color: AppTheme.outlineVariant.withValues(alpha: 0.5),
                     width: 1,
                   ),
                 ),
@@ -831,12 +831,12 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
           color: AppTheme.surfaceWhite,
           borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
           border: Border.all(
-            color: AppTheme.outlineVariant.withOpacity(0.4),
+            color: AppTheme.outlineVariant.withValues(alpha: 0.4),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),

@@ -9,7 +9,9 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:simple/features/auth/screens/login_screen.dart';
+import 'package:simple/core/services/auth_service.dart';
 import 'package:simple/features/auth/screens/role_selection_screen.dart';
+import 'package:simple/features/tutor_dashboard/screens/tutor_vinculacion_screen.dart';
 import 'package:simple/core/services/notification_service.dart';
 import 'package:simple/core/services/google_drive_service.dart';
 import 'package:simple/core/utils/reminder_options.dart';
@@ -26,7 +28,8 @@ class _Palette {
 }
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  final bool showNavBar;
+  const SettingsScreen({super.key, this.showNavBar = true});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -308,7 +311,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _Palette.background,
-      bottomNavigationBar: const CustomNavBar(initialIndex: 3),
+      bottomNavigationBar: widget.showNavBar
+          ? const CustomNavBar(initialIndex: 3)
+          : null,
       appBar: AppBar(
         backgroundColor: _Palette.background,
         elevation: 0,
@@ -387,6 +392,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 16),
                 _buildRoleCard(role),
                 const SizedBox(height: 16),
+                if (role == 'tutor') ...[
+                  _buildVinculacionCard(),
+                  const SizedBox(height: 16),
+                ],
+                if (role == 'paciente_tea' || role == 'paciente_tdah') ...[
+                  _buildVinculacionPacienteCard(),
+                  const SizedBox(height: 16),
+                ],
                 _buildEmergencyCard(),
                 const SizedBox(height: 16),
                 _buildNotificacionesCard(notiTaskEnabled, notiOffset),
@@ -505,6 +518,225 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildVinculacionCard() {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: ListTile(
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: const Icon(Icons.people_alt_outlined,
+            color: _Palette.accent, size: 28),
+        title: const Text('Vincular pacientes',
+            style: TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: const Text(
+            'Genera códigos y gestiona pacientes vinculados',
+            style: TextStyle(color: _Palette.textMuted, fontSize: 14)),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const TutorVinculacionScreen()),
+        ),
+      ),
+    );
+  }
+
+  // ── Vinculación paciente ──────────────────────────────────────────────────
+
+  Widget _buildVinculacionPacienteCard() {
+    return StreamBuilder<Map<String, dynamic>?>(
+      stream: AuthService.getLinkedTutorStream(),
+      builder: (context, snapshot) {
+        final tutor = snapshot.data;
+        final loading = snapshot.connectionState == ConnectionState.waiting;
+
+        if (loading) {
+          return Card(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: const ListTile(
+              leading: SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              title: Text('Verificando vinculación...'),
+            ),
+          );
+        }
+
+        if (tutor != null) {
+          final name = tutor['name'] as String? ?? 'Tutor';
+          final email = tutor['email'] as String? ?? '';
+          return Card(
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16)),
+            child: ListTile(
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              leading: const Icon(Icons.person_pin_outlined,
+                  color: _Palette.accent, size: 28),
+              title: const Text('Tutor vinculado',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name,
+                      style: const TextStyle(
+                          color: _Palette.textDark,
+                          fontWeight: FontWeight.w500)),
+                  if (email.isNotEmpty)
+                    Text(email,
+                        style: const TextStyle(
+                            color: _Palette.textMuted, fontSize: 12)),
+                ],
+              ),
+              trailing: const Icon(Icons.check_circle_rounded,
+                  color: Colors.green, size: 24),
+            ),
+          );
+        }
+
+        return Card(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: ListTile(
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            leading:
+                const Icon(Icons.link_outlined, color: _Palette.accent, size: 28),
+            title: const Text('Vincular con tutor',
+                style: TextStyle(fontWeight: FontWeight.w600)),
+            subtitle: const Text(
+                'Ingresa el código que te dio tu tutor',
+                style: TextStyle(color: _Palette.textMuted, fontSize: 14)),
+            trailing: ElevatedButton(
+              onPressed: _mostrarDialogoVinculacion,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _Palette.accent,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text('Vincular'),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _mostrarDialogoVinculacion() async {
+    final controller = TextEditingController();
+    final messenger = ScaffoldMessenger.of(context);
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Vincular con tutor'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Ingresa el código de invitación que te dio tu tutor:'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              textCapitalization: TextCapitalization.characters,
+              maxLength: 6,
+              decoration: const InputDecoration(
+                hintText: 'Ej: ABC123',
+                border: OutlineInputBorder(),
+                counterText: '',
+              ),
+              onSubmitted: (_) async {
+                final code = controller.text.trim().toUpperCase();
+                if (code.length < 6) return;
+                Navigator.of(ctx).pop();
+                await _vincularConTutor(code, messenger);
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final code = controller.text.trim().toUpperCase();
+              if (code.length < 6) return;
+              Navigator.of(ctx).pop();
+              await _vincularConTutor(code, messenger);
+            },
+            child: const Text('Verificar'),
+          ),
+        ],
+      ),
+    );
+
+    controller.dispose();
+  }
+
+  Future<void> _vincularConTutor(
+      String code, ScaffoldMessengerState messenger) async {
+    try {
+      final validation = await AuthService.validateInvitationCode(code);
+
+      if (!mounted) return;
+
+      if (validation == null || validation['valid'] != true) {
+        messenger.showSnackBar(SnackBar(
+          content: Text(validation?['reason'] ?? 'Código inválido'),
+          backgroundColor: Colors.redAccent,
+        ));
+        return;
+      }
+
+      final tutorName = validation['tutorName'] as String? ?? 'tu tutor';
+
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20)),
+          title: const Text('Confirmar vinculación'),
+          content: Text('¿Deseas vincularte con $tutorName?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Vincular'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed != true || !mounted) return;
+
+      await AuthService.acceptInvitationCode(code);
+
+      if (mounted) {
+        messenger.showSnackBar(const SnackBar(
+          content: Text('¡Vinculado con éxito!'),
+          backgroundColor: Colors.green,
+        ));
+      }
+    } catch (e) {
+      if (mounted) {
+        messenger.showSnackBar(SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.redAccent,
+        ));
+      }
+    }
   }
 
   Widget _buildRoleCard(String currentRole) {
@@ -652,10 +884,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () async {
+                      final messenger = ScaffoldMessenger.of(context);
                       await NotificationService
                           .ensureDeviceCanDeliverNotifications();
                       if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      messenger.showSnackBar(
                         const SnackBar(
                           content: Text(
                             'Revisa permisos del sistema y optimización '

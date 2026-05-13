@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../features/auth/screens/paciente_vinculacion_screen.dart';
 import '../../features/onboarding/screens/onboarding_screen.dart';
 import '../../features/tutor_dashboard/screens/home_screen.dart';
 import '../../features/tea_board/screens/pantalla_paciente_tea.dart';
@@ -8,6 +9,7 @@ class AppRouter {
   static const String onboarding = '/onboarding';
   static const String home = '/home';
   static const String pacienteTea = '/paciente-tea';
+  static const String vincularPaciente = '/vincular-paciente';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -17,6 +19,8 @@ class AppRouter {
         return _fade(const HomeScreen(), settings);
       case pacienteTea:
         return _fade(const PantallaPacienteTEA(), settings);
+      case vincularPaciente:
+        return _fade(const PacienteVinculacionScreen(), settings);
       default:
         return MaterialPageRoute(
           settings: settings,

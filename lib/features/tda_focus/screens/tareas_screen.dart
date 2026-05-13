@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import 'package:simple/core/services/activity_log_service.dart';
 import 'package:simple/core/services/reminder_dispatcher.dart';
 import 'package:simple/features/tda_focus/services/streak_service.dart';
 import 'package:simple/core/utils/date_time_helper.dart';
@@ -364,6 +365,14 @@ class _TareasScreenState extends State<TareasScreen> {
         await ReminderDispatcher.cancelTaskReminder(
             userDocRef: _userDocRef, taskId: taskId);
         await StreakService.updateStreakOnTaskCompletion(_userDocRef);
+        final taskSnap = await _tasksCollection.doc(taskId).get();
+        final taskText = taskSnap.data()?['text'] as String? ?? '';
+        await ActivityLogService.log(
+          userId: _userDocRef.id,
+          type: ActivityType.taskCompleted,
+          description: 'Tarea completada: "$taskText"',
+          metadata: {'taskId': taskId},
+        );
       }
     } catch (e) {
       debugPrint('Error al actualizar tarea: $e');
@@ -388,6 +397,12 @@ class _TareasScreenState extends State<TareasScreen> {
       await _tasksCollection.doc(taskId).delete();
       await ReminderDispatcher.cancelTaskReminder(
           userDocRef: _userDocRef, taskId: taskId);
+      await ActivityLogService.log(
+        userId: _userDocRef.id,
+        type: ActivityType.taskDeleted,
+        description: 'Tarea eliminada: "$text"',
+        metadata: {'taskId': taskId},
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('"$text" eliminada')),
@@ -501,6 +516,12 @@ class _TareasScreenState extends State<TareasScreen> {
                           dueDate: selectedDate,
                           reminderMinutes: selectedReminder,
                         );
+                        await ActivityLogService.log(
+                          userId: _userDocRef.id,
+                          type: ActivityType.taskCreated,
+                          description: 'Tarea creada: "${ctrl.text.trim()}"',
+                          metadata: {'taskId': ref.id, 'category': selectedCat},
+                        );
                         if (dlgCtx.mounted) Navigator.of(dlgCtx).pop();
                       } catch (e) {
                         debugPrint('Error al añadir tarea: $e');
@@ -548,6 +569,12 @@ class _TareasScreenState extends State<TareasScreen> {
                 await _tasksCollection.doc(taskId).delete();
                 await ReminderDispatcher.cancelTaskReminder(
                     userDocRef: _userDocRef, taskId: taskId);
+                await ActivityLogService.log(
+                  userId: _userDocRef.id,
+                  type: ActivityType.taskDeleted,
+                  description: 'Tarea eliminada: "$text"',
+                  metadata: {'taskId': taskId},
+                );
                 if (nav.mounted) nav.pop();
                 msg.showSnackBar(SnackBar(content: Text('"$text" eliminada')));
               } catch (e) {

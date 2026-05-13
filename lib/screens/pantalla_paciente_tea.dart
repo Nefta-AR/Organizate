@@ -182,7 +182,7 @@ class _PantallaPacienteTEAState extends State<PantallaPacienteTEA> {
   Color _tinteFranja(ColorScheme cs) {
     switch (_franjaActual) {
       case _Franja.manana:
-        return cs.surfaceVariant;
+        return cs.surfaceContainerHighest;
       case _Franja.tarde:
         return cs.secondaryContainer;
       case _Franja.noche:
@@ -344,9 +344,9 @@ class _BotonPictograma extends StatelessWidget {
     final Color accent = isEmergency ? cs.error : (franjaAccent ?? cs.primary);
 
     final bgColor = isEmergency ? cs.errorContainer : cs.surface;
-    final borderColor = accent.withOpacity(0.22);
-    final shadowColor = cs.shadow.withOpacity(0.05);
-    final labelBg = accent.withOpacity(0.09);
+    final borderColor = accent.withValues(alpha: 0.22);
+    final shadowColor = cs.shadow.withValues(alpha: 0.05);
+    final labelBg = accent.withValues(alpha: 0.09);
 
     return GestureDetector(
       onTap: onTap,

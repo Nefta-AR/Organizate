@@ -5,8 +5,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import 'package:simple/features/tutor_dashboard/screens/home_screen.dart';
+import 'package:simple/features/tutor_dashboard/screens/tutor_supervise_screen.dart';
 import 'package:simple/features/auth/screens/login_screen.dart';
 import 'package:simple/features/auth/screens/role_selection_screen.dart';
+import 'package:simple/features/tea_board/screens/pantalla_paciente_tea.dart';
 import 'package:simple/core/services/push_notification_service.dart';
 
 class AuthGate extends StatelessWidget {
@@ -89,6 +91,10 @@ class RoleDispatcher extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const HomeScreen();
+    return switch (role) {
+      'tutor' => const TutorSupervisarScreen(),
+      'paciente_tea' => const PantallaPacienteTEA(),
+      _ => const HomeScreen(),
+    };
   }
 }
