@@ -499,7 +499,7 @@ class _SuperExpertoSheetState extends State<SuperExpertoSheet> {
             ),
           ),
           const SizedBox(height: 20),
-          Text(
+          const Text(
             'Consultando al experto...',
             style: TextStyle(
               color: _Palette.textMuted,
@@ -508,7 +508,7 @@ class _SuperExpertoSheetState extends State<SuperExpertoSheet> {
             ),
           ),
           const SizedBox(height: 6),
-          Text(
+          const Text(
             'Dividiendo tu tarea en pasos simples',
             style: TextStyle(
               color: _Palette.textMuted,

@@ -23,8 +23,8 @@ class _TutorVinculacionScreenState extends State<TutorVinculacionScreen> {
       setState(() => _currentCode = code);
       if (mounted) {
         messenger.showSnackBar(
-          SnackBar(
-            content: const Text('¡Código generado con éxito!'),
+          const SnackBar(
+            content: Text('¡Código generado con éxito!'),
             backgroundColor: Colors.green,
           ),
         );
@@ -76,8 +76,8 @@ class _TutorVinculacionScreenState extends State<TutorVinculacionScreen> {
         await AuthService.removePatientLink(patientId);
         if (mounted) {
           messenger.showSnackBar(
-            SnackBar(
-              content: const Text('Paciente desvinculado'),
+            const SnackBar(
+              content: Text('Paciente desvinculado'),
               backgroundColor: Colors.orange,
             ),
           );

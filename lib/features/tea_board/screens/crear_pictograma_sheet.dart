@@ -125,9 +125,9 @@ class _CrearPictogramaSheetState extends State<CrearPictogramaSheet> {
       snap: true,
       builder: (_, scrollController) {
         return Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: AppTheme.warmCream,
-            borderRadius: const BorderRadius.vertical(
+            borderRadius: BorderRadius.vertical(
               top: Radius.circular(AppTheme.radiusXLarge),
             ),
           ),
@@ -347,7 +347,7 @@ class _CrearPictogramaSheetState extends State<CrearPictogramaSheet> {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-          borderSide: BorderSide(
+          borderSide: const BorderSide(
             color: AppTheme.outlineVariant,
             width: 1,
           ),
@@ -378,7 +378,7 @@ class _CrearPictogramaSheetState extends State<CrearPictogramaSheet> {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-          borderSide: BorderSide(
+          borderSide: const BorderSide(
             color: AppTheme.outlineVariant,
             width: 1,
           ),

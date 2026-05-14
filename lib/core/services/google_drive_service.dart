@@ -347,7 +347,7 @@ class GoogleDriveService {
       }
 
       if (!force && lastSync != null && lastSync.isAfter(cloudModified)) {
-        return DriveRestoreResult(
+        return const DriveRestoreResult(
           success: true,
           message: 'Tu versión local ya está actualizada.',
           cloudIsNewer: false,

@@ -302,8 +302,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   ImageProvider? _resolveAvatar(String? photoUrl, String? avatar) {
     if (photoUrl != null && photoUrl.isNotEmpty) return NetworkImage(photoUrl);
-    if (avatar != null && avatar.isNotEmpty)
+    if (avatar != null && avatar.isNotEmpty) {
       return AssetImage('assets/avatars/$avatar.png');
+    }
     return null;
   }
 
@@ -794,8 +795,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 border: OutlineInputBorder(),
               ),
               onChanged: (_) {
-                if (!_isEmergencyDirty)
+                if (!_isEmergencyDirty) {
                   setState(() => _isEmergencyDirty = true);
+                }
               },
             ),
             const SizedBox(height: 12),
@@ -808,8 +810,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 border: OutlineInputBorder(),
               ),
               onChanged: (_) {
-                if (!_isEmergencyDirty)
+                if (!_isEmergencyDirty) {
                   setState(() => _isEmergencyDirty = true);
+                }
               },
             ),
             const SizedBox(height: 12),
@@ -1115,11 +1118,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               children: [
                 Icon(Icons.cloud_outlined, color: _Palette.primary, size: 22),
-                const SizedBox(width: 10),
-                const Text(
+                SizedBox(width: 10),
+                Text(
                   'Respaldo y Seguridad',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
@@ -1138,12 +1141,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Icon(Icons.access_time,
+                  const Icon(Icons.access_time,
                       size: 14, color: _Palette.textMuted),
                   const SizedBox(width: 6),
                   Text(
                     'Última sincronización: ${_formatSyncDate(_lastSync!)}',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 12,
                       color: _Palette.textMuted,
                       fontStyle: FontStyle.italic,
@@ -1188,12 +1191,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: CircularProgressIndicator(
                           strokeWidth: 3,
                           value: _backupProgress,
-                          valueColor: AlwaysStoppedAnimation<Color>(
+                          valueColor: const AlwaysStoppedAnimation<Color>(
                             _Palette.primary,
                           ),
                         ),
                       ),
-                      Icon(
+                      const Icon(
                         Icons.sync,
                         size: 20,
                         color: _Palette.primary,

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+// ignore: constant_identifier_names
 enum UserRole { tutor, paciente_tdah, paciente_tea, usuario_general }
 
 class AuthService {
@@ -343,6 +344,11 @@ class AuthService {
     final patient = _auth.currentUser;
     if (patient == null) throw Exception('No hay usuario autenticado.');
 
+    final role = await getUserRole();
+    if (role != UserRole.paciente_tdah && role != UserRole.paciente_tea) {
+      throw Exception('Solo los pacientes pueden aceptar códigos de invitación.');
+    }
+
     final validation = await validateInvitationCode(code);
     if (validation == null || validation['valid'] != true) {
       throw Exception(validation?['reason'] ?? 'Código inválido.');
@@ -391,6 +397,11 @@ class AuthService {
   static Future<void> removePatientLink(String patientId) async {
     final user = _auth.currentUser;
     if (user == null) throw Exception('No hay usuario autenticado.');
+
+    final role = await getUserRole();
+    if (role != UserRole.tutor) {
+      throw Exception('Solo los tutores pueden desvincular pacientes.');
+    }
 
     // Marca el linkedTutors del paciente como inactivo (el tutor puede hacerlo
     // porque el doc ID coincide con su uid) y desactiva el código de invitación.

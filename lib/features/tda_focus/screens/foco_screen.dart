@@ -599,7 +599,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
         children: [
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.self_improvement_rounded,
                 color: AppTheme.softLavender,
                 size: 22,
@@ -754,7 +754,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                 ),
                 child: Column(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.task_alt_rounded,
                       size: 48,
                       color: AppTheme.outlineSoft,
@@ -977,14 +977,14 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                             selectedDueDate == null
                                 ? 'Sin fecha'
                                 : 'Entrega: ${_dateFormatter.format(selectedDueDate!)}',
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: AppTheme.mutedText,
                               fontSize: 13,
                             ),
                           ),
                         ),
                         IconButton(
-                          icon: Icon(
+                          icon: const Icon(
                             Icons.calendar_today_rounded,
                             color: AppTheme.softBlue,
                             size: 20,
@@ -1001,7 +1001,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                         ),
                         if (selectedDueDate != null)
                           IconButton(
-                            icon: Icon(
+                            icon: const Icon(
                               Icons.close_rounded,
                               color: AppTheme.mutedText,
                               size: 18,
@@ -1033,7 +1033,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: Text(
+                  child: const Text(
                     'Cancelar',
                     style: TextStyle(color: AppTheme.mutedText),
                   ),
@@ -1064,7 +1064,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                     );
                     if (context.mounted) Navigator.of(context).pop();
                   },
-                  child: Text(
+                  child: const Text(
                     'Añadir',
                     style: TextStyle(
                       color: AppTheme.softBlue,
@@ -1106,7 +1106,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: Icon(Icons.edit_rounded, color: AppTheme.softBlue),
+                leading: const Icon(Icons.edit_rounded, color: AppTheme.softBlue),
                 title: Text(
                   'Editar',
                   style: AppTheme.getTheme().textTheme.bodyMedium?.copyWith(
@@ -1126,7 +1126,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
               ),
               ListTile(
                 leading:
-                    Icon(Icons.delete_rounded, color: AppTheme.errorMuted),
+                    const Icon(Icons.delete_rounded, color: AppTheme.errorMuted),
                 title: Text(
                   'Eliminar',
                   style: AppTheme.getTheme().textTheme.bodyMedium?.copyWith(
@@ -1175,7 +1175,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(
+              child: const Text(
                 'Cancelar',
                 style: TextStyle(color: AppTheme.mutedText),
               ),
@@ -1232,14 +1232,14 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                             selectedDueDate == null
                                 ? 'Sin fecha'
                                 : 'Entrega: ${_dateFormatter.format(selectedDueDate!)}',
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: AppTheme.mutedText,
                               fontSize: 13,
                             ),
                           ),
                         ),
                         IconButton(
-                          icon: Icon(
+                          icon: const Icon(
                             Icons.calendar_today_rounded,
                             color: AppTheme.softBlue,
                             size: 20,
@@ -1256,7 +1256,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                         ),
                         if (selectedDueDate != null)
                           IconButton(
-                            icon: Icon(
+                            icon: const Icon(
                               Icons.close_rounded,
                               color: AppTheme.mutedText,
                               size: 18,
@@ -1288,7 +1288,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: Text(
+                  child: const Text(
                     'Cancelar',
                     style: TextStyle(color: AppTheme.mutedText),
                   ),
@@ -1329,7 +1329,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                       navigator.pop();
                     }
                   },
-                  child: Text(
+                  child: const Text(
                     'Guardar',
                     style: TextStyle(
                       color: AppTheme.softBlue,

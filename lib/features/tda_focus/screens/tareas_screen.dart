@@ -493,8 +493,9 @@ class _TareasScreenState extends State<TareasScreen> {
               onPressed: isSaving
                   ? null
                   : () async {
-                      if (ctrl.text.trim().isEmpty || selectedCat == null)
+                      if (ctrl.text.trim().isEmpty || selectedCat == null) {
                         return;
+                      }
                       setDlg(() => isSaving = true);
                       try {
                         final data = <String, dynamic>{

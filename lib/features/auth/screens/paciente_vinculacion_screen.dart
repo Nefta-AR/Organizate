@@ -234,12 +234,12 @@ class _PacienteVinculacionScreenState extends State<PacienteVinculacionScreen> {
         ),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.group_add, color: Colors.white, size: 32),
-          const SizedBox(height: 12),
-          const Text(
+          Icon(Icons.group_add, color: Colors.white, size: 32),
+          SizedBox(height: 12),
+          Text(
             'Vincúlate con tu tutor',
             style: TextStyle(
               fontSize: 18,
@@ -247,8 +247,8 @@ class _PacienteVinculacionScreenState extends State<PacienteVinculacionScreen> {
               color: Colors.white,
             ),
           ),
-          const SizedBox(height: 8),
-          const Text(
+          SizedBox(height: 8),
+          Text(
             'Ingresa el código que te proporcionó tu tutor para establecer la vinculación. Esto permitirá que tu tutor supervise tu progreso.',
             style: TextStyle(fontSize: 13, color: Colors.white70),
           ),

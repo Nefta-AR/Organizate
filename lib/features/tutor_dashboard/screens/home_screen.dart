@@ -697,8 +697,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 TextButton(
                   onPressed: () async {
-                    if (taskController.text.isEmpty || selectedCategory == null)
+                    if (taskController.text.isEmpty || selectedCategory == null) {
                       return;
+                    }
                     final navigator = Navigator.of(dialogContext);
                     final messenger = ScaffoldMessenger.of(context);
                     final updatedData = <String, dynamic>{

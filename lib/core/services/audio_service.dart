@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:crypto/crypto.dart';
@@ -77,7 +79,7 @@ class AudioService {
       final cloudPath = await _fetchFromCloud(text, vozId: vozId);
       await _playFile(cloudPath);
     } catch (e) {
-      print('Error al sintetizar voz: $e');
+      debugPrint('Error al sintetizar voz: $e');
     }
   }
 
