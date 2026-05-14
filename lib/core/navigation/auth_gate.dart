@@ -8,6 +8,7 @@ import 'package:simple/features/tutor_dashboard/screens/home_screen.dart';
 import 'package:simple/features/tutor_dashboard/screens/tutor_supervise_screen.dart';
 import 'package:simple/features/auth/screens/login_screen.dart';
 import 'package:simple/features/auth/screens/role_selection_screen.dart';
+import 'package:simple/features/auth/screens/profile_setup_screen.dart';
 import 'package:simple/features/tea_board/screens/pantalla_paciente_tea.dart';
 import 'package:simple/core/services/push_notification_service.dart';
 
@@ -77,6 +78,10 @@ class _UserOnboardingGateState extends State<_UserOnboardingGate> {
         final role = data?['role'] as String?;
 
         if (role == null || role.isEmpty) return const RoleSelectionScreen();
+
+        final hasProfile = data?['hasCompletedProfile'] as bool? ?? false;
+        final hasName = (data?['name'] as String? ?? '').isNotEmpty;
+        if (!hasProfile && !hasName) return const ProfileSetupScreen();
 
         return RoleDispatcher(role: role);
       },

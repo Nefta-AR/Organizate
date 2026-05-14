@@ -14,7 +14,7 @@ class IAService {
           .httpsCallable(
             'desglosarTarea',
             options: HttpsCallableOptions(
-              timeout: const Duration(seconds: 25),
+              timeout: const Duration(seconds: 10),
             ),
           )
           .call(<String, dynamic>{
