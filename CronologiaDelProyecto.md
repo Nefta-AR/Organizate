@@ -1,10 +1,10 @@
 # Cronología del Proyecto: Simple
 
-Este documento consolida la **Carta Gantt** y la planificación de **Sprints** para el desarrollo de la aplicación Simple.
+Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y el registro de avance real del desarrollo de la aplicación Simple.
 
 **Período:** 27 Abril 2026 - 07 Julio 2026 (10 semanas)  
-**Estado Actual:** 87% Completado | Fase 5: Integración y Correcciones (85%)  
-**Próximo Hito:** Sincronización Completa (26 Mayo 2026)
+**Estado Actual:** 93% Completado | Fase 5 cerrada → entrando a Fase 6  
+**Próximo Hito:** ⭐ HITO 2 — Sincronización Completa (26 Mayo 2026) — **prácticamente alcanzado**
 
 ---
 
@@ -12,22 +12,22 @@ Este documento consolida la **Carta Gantt** y la planificación de **Sprints** p
 
 ### Progreso por Fase
 
-| Fase | Periodo | Estado | Progreso |
-|:---|:---|:---:|:---:|
+| Fase | Periodo | Nombre | Estado | Progreso |
+|:---|:---|:---|:---:|:---:|
 | **Fase 1** | 27-28 Abr | Fundación y Auth | ✅ Completado | 100% |
 | **Fase 2** | 28-29 Abr | IA / Súper Experto | ✅ Completado | 100% |
 | **Fase 3** | 30 Abr-06 May | Módulo TEA (Pictogramas) | ✅ Completado | 100% |
-| **Fase 4** | 05-09 May | Módulo TDAH (Tareas) | ✅ Completado | 100% |
-| **Fase 5** | 09-26 May | Integración y Correcciones | 🔄 En Curso | 75% |
-| **Fase 6** | 27 May-16 Jun | Pulido y Testing | ⏳ Pendiente | 0% |
+| **Fase 4** | 05-09 May | Módulo TDAH (Tareas y Foco) | ✅ Completado | 100% |
+| **Fase 5** | 09-23 May | Integración y Correcciones | ✅ Completado | 100% |
+| **Fase 6** | 24 May-16 Jun | Pulido y Testing | 🔄 En Curso | 0% |
 | **Fase 7** | 17 Jun-07 Jul | Documentación y Entrega | ⏳ Pendiente | 0% |
 
 ### Hitos del Proyecto
 
 | Hito | Fecha | Descripción | Estado |
 |:---|:---|:---|:---:|
-| **HITO 1** | 13 May 2026 | Vinculación Tutor-Paciente | ✅ Alcanzado |
-| **HITO 2** | 26 May 2026 | Sincronización Completa | 🔄 En Progreso |
+| **HITO 1** | 13 May 2026 | Vinculación Tutor-Usuario | ✅ Alcanzado |
+| **HITO 2** | 26 May 2026 | Sincronización Completa | ✅ Alcanzado |
 | **HITO 3** | 30 Jun 2026 | MVP Listo | ⏳ Pendiente |
 | **HITO 4** | 07 Jul 2026 | Entrega Final (APK + Doc) | ⏳ Pendiente |
 
@@ -41,39 +41,29 @@ Este documento consolida la **Carta Gantt** y la planificación de **Sprints** p
 |:---|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | **FASE 1** | Base Organizate 2.0 + UI | ██████ | | | | | | | | | | | |
 | | Sistema Login (email + Google) | ██████ | | | | | | | | | | | |
-| | Cambio nombre -> Simple + Logo | ██████ | | | | | | | | | | | |
-| | Login Web funcional | ██████ | | | | | | | | | | | |
+| | Cambio nombre → Simple + Logo | ██████ | | | | | | | | | | | |
 | **FASE 2** | Integración Cloud Functions IA | | ██████ | | | | | | | | | | |
 | | Súper Experto funcional (Gemini) | | ██████ | | | | | | | | | | |
-| | Función desglosarTarea | | ██████ | | | | | | | | | | |
-| **FASE 3** | Pantalla Pictogramas Beta | | | ██████ | | | | | | | | | |
-| | Banco pictogramas (SVG) | | | ██████ | | | | | | | | | |
-| | Pictogramas con color | | | | ██████ | | | | | | | | |
-| | Gestor pictogramas personalizados | | | | ██████ | | | | | | | | |
+| **FASE 3** | Pantalla Pictogramas (ARASAAC) | | | ██████ | | | | | | | | | |
+| | Banco pictogramas SVG + TTS | | | ██████ | | | | | | | | | |
+| | Pictogramas custom (cámara/storage) | | | | ██████ | | | | | | | | |
 | **FASE 4** | Gestión tareas (CRUD) | | | ██████ | | | | | | | | | |
-| | Swipe eliminar tareas | | | ██████ | | | | | | | | | |
-| | Migración completa a Simple | | | ██████ | | | | | | | | | |
 | | Timer Pomodoro + respiración | | | | ██████ | | | | | | | | |
-| | Sistema puntos y racha | | | | ██████ | | | | | | | | |
-| **FASE 5** | Corrección SHA + Firebase | | | | ██████ | | | | | | | | |
-| | Eliminación Modo Foco | | | | ██████ | | | | | | | | |
-| | Fix superposición botones TEA | | | | ██████ | | | | | | | | |
-| | Tutor conectado a paciente | | | | | ██████ | | | | | | | |
-| | Supervisión tutor -> detalle | | | | | ██████ | | | | | | | |
-| | Sincronización bidireccional | | | | | | ██████ | | | | | | |
-| | Corrección bugs integración | | | | | | ██████ | | | | | | |
-| **FASE 6** | Kiosk Mode paciente TEA | | | | | | | ██████ | | | | | |
+| | Sistema dopamina (puntos + racha) | | | | ██████ | | | | | | | | |
+| **FASE 5** | Vinculación tutor-usuario | | | | | ██████ | | | | | | | |
+| | Panel supervisión tutor completo | | | | | | ██████ | | | | | | |
+| | Sincronización bidireccional tareas | | | | | | ██████ | | | | | | |
+| | Correcciones y renombrado roles | | | | | | ██████ | | | | | | |
+| **FASE 6** | Kiosk Mode usuario TEA | | | | | | | ██████ | | | | | |
 | | Dashboard progreso (fl_chart) | | | | | | | ██████ | | | | | |
 | | Notificaciones push FCM | | | | | | | | ██████ | | | | |
-| | Testing y bugs menores | | | | | | | | ██████ | | | | |
-| **FASE 7** | Optimización rendimiento | | | | | | | | | ██████ | | | |
-| | Documentación técnica | | | | | | | | | ██████ | | | |
-| | Pruebas finales | | | | | | | | | | ██████ | | |
-| | Manual de usuario | | | | | | | | | | ██████ | | |
-| | Presentación final | | | | | | | | | | | | ██████ |
+| | QA y bugs menores | | | | | | | | ██████ | | | | |
+| **FASE 7** | Comentarios en código crítico | | | | | | | | | ██████ | | | |
+| | Pruebas finales con usuarios | | | | | | | | | ██████ | | | |
+| | Manual de usuario (tutores/TEA) | | | | | | | | | | ██████ | | |
+| | APK firmado + entrega | | | | | | | | | | | | ██████ |
 
-**Leyenda:** ██████ = Período de desarrollo activo
-
+**Leyenda:** ██████ = Período de desarrollo activo  
 **Nota:** La entrega será mediante APK/instalación directa, sin publicación en tiendas.
 
 ---
@@ -89,19 +79,12 @@ Este documento consolida la **Carta Gantt** y la planificación de **Sprints** p
 - `e48e5d0` (28 Abr): Cambio de nombre a Simple, nuevo logo, login web
 
 **Tareas Completadas:**
-- ✅ Refactor del código base heredado de *Organízate*
-- ✅ Configuración de arquitectura Flutter con features por módulos
+- ✅ Refactor del código base heredado de *Organízate* — carpetas limpias, estructura por `features/`
+- ✅ Diseño base con paleta Soft UI (colores calmos, bordes redondeados, tipografía)
 - ✅ Setup de Firebase (Auth, Firestore, Storage)
-- ✅ Implementación de login con Email/Password
-- ✅ Implementación de Google Sign-In
-- ✅ Configuración de reglas de seguridad iniciales
-- ✅ Diseño base con paleta Soft UI (colores calmos, bordes redondeados)
-- ✅ `RoleDispatcher` para enrutamiento automático según rol del usuario
-
-**Hitos Alcanzados:**
-- Proyecto Flutter limpio con arquitectura escalable
-- Firebase conectado y funcional
-- Flujo de autenticación completo
+- ✅ Login con Email/Password y Google Sign-In
+- ✅ Reglas de seguridad Firestore iniciales
+- ✅ `RoleDispatcher` — enrutamiento automático según rol del usuario
 
 ---
 
@@ -111,160 +94,139 @@ Este documento consolida la **Carta Gantt** y la planificación de **Sprints** p
 
 **Commits Principales:**
 - `2d886cc` (29 Abr): Súper Experto IA funcional (Gemini + Cloud Functions)
-- `c417861` (29 Abr): Función desglosarTarea (Gemini)
+- `c417861` (29 Abr): Función `desglosarTarea` (Gemini)
 
 **Tareas Completadas:**
-- ✅ Configuración de Google Cloud Functions
-- ✅ Integración con Gemini API
-- ✅ Desarrollo del "Súper Experto" - asistente IA
-- ✅ Función `desglosarTarea()` para dividir tareas complejas en pasos simples
-- ✅ Implementación de interfaz de chat con IA
-
-**Hitos Alcanzados:**
-- IA funcionando en tiempo real
-- Desglose automático de tareas para TDAH
+- ✅ Google Cloud Functions v2 (TypeScript) con Secret Manager para la API key
+- ✅ Integración con Gemini API — desglose automático de tareas en pasos simples
+- ✅ Fallback local `generarPlanLocal()` cuando Gemini no está disponible
+- ✅ UI de chat con el "Súper Experto" en pantalla de foco TDAH
+- ✅ Manejo correcto de errores (región explícita `us-central1`, timeout 30s)
 
 ---
 
-### ✅ Fase 3: Módulo TEA - Pictogramas (30 Abril - 06 Mayo 2026)
+### ✅ Fase 3: Módulo TEA — Pictogramas (30 Abril - 06 Mayo 2026)
 
-**Objetivo:** Desarrollar el sistema de comunicación aumentativa para pacientes TEA.
+**Objetivo:** Desarrollar el sistema de comunicación aumentativa para usuarios TEA.
 
 **Commits Principales:**
 - `0633e86` (30 Abr): Pantalla Pictogramas Beta (módulo TEA)
-- `335f814` (06 May): Pantalla Pictogramas completa
+- `335f814` (06 May): Pantalla Pictogramas completa con banco ARASAAC
 - `d361ef0` (06 May): Pictogramas con color
 
 **Tareas Completadas:**
-- ✅ Tablero de pictogramas dinámico
-- ✅ Organización por franjas horarias: Mañana, Tarde, Noche
-- ✅ Categorías: Comida, Emociones, Acciones
-- ✅ Banco de pictogramas predefinidos (SVG)
-- ✅ Síntesis de voz inmediata (TTS) al pulsar pictogramas
-- ✅ Creación de pictogramas personalizados con cámara/galería
-- ✅ Recorte cuadrado integrado (1:1)
-- ✅ Subida directa a Firebase Storage
-- ✅ Gestión de visibilidad por pictograma
-- ✅ Reasignación de categoría y horario
-- ✅ `pictogramSettings` como subcolección separada en Firestore
-
-**Hitos Alcanzados:**
-- Comunicación aumentativa funcional completa
-- Personalización total de pictogramas
+- ✅ Tablero de pictogramas con franjas horarias: Mañana, Tarde, Noche
+- ✅ Categorías: Comida, Emociones, Acciones, Emergencia
+- ✅ Banco de pictogramas predefinidos (SVG — banco ARASAAC local)
+- ✅ Síntesis de voz (TTS) inmediata al pulsar cada pictograma
+- ✅ Creación de pictogramas personalizados con cámara/galería + recorte 1:1
+- ✅ Subida a Firebase Storage + metadatos en Firestore
+- ✅ Gestión de visibilidad, categoría y horario por pictograma
+- ✅ `pictogramSettings` como subcolección separada (sin modificar el original)
+- ✅ Tutor puede agregar/eliminar pictogramas del usuario desde su panel
 
 ---
 
-### ✅ Fase 4: Módulo TDAH - Tareas y Foco (05-09 Mayo 2026)
+### ✅ Fase 4: Módulo TDAH — Tareas y Foco (05-09 Mayo 2026)
 
 **Objetivo:** Desarrollar herramientas de organización y enfoque para TDAH.
 
 **Commits Principales:**
-- `12bd20d` (05 May): Migración completa de Organizate -> Simple
-- `e723ddd` (05 May): Eliminación de tareas completadas al deslizar
-- `89ec05e` (09 May): Timer Pomodoro + respiración
+- `12bd20d` (05 May): Migración completa de Organizate → Simple
+- `e723ddd` (05 May): Swipe para eliminar tareas completadas
+- `89ec05e` (09 May): Timer Pomodoro + respiración guiada
 
 **Tareas Completadas:**
-- ✅ Sistema CRUD de tareas
-- ✅ Categorización de tareas
+- ✅ CRUD de tareas con categorías (General, Estudios, Hogar, Meds, Foco)
 - ✅ Swipe para eliminar tareas completadas
-- ✅ Temporizador Pomodoro configurable
-- ✅ Ciclos de trabajo/descanso personalizables
-- ✅ Rutinas de respiración guiada
-- ✅ Sistema de puntos y racha (gamificación)
-- ✅ Animaciones de refuerzo positivo
-- ✅ Migración completa de datos de Organizate a Simple
+- ✅ Temporizador Pomodoro configurable (15, 25, 45 min)
+- ✅ Rutinas de respiración guiada animada
+- ✅ Sistema de dopamina: puntos (+10 por tarea), racha diaria, animaciones de refuerzo
+- ✅ "Súper Experto" IA conectado al contexto de la pantalla de foco
 
-**Hitos Alcanzados:**
-- Herramientas de productividad completas
-- Sistema de gamificación implementado
+---
+
+### ✅ Fase 5: Integración y Correcciones (09-23 Mayo 2026)
+
+**Objetivo:** Conectar todos los módulos, corregir bugs y completar el panel del tutor.
+
+**Commits Realizados:**
+- `97fd1b1` (09 May): Eliminación Modo Foco → reemplazado por Pictogramas TEA
+- `f953774` (09 May): Fix superposición de botones en Pictogramas
+- `89ec05e` (09 May): Conexiones Firebase, nuevo SHA-1, nuevo `google-services.json`
+- `ce5c88a` (13 May): Tutor conectado a usuario — vinculación por código ⭐ **HITO 1**
+- `e6d1494` (14 May): Inicio de sesión con Google corregido
+- *(19 May)*: `ProfileSetupScreen` post-rol + renombrado completo `paciente` → `usuario`
+- *(19 May)*: Panel historial tutor: stats en tiempo real + log Pomodoro + log pictogramas + badge Tutor en tareas
+
+**Tareas Completadas:**
+- ✅ Corrección SHA-1 — inicio de sesión con Google estable
+- ✅ `.firebaserc` configurado con proyecto `organizate-26065`
+- ✅ Eliminación del Modo Foco (reemplazado por Pictogramas en perfil TEA)
+- ✅ Fix superposición de botones en el tablero de pictogramas
+- ✅ Vinculación tutor-usuario mediante código de invitación de 6 caracteres
+- ✅ `ProfileSetupScreen` — pantalla de nombre + avatar después de elegir rol
+- ✅ Botón × visible en tarjetas de pictograma del tutor (eliminación directa)
+- ✅ Fix Súper Experto: `throw String` → `throw Exception(...)` para captura correcta
+- ✅ Fix dialog "Añadir tarea": se cierra automáticamente al guardar
+- ✅ Renombrado completo `paciente_tdah` → `usuario_tdah`, `paciente_tea` → `usuario_tea` — código + Firestore rules + migración automática al abrir sesión
+- ✅ Tab Historial del tutor: tarjeta de 4 stats en tiempo real (sesiones Pomodoro, minutos foco, racha, puntos)
+- ✅ `ActivityType.pomodoroCompleted` — sesiones Pomodoro ahora aparecen en el historial del tutor
+- ✅ `ActivityType.pictogramUsed` — cada uso de pictograma (TTS) queda registrado
+- ✅ Badge azul "Tutor" en tareas creadas por el tutor visibles en pantalla del usuario ⭐ **HITO 2**
+- ✅ Sincronización bidireccional de tareas tutor ↔ usuario (Firestore compartido, tiempo real)
+- ✅ Sección "Eliminadas por el usuario" en tab Tareas del tutor (`_DeletedTaskTile` con tachado y color gris)
+- ✅ `PictogramManagerScreen` rediseñado como cuadrícula 3 columnas (`_PictoManagerCard`)
+- ✅ Tab "Ajustes" en panel tutor: switches para activar/desactivar pestañas Pictogramas y Foco del usuario TEA en tiempo real
+- ✅ `CustomNavBar` reactivo: dos streams paralelos (rol + feature flags) — índice clampeado para evitar out-of-bounds al cambiar cantidad de tabs
+- ✅ Comentarios de arquitectura profesionales en 8 archivos críticos (servicios, navegación, reglas Firestore, pantallas)
+- ✅ `SettingsScreen` rediseñado: tarjeta unificada perfil+rol con edición de nombre, foto y rol por íconos de lápiz + diálogo de confirmación antes de cambiar rol
+- ✅ Fix bug cambio de rol: `Navigator.pushAndRemoveUntil(AuthGate)` limpia el stack — el usuario ya no queda pegado en `RoleSelectionScreen`
 
 ---
 
 ## Fase en Curso
 
-### 🔄 Fase 5: Integración y Correcciones (09-26 Mayo 2026)
+### 🔄 Fase 6: Pulido y Testing (24 Mayo - 16 Junio 2026)
 
-**Estado:** 85% Completado | **Proyección:** 26 Mayo 2026
+**Estado:** 0% iniciado | **Proyección:** 16 Junio 2026
 
-**Objetivo:** Conectar todos los módulos y corregir bugs de integración.
+**Objetivo:** Pulir la UX, agregar funcionalidades de control parental, notificaciones y testing exhaustivo.
 
-**Commits Realizados:**
-- `97fd1b1` (09 May): Eliminación Modo Foco -> reemplazado por Pictogramas TEA
-- `f953774` (09 May): Solución de superposición de botones en Pictogramas
-- `89ec05e` (09 May): Conexiones arregladas, nuevo SHA, nuevo JSON
-- `ce5c88a` (13 May): Tutor conectado a paciente (vinculación completada) ⭐ **HITO 1**
-- `e6d1494` (14 May): Inicio de sesión con Google corregido
-- *(19 May)*: Pantalla de configuración de perfil post-rol + renombrado completo paciente → usuario
+#### Tareas Planificadas
 
-#### Tareas Completadas (85%):
-- ✅ Corrección SHA-1 para inicio de sesión estable con Google
-- ✅ Reestructuración de conexiones Firebase
-- ✅ Eliminación del Modo Foco (reemplazado por Pictogramas en perfil TEA)
-- ✅ Fix de superposición de botones en el apartado pictogramas
-- ✅ Vinculación tutor-paciente mediante código de invitación
-- ✅ Sistema de vinculación funcional en tiempo real
-- ✅ Pantalla `ProfileSetupScreen` (nombre + avatar) después de elegir rol
-- ✅ Eliminación de pictogramas por el tutor (botón × visible en tarjeta)
-- ✅ Corrección Súper Experto: desglose de tareas con IA funcionando
-- ✅ Corrección dialog de añadir tarea (se cierra automáticamente al guardar)
-- ✅ Renombrado completo `paciente_tdah` → `usuario_tdah` y `paciente_tea` → `usuario_tea` en código, reglas Firestore y base de datos (migración automática al abrir sesión)
+**Sprint A — Control y Visualización (24 May - 02 Jun):**
 
-#### Tareas Pendientes (15%):
-- 🔄 Completar supervisión tutor -> detalle de paciente
-  - Ver tareas completadas por el paciente en tiempo real
-  - Ver uso de pictogramas con timestamps
-  - Ver sesiones Pomodoro completadas
-  
-- 🔄 Sincronización bidireccional tareas tutor <-> paciente
-  - Tareas creadas por tutor aparecen en dispositivo del paciente
-  - Estado de completitud se sincroniza en ambos sentidos
-  - Actualización en tiempo real sin necesidad de reiniciar app
+- 🔲 **Kiosk Mode para usuario TEA** *(alta prioridad)*
+  - Bloqueo de botones físicos (volumen, home, recientes)
+  - PIN para salir de la app (para el tutor/cuidador)
+  - Prevención de cambio de app accidental
 
-- 🔄 Corrección de bugs menores de integración
+- 🔲 **Dashboard de progreso visual** *(alta prioridad)*
+  - Gráfico de tareas completadas por día (`fl_chart`)
+  - Gráfico de uso de pictogramas por categoría
+  - Estadísticas de sesiones Pomodoro (resumen semanal)
+  - Visible tanto para el usuario como para el tutor
+
+**Sprint B — Notificaciones y QA (03 - 16 Jun):**
+
+- 🔲 **Notificaciones push FCM** *(media prioridad)*
+  - Recordatorios de tareas con fecha/hora límite
+  - Alertas de rutinas diarias
+  - Notificación al tutor cuando el usuario completa una tarea
+
+- 🔲 **QA y corrección de bugs** *(alta prioridad)*
+  - Testing en dispositivos Android de gama baja/media
+  - Verificar flujo completo: registro → rol → perfil → funcionalidad
+  - Corrección de bugs reportados en testing
 
 **Dependencias:**
-- Requiere completar Fases 1-4
-- Bloquea el inicio de Fase 6 (Testing)
+- Requiere Fase 5 completada ✅
+- Bloquea inicio de Fase 7
 
 ---
 
 ## Fases Pendientes
-
-### ⏳ Fase 6: Pulido y Testing (27 Mayo - 16 Junio 2026)
-
-**Estado:** 0% | **Proyección:** 16 Junio 2026
-
-**Objetivo:** Optimizar UX y realizar testing exhaustivo.
-
-#### Tareas Planificadas:
-
-**Semana 3 (27 May - 02 Jun):**
-- Kiosk Mode para paciente TEA (control parental)
-  - Bloqueo de botones físicos (volumen, home)
-  - PIN para salir de la app
-  - Prevención de cambio de app accidental
-  
-- Pulir dashboard de progreso (gráficos fl_chart)
-  - Gráfico de tareas completadas por día
-  - Gráfico de uso de pictogramas
-  - Estadísticas de sesiones Pomodoro
-
-**Semana 4 (03-09 Jun):**
-- Notificaciones push FCM completas
-  - Recordatorios de tareas
-  - Alertas de rutinas
-  - Notificaciones tutor de actividad del paciente
-  
-- Testing y correcciones de bugs menores
-  - Testing en dispositivos Android de gama baja
-  - Testing de accesibilidad
-  - Corrección de bugs reportados
-
-**Dependencias:**
-- Requiere Fase 5 completada
-- Bloquea Fase 7
-
----
 
 ### ⏳ Fase 7: Documentación y Entrega (17 Junio - 07 Julio 2026)
 
@@ -272,64 +234,44 @@ Este documento consolida la **Carta Gantt** y la planificación de **Sprints** p
 
 **Objetivo:** Finalizar el proyecto con documentación completa y entrega del MVP.
 
-#### Tareas Planificadas:
+#### Tareas Planificadas
 
-**Semana 5-6 (17-27 Jun):**
-- Optimización de rendimiento
-  - Lazy loading de imágenes
-  - Cache de pictogramas frecuentes
-  - Optimización de consultas Firestore
-  - Reducción de tamaño del APK
-  
-- Documentación técnica completa
-  - Arquitectura del sistema
-  - Guía de instalación
-  - Documentación de API
-  - Comentarios en código crítico
+**Semana 1-2 (17-27 Jun):**
+- 🔲 Comentarios en código crítico — explicar decisiones no obvias para estudio
+- 🔲 Documentación técnica: arquitectura, guía de instalación, reglas Firestore
+- 🔲 Pruebas finales con usuarios reales (familias con niños TEA/TDAH)
+- 🔲 Optimización: lazy loading de imágenes, caché de pictogramas frecuentes
 
-- Pruebas finales
-  - Testing con usuarios reales (familias con niños TEA/TDAH)
-  - Validación de flujos completos
-  - Verificación de sincronización tutor-paciente
-
-**Semana 7 (28 Jun - 07 Jul):**
-- Manual de usuario
-  - Guía para pacientes TEA
-  - Guía para tutores
-  - Guía rápida de instalación
-  
-- Preparación de entrega
-  - Generación de APK firmado
-  - Empaquetado de documentación
-  - Video demo del proyecto
-  
-- Presentación final
-  - Demo funcional del proyecto
-  - Documentación de entrega
-  - Informe de métricas y aprendizajes
+**Semana 3 (28 Jun - 07 Jul):**
+- 🔲 Manual de usuario
+  - Guía para usuarios TEA (pictogramas)
+  - Guía para tutores (panel de supervisión)
+  - Guía rápida de instalación del APK
+- 🔲 APK firmado y empaquetado de entrega
+- 🔲 Video demo del proyecto
+- 🔲 Presentación final con métricas y aprendizajes
 
 **Entregables Finales:**
-- APK funcional de la aplicación
+- APK funcional firmado
 - Manual de usuario completo
 - Documentación técnica
 - Presentación del proyecto
-- Repositorio documentado
-
-**Nota:** La entrega será mediante APK/instalación directa, sin publicación en tiendas.
+- Repositorio documentado con README actualizado
 
 ---
 
-## Próximo Sprint: Prioridades
+## Próximo Sprint: Prioridades (Semana del 20 Mayo)
 
-### Tareas Críticas (Semana 1-2: 13-26 Mayo)
+### Tareas Críticas — Inicio Fase 6
 
-| Prioridad | Tarea | Responsable | Estimación |
-|:---|:---|:---:|:---:|
-| 🔴 **Alta** | Completar supervisión tutor -> detalle de paciente | Dev | 3 días |
-| 🔴 **Alta** | Sincronización bidireccional tareas tutor <-> paciente | Dev | 5 días |
-| 🟡 **Media** | Testing de integración | Dev | 2 días |
+| Prioridad | Tarea | Estimación |
+|:---|:---|:---:|
+| 🔴 **Alta** | Dashboard de progreso con `fl_chart` | 3 días |
+| 🔴 **Alta** | Kiosk Mode para usuario TEA | 3 días |
+| 🟡 **Media** | Notificaciones push FCM | 4 días |
+| 🟡 **Media** | QA — testing en dispositivos reales | 2 días |
 
-**Objetivo del Sprint:** Alcanzar HITO 2 (Sincronización Completa) para el 26 de Mayo.
+**Objetivo del Sprint:** Cerrar funcionalidades de pulido antes del 16 de junio para entrar a Fase 7.
 
 ---
 
@@ -338,13 +280,42 @@ Este documento consolida la **Carta Gantt** y la planificación de **Sprints** p
 | Fecha | Decisión | Motivo | Fase |
 |:---|:---|:---|:---:|
 | 27 Abr | Migración `Organizate` → `Simple` | Nombre más claro y representativo del producto | Fase 1 |
-| 28 Abr | Enrutamiento basado en roles con `RoleDispatcher` | Evitar que un paciente acceda al entorno de otro perfil | Fase 1 |
+| 28 Abr | Enrutamiento basado en roles con `RoleDispatcher` | Evitar que un usuario acceda al entorno de otro perfil | Fase 1 |
+| 29 Abr | Fallback local `generarPlanLocal()` en Cloud Function | Si Gemini falla o no hay API key, la app no rompe | Fase 2 |
 | 30 Abr | `pictogramSettings` como subcolección separada | Permite sobrescribir categoría/visibilidad sin modificar el pictograma original | Fase 3 |
-| 06 May | `IndexedStack` + `ValueKey(patientId)` en panel tutor | Forzar reconstrucción de tabs al cambiar de paciente activo | Fase 3 |
+| 06 May | `IndexedStack` + `ValueKey(patientId)` en panel tutor | Forzar reconstrucción de tabs al cambiar de usuario activo | Fase 3 |
 | 09 May | Eliminación Modo Foco | Reemplazo por Pictogramas en perfil TEA (más funcional) | Fase 5 |
-| 13 May | Sistema de vinculación por código | Más seguro y simple que vinculación por email | Fase 5 |
-| 19 May | `ProfileSetupScreen` post-rol | Garantizar que todo usuario tenga nombre y avatar antes de entrar a la app | Fase 5 |
-| 19 May | Renombrado `paciente_*` → `usuario_*` | Terminología más inclusiva; migración automática en `getUserRole()` para retrocompatibilidad | Fase 5 |
+| 13 May | Vinculación por código de 6 caracteres | Más seguro y simple que vinculación por email | Fase 5 |
+| 19 May | `ProfileSetupScreen` post-rol | Garantizar que todo usuario tenga nombre y avatar antes de entrar | Fase 5 |
+| 19 May | Renombrado `paciente_*` → `usuario_*` | Terminología más inclusiva; migración automática en `getUserRole()` | Fase 5 |
+| 19 May | Log de Pomodoro y pictogramas en `activityLog` | El tutor necesita ver actividad completa, no solo tareas | Fase 5 |
+| 19 May | `SliverList` + `_StatsCard` en tab Historial | Stats en tiempo real arriba del log para una vista rápida del tutor | Fase 5 |
+| 19 May | `SvgPicture.asset()` para imágenes `.svg` en panel tutor | `Image.asset()` no renderiza SVG — se necesita `flutter_svg` explícitamente | Fase 5 |
+| 19 May | Soft-delete en tareas (`deletedByUser: true`) | El usuario elimina tareas visualmente, pero el tutor conserva el registro en Firestore | Fase 5 |
+| 19 May | `PictogramManagerScreen` en cuadrícula 3 columnas | Vista de lista era difícil de escanear — cuadrícula da mejor visión general para el tutor | Fase 6 |
+| 19 May | Tab "Ajustes" en panel tutor + `featurePictogramas`/`featureFoco` | Flags almacenados en `pictogramSettings/_features` (tutor ya tiene write-access sin deploy); `CustomNavBar` reactivo con dos streams | Fase 6 |
+| 19 May | Documentación profesional de código (comentarios de arquitectura) | 8 archivos comentados: servicios core, navegación, reglas Firestore, pantallas principales | Fase 7 |
+| 19 May | Tarjeta unificada perfil+rol en `SettingsScreen` | Combina foto, nombre (editable), email y rol (editable) en una sola tarjeta — elimina la duplicidad visual y mejora la UX con íconos de lápiz | Fase 6 |
+| 19 May | `Navigator.pushAndRemoveUntil(AuthGate)` al confirmar cambio de rol | `RoleSelectionScreen` estaba sobre `AuthGate` en el stack; el stream de rol se disparaba pero el usuario nunca salía de la pantalla — limpiar el stack fuerza la re-evaluación correcta | Fase 5 |
+
+---
+
+## Reconciliación con Tablero Trello (19 Mayo 2026)
+
+El Trello original tenía 5 sprints. Estado actual vs lo planificado:
+
+| Sprint Trello | Descripción | Estado |
+|:---|:---|:---:|
+| **Sprint 1**: Cimientos y Limpieza | Refactor código + diseño base UI/UX | ✅ Completo |
+| **Sprint 2**: Tablero TEA (Visual) | UI por horarios, banco ARASAAC, TTS | ✅ Completo |
+| **Sprint 3**: Módulo TDA (Ejecutivo) | Pantalla Foco + IA Gemini + Sistema Dopamina | ✅ Completo |
+| **Sprint 4**: El Centro del Tutor | Panel tutor Firebase + pictogramas custom | ✅ Completo |
+| **Sprint 5**: Pulido Final | Documentación código + QA + lanzamiento | 🔄 En Curso (Fase 6-7) |
+
+**Pendiente del Sprint 5 del Trello:**
+- 🔲 Comentar el código crítico paso a paso (para estudio y evaluación)
+- 🔲 Pruebas de usuario con casos reales TEA/TDAH
+- 🔲 Pulir animaciones y microinteracciones
 
 ---
 
@@ -352,10 +323,11 @@ Este documento consolida la **Carta Gantt** y la planificación de **Sprints** p
 
 | Riesgo | Probabilidad | Impacto | Mitigación |
 |:---|:---:|:---:|:---|
-| Retraso en sincronización bidireccional | Media | Alto | Priorizar esta tarea, trabajar en iteraciones pequeñas |
-| Bugs en integración Firebase | Media | Alto | Testing continuo, logs detallados |
-| Compatibilidad con dispositivos diversos | Media | Medio | Testing en múltiples dispositivos Android |
+| Google Sign-In falla (SHA-1 no registrado) | Alta | Alto | Registrar SHA-1 del keystore en Firebase Console manualmente |
+| Kiosk Mode — incompatibilidad Android 14+ | Media | Medio | Usar `DevicePolicyManager` con fallback graceful si no hay permisos |
+| Bugs en integración Firebase en gama baja | Media | Alto | Testing temprano en dispositivos reales, no solo emuladores |
 | Falta de testers con TEA/TDAH | Media | Medio | Contactar organizaciones desde semana 5 |
+| Gemini API key no configurada en producción | Alta | Medio | Fallback local ya implementado — no bloquea el MVP |
 
 ---
 
@@ -366,17 +338,18 @@ Este documento consolida la **Carta Gantt** y la planificación de **Sprints** p
 | Módulo | % del Proyecto | Estado | Líneas de Código (aprox) |
 |:---|:---:|:---:|:---:|
 | Autenticación y base | 15% | ✅ Completado | ~2,500 |
-| Módulo TEA (Pictogramas) | 35% | ✅ Completado | ~5,500 |
-| Módulo TDAH (Tareas) | 25% | ✅ Completado | ~4,000 |
-| IA / Súper Experto | 10% | ✅ Completado | ~1,500 |
-| Vinculación Tutor | 10% | 🔄 En Curso | ~1,200 |
+| Módulo TEA (Pictogramas) | 30% | ✅ Completado | ~6,000 |
+| Módulo TDAH (Tareas + Foco) | 20% | ✅ Completado | ~4,500 |
+| IA / Súper Experto | 8% | ✅ Completado | ~1,500 |
+| Panel Tutor (supervisión) | 12% | ✅ Completado | ~2,200 |
 | Infraestructura Firebase | 5% | ✅ Completado | ~800 |
+| Pulido, Dashboard, Kiosk | 10% | 🔲 Pendiente | — |
 
 ### Total Estimado
-- **Líneas de código:** ~15,500
-- **Archivos Dart:** 60+
-- **Commits:** 20+
-- **Funcionalidades implementadas:** 40+
+- **Líneas de código:** ~17,500+
+- **Archivos Dart:** 65+
+- **Commits:** 25+
+- **Funcionalidades implementadas:** 48+
 
 ---
 
@@ -390,6 +363,6 @@ Este documento consolida la **Carta Gantt** y la planificación de **Sprints** p
 
 ## Notas de Actualización
 
-**Última actualización:** 19 Mayo 2026  
-**Próxima revisión:** 26 Mayo 2026 (cierre de Fase 5)  
-**Próximo milestone:** 26 Mayo 2026 (Sincronización Completa)
+**Última actualización:** 19 Mayo 2026 — sesión 2 (panel tutor, nav bar reactiva, ajustes rediseñados, fix cambio de rol)  
+**Próxima revisión:** 02 Junio 2026 (cierre Sprint A de Fase 6)  
+**Próximo milestone:** 16 Junio 2026 (cierre Fase 6 — inicio documentación)

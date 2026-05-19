@@ -12,12 +12,24 @@ import 'package:simple/features/auth/screens/profile_setup_screen.dart';
 import 'package:simple/features/tea_board/screens/pantalla_paciente_tea.dart';
 import 'package:simple/core/services/push_notification_service.dart';
 
+/// Punto de entrada del árbol de widgets post-MaterialApp.
+///
+/// Implementa una máquina de estados de navegación de tres niveles:
+///
+///   1. [AuthGate]             → ¿hay sesión activa de Firebase?
+///   2. [_UserOnboardingGate]  → ¿tiene rol y perfil configurados?
+///   3. [RoleDispatcher]       → ¿qué pantalla corresponde al rol?
+///
+/// Cada nivel usa un [StreamBuilder] independiente para que los cambios
+/// en Firebase Auth y en Firestore disparen reconstrucciones aisladas
+/// sin reiniciar el árbol completo.
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
+      // authStateChanges emite null al logout y User al login/token-refresh
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -38,6 +50,15 @@ class AuthGate extends StatelessWidget {
   }
 }
 
+/// Segundo nivel del gate: verifica que el usuario tenga rol y perfil
+/// antes de enviarlo a su pantalla definitiva.
+///
+/// El stream se abre sobre el documento del usuario en Firestore para
+/// reaccionar en tiempo real si el tutor cambia el rol o si el usuario
+/// completa el setup de perfil desde otro dispositivo.
+///
+/// También sincroniza el token FCM al montarse, lo que garantiza que
+/// las notificaciones push estén vinculadas al dispositivo actual.
 class _UserOnboardingGate extends StatefulWidget {
   const _UserOnboardingGate({required this.user});
   final User user;
@@ -52,6 +73,8 @@ class _UserOnboardingGateState extends State<_UserOnboardingGate> {
   @override
   void initState() {
     super.initState();
+    // Sincroniza el token FCM del dispositivo actual. Se hace aquí y no en
+    // main() para tener acceso al uid del usuario ya autenticado.
     PushNotificationService.syncUserToken(widget.user);
     _userDocStream = FirebaseFirestore.instance
         .collection('users')
@@ -77,8 +100,13 @@ class _UserOnboardingGateState extends State<_UserOnboardingGate> {
         final data = snapshot.data?.data();
         final role = data?['role'] as String?;
 
+        // Sin rol → el usuario acaba de registrarse con Google o hay un
+        // documento corrupto. Forzar selección de rol.
         if (role == null || role.isEmpty) return const RoleSelectionScreen();
 
+        // Sin nombre → el usuario no completó el setup de perfil.
+        // `hasCompletedProfile` es la fuente de verdad; `name` es el fallback
+        // por si el campo booleano no existe en documentos antiguos.
         final hasProfile = data?['hasCompletedProfile'] as bool? ?? false;
         final hasName = (data?['name'] as String? ?? '').isNotEmpty;
         if (!hasProfile && !hasName) return const ProfileSetupScreen();
@@ -89,6 +117,12 @@ class _UserOnboardingGateState extends State<_UserOnboardingGate> {
   }
 }
 
+/// Tercer nivel: despacha al widget raíz correspondiente al rol.
+///
+/// Usa un `switch` exhaustivo para que agregar un nuevo rol en el futuro
+/// produzca un warning del compilador si no se maneja el caso.
+/// Los roles legacy (`paciente_tea`) se mantienen como alias temporales
+/// hasta que todos los usuarios migren automáticamente via [AuthService].
 class RoleDispatcher extends StatelessWidget {
   final String role;
 
@@ -97,10 +131,10 @@ class RoleDispatcher extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (role) {
-      'tutor' => const TutorSupervisarScreen(),
-      'usuario_tea' => const PantallaPacienteTEA(),
-      'paciente_tea' => const PantallaPacienteTEA(), // legacy
-      _ => const HomeScreen(),
+      'tutor'        => const TutorSupervisarScreen(),
+      'usuario_tea'  => const PantallaPacienteTEA(),
+      'paciente_tea' => const PantallaPacienteTEA(), // alias legacy → migrar vía AuthService
+      _              => const HomeScreen(),           // tutor_tdah, usuario_general, usuario_tdah
     };
   }
 }

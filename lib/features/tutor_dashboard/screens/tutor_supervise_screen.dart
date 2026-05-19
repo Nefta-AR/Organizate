@@ -1,7 +1,37 @@
+// lib/features/tutor_dashboard/screens/tutor_supervise_screen.dart
+//
+// Panel de supervisión del tutor. Muestra datos en tiempo real del usuario
+// seleccionado, organizado en cuatro tabs:
+//
+//   1. **Tareas** [_TutorTasksTab]: lista de tareas con tres secciones
+//      (Pendientes / Completadas / Eliminadas por el usuario). Las tareas
+//      eliminadas usan soft-delete (`deletedByUser: true`) para que el tutor
+//      conserve el registro aunque el usuario ya no las vea en su pantalla.
+//
+//   2. **Pictogramas** [_TutorPictogramsTab]: grid de pictogramas personalizados
+//      del usuario. El tutor puede agregar del banco SVG predefinido o abrir
+//      el gestor completo [PictogramManagerScreen].
+//
+//   3. **Historial** [_TutorHistorialTab]: tarjeta de estadísticas en tiempo
+//      real ([_StatsCard]) + log de actividad de las últimas 100 entradas
+//      (tareas completadas, pictogramas usados, sesiones Pomodoro).
+//
+//   4. **Ajustes** [_TutorConfigTab]: toggles para habilitar/deshabilitar las
+//      pestañas de Pictogramas y Foco en la app del usuario TEA. Los flags
+//      se persisten en `pictogramSettings/_features` (subcolección con permisos
+//      de tutor ya establecidos en las reglas, sin necesidad de deploy extra).
+//
+// ## Manejo de múltiples usuarios
+//
+// El selector de usuario usa un [Stream] de [AuthService.getLinkedPatientsStream].
+// Al cambiar de usuario activo, [IndexedStack] usa [ValueKey(patientId)] en
+// cada tab para forzar su reconstrucción completa y limpiar el estado previo.
+
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:simple/core/services/activity_log_service.dart';
 import 'package:simple/core/services/auth_service.dart';
@@ -163,6 +193,11 @@ class _TutorSupervisarScreenState extends State<TutorSupervisarScreen> {
             key: ValueKey('history_$pk'),
             patientId: pk,
           ),
+          _TutorConfigTab(
+            key: ValueKey('config_$pk'),
+            patientId: pk,
+            patientName: _patientName,
+          ),
         ],
       ),
       bottomNavigationBar: NavigationBar(
@@ -182,6 +217,11 @@ class _TutorSupervisarScreenState extends State<TutorSupervisarScreen> {
           NavigationDestination(
             icon: Icon(Icons.history),
             label: 'Historial',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.tune_outlined),
+            selectedIcon: Icon(Icons.tune_rounded),
+            label: 'Ajustes',
           ),
         ],
       ),
@@ -445,10 +485,19 @@ class _TutorTasksTabState extends State<_TutorTasksTab> {
             );
           }
 
-          final pending =
-              docs.where((d) => d.data()['done'] != true).toList();
-          final done =
-              docs.where((d) => d.data()['done'] == true).toList();
+          final pending = docs
+              .where((d) =>
+                  d.data()['done'] != true &&
+                  d.data()['deletedByUser'] != true)
+              .toList();
+          final done = docs
+              .where((d) =>
+                  d.data()['done'] == true &&
+                  d.data()['deletedByUser'] != true)
+              .toList();
+          final deleted = docs
+              .where((d) => d.data()['deletedByUser'] == true)
+              .toList();
 
           return ListView(
             padding:
@@ -472,6 +521,16 @@ class _TutorTasksTabState extends State<_TutorTasksTab> {
                       doc: d,
                       onToggle: () =>
                           _toggleDone(d.id, d.data()['done'] == true),
+                      onDelete: () => _deleteTask(d.id),
+                    )),
+                const SizedBox(height: 16),
+              ],
+              if (deleted.isNotEmpty) ...[
+                _sectionHeader(
+                    'Eliminadas por el usuario (${deleted.length})',
+                    Colors.grey),
+                ...deleted.map((d) => _DeletedTaskTile(
+                      doc: d,
                       onDelete: () => _deleteTask(d.id),
                     )),
               ],
@@ -607,10 +666,12 @@ class _TutorPictogramsTab extends StatelessWidget {
                               MainAxisAlignment.center,
                           children: [
                             Expanded(
-                              child: Image.asset(p.asset,
-                                  fit: BoxFit.contain,
-                                  errorBuilder: (_, __, ___) =>
-                                      const Icon(Icons.image)),
+                              child: p.asset.endsWith('.svg')
+                                  ? SvgPicture.asset(p.asset, fit: BoxFit.contain)
+                                  : Image.asset(p.asset,
+                                      fit: BoxFit.contain,
+                                      errorBuilder: (_, __, ___) =>
+                                          const Icon(Icons.image)),
                             ),
                             const SizedBox(height: 4),
                             Text(p.label,
@@ -799,6 +860,8 @@ class _TutorHistorialTab extends StatelessWidget {
         ActivityType.taskDeleted => Icons.delete_outline,
         ActivityType.pictogramCreated => Icons.image,
         ActivityType.pictogramDeleted => Icons.image_not_supported,
+        ActivityType.pictogramUsed => Icons.record_voice_over_rounded,
+        ActivityType.pomodoroCompleted => Icons.timer_rounded,
         _ => Icons.info_outline,
       };
 
@@ -808,6 +871,8 @@ class _TutorHistorialTab extends StatelessWidget {
         ActivityType.taskDeleted => Colors.red,
         ActivityType.pictogramCreated => Colors.purple,
         ActivityType.pictogramDeleted => Colors.orange,
+        ActivityType.pictogramUsed => Colors.teal,
+        ActivityType.pomodoroCompleted => Colors.deepOrange,
         _ => Colors.grey,
       };
 
@@ -817,95 +882,379 @@ class _TutorHistorialTab extends StatelessWidget {
         ActivityType.taskDeleted => 'Tarea eliminada',
         ActivityType.pictogramCreated => 'Pictograma creado',
         ActivityType.pictogramDeleted => 'Pictograma eliminado',
+        ActivityType.pictogramUsed => 'Pictograma usado',
+        ActivityType.pomodoroCompleted => 'Sesión de foco',
         _ => 'Actividad',
       };
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: ActivityLogService.getStream(patientId),
-      builder: (context, snap) {
-        if (snap.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final logs = snap.data ?? [];
-        if (logs.isEmpty) {
-          return const Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.history, size: 64, color: Colors.grey),
-                SizedBox(height: 12),
-                Text('Sin actividad registrada aún.',
-                    style: TextStyle(color: Colors.grey)),
-              ],
-            ),
-          );
-        }
-
-        return ListView.separated(
-          padding: const EdgeInsets.all(16),
-          itemCount: logs.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 8),
-          itemBuilder: (context, i) {
-            final log = logs[i];
-            final type = log['type'] as String? ?? '';
-            final description = log['description'] as String? ?? '';
-            final ts = log['timestamp'] as Timestamp?;
-            final date = ts?.toDate();
-            final color = _color(type);
-
-            return Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                    color: color.withValues(alpha: 0.2)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.12),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(_icon(type), color: color, size: 18),
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+          child: _StatsCard(patientId: patientId),
+        ),
+        StreamBuilder<List<Map<String, dynamic>>>(
+          stream: ActivityLogService.getStream(patientId),
+          builder: (context, snap) {
+            if (snap.connectionState == ConnectionState.waiting) {
+              return const SliverFillRemaining(
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+            final logs = snap.data ?? [];
+            if (logs.isEmpty) {
+              return const SliverFillRemaining(
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.history, size: 64, color: Colors.grey),
+                      SizedBox(height: 12),
+                      Text('Sin actividad registrada aún.',
+                          style: TextStyle(color: Colors.grey)),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+              );
+            }
+            return SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+              sliver: SliverList.separated(
+                itemCount: logs.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                itemBuilder: (context, i) {
+                  final log = logs[i];
+                  final type = log['type'] as String? ?? '';
+                  final description = log['description'] as String? ?? '';
+                  final ts = log['timestamp'] as Timestamp?;
+                  final date = ts?.toDate();
+                  final color = _color(type);
+
+                  return Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: color.withValues(alpha: 0.2)),
+                    ),
+                    child: Row(
                       children: [
-                        Text(
-                          _label(type),
-                          style: TextStyle(
-                              fontSize: 11,
-                              color: color,
-                              fontWeight: FontWeight.w600),
-                        ),
-                        Text(description,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w500,
-                                fontSize: 14)),
-                        if (date != null)
-                          Text(
-                            DateFormat('dd/MM/yyyy HH:mm', 'es_ES')
-                                .format(date),
-                            style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey.shade600),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.12),
+                            shape: BoxShape.circle,
                           ),
+                          child: Icon(_icon(type), color: color, size: 18),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _label(type),
+                                style: TextStyle(
+                                    fontSize: 11,
+                                    color: color,
+                                    fontWeight: FontWeight.w600),
+                              ),
+                              Text(description,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 14)),
+                              if (date != null)
+                                Text(
+                                  DateFormat('dd/MM/yyyy HH:mm', 'es_ES')
+                                      .format(date),
+                                  style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey.shade600),
+                                ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
-                  ),
-                ],
+                  );
+                },
               ),
             );
           },
+        ),
+      ],
+    );
+  }
+}
+
+// ─── TAB CONFIGURACIÓN ───────────────────────────────────────────────────────
+
+class _TutorConfigTab extends StatefulWidget {
+  final String patientId;
+  final String patientName;
+
+  const _TutorConfigTab({
+    super.key,
+    required this.patientId,
+    required this.patientName,
+  });
+
+  @override
+  State<_TutorConfigTab> createState() => _TutorConfigTabState();
+}
+
+class _TutorConfigTabState extends State<_TutorConfigTab> {
+  bool? _featurePictogramas;
+  bool? _featureFoco;
+  late final StreamSubscription<DocumentSnapshot<Map<String, dynamic>>> _sub;
+
+  static const _featuresDocId = '_features';
+
+  CollectionReference<Map<String, dynamic>> get _settingsRef =>
+      FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.patientId)
+          .collection('pictogramSettings');
+
+  @override
+  void initState() {
+    super.initState();
+    _sub = _settingsRef.doc(_featuresDocId).snapshots().listen((snap) {
+      if (!mounted) return;
+      final data = snap.data() ?? {};
+      setState(() {
+        _featurePictogramas = data['featurePictogramas'] as bool? ?? true;
+        _featureFoco = data['featureFoco'] as bool? ?? false;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _sub.cancel();
+    super.dispose();
+  }
+
+  Future<void> _toggle(String field, bool current) async {
+    await _settingsRef.doc(_featuresDocId).set(
+      {field: !current},
+      SetOptions(merge: true),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_featurePictogramas == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+      children: [
+        Text(
+          'Pestañas de ${widget.patientName}',
+          style: Theme.of(context)
+              .textTheme
+              .titleMedium
+              ?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Activa o desactiva las secciones visibles en la app del usuario.',
+          style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+        ),
+        const SizedBox(height: 20),
+        _FeatureToggleTile(
+          icon: Icons.image_rounded,
+          color: Colors.purple,
+          title: 'Pestaña de Pictogramas',
+          subtitle:
+              'El usuario puede acceder al tablero de comunicación por pictogramas',
+          value: _featurePictogramas!,
+          onChanged: (_) => _toggle('featurePictogramas', _featurePictogramas!),
+        ),
+        const SizedBox(height: 12),
+        _FeatureToggleTile(
+          icon: Icons.self_improvement,
+          color: Colors.deepOrange,
+          title: 'Pestaña de Foco',
+          subtitle:
+              'El usuario puede usar el temporizador Pomodoro y gestión de concentración',
+          value: _featureFoco!,
+          onChanged: (_) => _toggle('featureFoco', _featureFoco!),
+        ),
+      ],
+    );
+  }
+}
+
+class _FeatureToggleTile extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _FeatureToggleTile({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: value ? color.withValues(alpha: 0.3) : Colors.grey.shade200,
+          width: value ? 1.5 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withValues(alpha: 0.06),
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: SwitchListTile(
+        value: value,
+        onChanged: onChanged,
+        activeThumbColor: color,
+        secondary: Container(
+          padding: const EdgeInsets.all(9),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: value ? 0.12 : 0.06),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: value ? color : Colors.grey, size: 22),
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: value ? Colors.black87 : Colors.grey.shade600,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey.shade500,
+          ),
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+    );
+  }
+}
+
+// ─── Tarjeta de stats del usuario ────────────────────────────────────────────
+
+class _StatsCard extends StatelessWidget {
+  final String patientId;
+  const _StatsCard({required this.patientId});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(patientId)
+          .snapshots(),
+      builder: (context, snap) {
+        final data = snap.data?.data() ?? {};
+        final sessions = data['focusSessionsCompleted'] as int? ?? 0;
+        final minutes = data['totalFocusMinutes'] as int? ?? 0;
+        final points = data['points'] as int? ?? 0;
+        final streak = data['streak'] as int? ?? 0;
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+          child: Row(
+            children: [
+              _StatChip(
+                icon: Icons.timer_rounded,
+                color: Colors.deepOrange,
+                label: '$sessions sesiones',
+                sub: 'Pomodoro',
+              ),
+              const SizedBox(width: 10),
+              _StatChip(
+                icon: Icons.access_time_rounded,
+                color: Colors.indigo,
+                label: '$minutes min',
+                sub: 'Foco total',
+              ),
+              const SizedBox(width: 10),
+              _StatChip(
+                icon: Icons.local_fire_department_rounded,
+                color: Colors.orange,
+                label: '$streak días',
+                sub: 'Racha',
+              ),
+              const SizedBox(width: 10),
+              _StatChip(
+                icon: Icons.star_rounded,
+                color: Colors.amber,
+                label: '$points pts',
+                sub: 'Puntos',
+              ),
+            ],
+          ),
         );
       },
+    );
+  }
+}
+
+class _StatChip extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String label;
+  final String sub;
+
+  const _StatChip({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.sub,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 20),
+            const SizedBox(height: 4),
+            Text(label,
+                style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: color)),
+            Text(sub,
+                style: TextStyle(
+                    fontSize: 9, color: Colors.grey.shade600)),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -987,6 +1336,77 @@ class _SupervisionTaskTile extends StatelessWidget {
   }
 }
 
+class _DeletedTaskTile extends StatelessWidget {
+  final QueryDocumentSnapshot<Map<String, dynamic>> doc;
+  final VoidCallback onDelete;
+
+  const _DeletedTaskTile({required this.doc, required this.onDelete});
+
+  @override
+  Widget build(BuildContext context) {
+    final data = doc.data();
+    final text = data['text'] as String? ?? '';
+    final category = data['category'] as String? ?? 'General';
+    final byTutor = data['addedByTutor'] == true;
+
+    return Dismissible(
+      key: Key('del_${doc.id}'),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 16),
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade400,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(Icons.delete_forever, color: Colors.white),
+      ),
+      onDismissed: (_) => onDelete(),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: ListTile(
+          leading: Icon(Icons.delete_outline,
+              color: Colors.grey.shade400, size: 22),
+          title: Text(
+            text,
+            style: TextStyle(
+              decoration: TextDecoration.lineThrough,
+              color: Colors.grey.shade500,
+            ),
+          ),
+          subtitle: Row(
+            children: [
+              Text(category,
+                  style: TextStyle(
+                      fontSize: 12, color: Colors.grey.shade400)),
+              if (byTutor) ...[
+                const SizedBox(width: 6),
+                Icon(Icons.person_pin,
+                    size: 12, color: Colors.grey.shade400),
+                Text(' Tutor',
+                    style: TextStyle(
+                        fontSize: 11, color: Colors.grey.shade400)),
+              ],
+              const SizedBox(width: 6),
+              Icon(Icons.person_remove_outlined,
+                  size: 11, color: Colors.grey.shade400),
+              Text(' Eliminada por usuario',
+                  style: TextStyle(
+                      fontSize: 10, color: Colors.grey.shade400)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SupervisionPictoCard extends StatelessWidget {
   final PictogramaPersonalizado picto;
   final VoidCallback onDelete;
@@ -1019,10 +1439,13 @@ class _SupervisionPictoCard extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(8, 20, 8, 4),
                   child: isAsset
-                      ? Image.asset(picto.imageUrl,
-                          fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) =>
-                              const Icon(Icons.image, size: 40))
+                      ? (picto.imageUrl.endsWith('.svg')
+                          ? SvgPicture.asset(picto.imageUrl,
+                              fit: BoxFit.contain)
+                          : Image.asset(picto.imageUrl,
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, __, ___) =>
+                                  const Icon(Icons.image, size: 40)))
                       : picto.imageUrl.isNotEmpty
                           ? Image.network(picto.imageUrl,
                               fit: BoxFit.contain)

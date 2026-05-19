@@ -389,9 +389,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildProfileCard(name, email, photoUrl, avatar),
-                const SizedBox(height: 16),
-                _buildRoleCard(role),
+                _buildProfileRoleCard(name, email, photoUrl, avatar, role),
                 const SizedBox(height: 16),
                 if (role == 'tutor') ...[
                   _buildVinculacionCard(),
@@ -429,26 +427,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildProfileCard(
-      String name, String email, String? photoUrl, String? avatar) {
-    return GestureDetector(
-      onTap: _isUploadingPhoto ? null : () => _showPhotoOptions(avatar),
-      child: Container(
-        decoration: BoxDecoration(
-          color: _Palette.surface,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            Stack(
+  Widget _buildProfileRoleCard(
+      String name, String email, String? photoUrl, String? avatar, String role) {
+    final roleLabel = switch (role) {
+      'usuario_general' => 'Usuario General',
+      'tutor' => 'Tutor',
+      'usuario_tdah' => 'Usuario TDAH',
+      'usuario_tea' => 'Usuario TEA',
+      'paciente_tdah' => 'Usuario TDAH',
+      'paciente_tea' => 'Usuario TEA',
+      _ => role.isEmpty ? 'Sin rol asignado' : role,
+    };
+
+    return Container(
+      decoration: BoxDecoration(
+        color: _Palette.surface,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Avatar tappable to change photo
+          GestureDetector(
+            onTap: _isUploadingPhoto ? null : () => _showPhotoOptions(avatar),
+            child: Stack(
               alignment: Alignment.center,
               children: [
                 CircleAvatar(
@@ -477,48 +487,174 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                   ),
+                // Camera badge
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: _Palette.accent,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: const Icon(Icons.camera_alt,
+                        size: 12, color: Colors.white),
+                  ),
+                ),
               ],
             ),
-            const SizedBox(width: 18),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: const TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.w700,
-                      color: _Palette.textDark,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(email,
-                      style: const TextStyle(
-                          fontSize: 13, color: _Palette.textMuted)),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(Icons.camera_alt_outlined,
-                          size: 13,
-                          color: _Palette.accent.withValues(alpha: 0.75)),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Toca para cambiar foto o avatar',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: _Palette.accent.withValues(alpha: 0.75),
+          ),
+          const SizedBox(width: 18),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Name row with edit pencil
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        name,
+                        style: const TextStyle(
+                          fontSize: 19,
+                          fontWeight: FontWeight.w700,
+                          color: _Palette.textDark,
                         ),
                       ),
-                    ],
-                  ),
-                ],
-              ),
+                    ),
+                    GestureDetector(
+                      onTap: () => _editDisplayName(name),
+                      child: const Padding(
+                        padding: EdgeInsets.only(left: 6),
+                        child: Icon(Icons.edit_outlined,
+                            size: 18, color: _Palette.accent),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                Text(email,
+                    style: const TextStyle(
+                        fontSize: 13, color: _Palette.textMuted)),
+                const SizedBox(height: 10),
+                const Divider(height: 1),
+                const SizedBox(height: 10),
+                // Role row with edit pencil
+                Row(
+                  children: [
+                    const Icon(Icons.manage_accounts_outlined,
+                        size: 16, color: _Palette.textMuted),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        roleLabel,
+                        style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: _Palette.textDark),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => _showRoleChangeConfirmation(),
+                      child: const Padding(
+                        padding: EdgeInsets.only(left: 6),
+                        child: Icon(Icons.edit_outlined,
+                            size: 18, color: _Palette.accent),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
+  }
+
+  Future<void> _editDisplayName(String currentName) async {
+    final controller = TextEditingController(text: currentName);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Editar nombre'),
+        content: TextField(
+          controller: controller,
+          textCapitalization: TextCapitalization.words,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Nombre',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (confirmed != true || !mounted) return;
+
+    final newName = controller.text.trim();
+    if (newName.isEmpty || newName == currentName) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await FirebaseAuth.instance.currentUser?.updateDisplayName(newName);
+      await _userDoc.set({'name': newName}, SetOptions(merge: true));
+      if (mounted) setState(() {});
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Nombre actualizado')),
+      );
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('No se pudo actualizar el nombre')),
+      );
+    }
+  }
+
+  Future<void> _showRoleChangeConfirmation() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Cambiar rol'),
+        content: const Text(
+          'Al cambiar tu rol se ajustará la interfaz de la aplicación. '
+          '¿Deseas continuar?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _Palette.primary,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Continuar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const RoleSelectionScreen()),
+      );
+    }
   }
 
   Widget _buildVinculacionCard() {
@@ -738,39 +874,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ));
       }
     }
-  }
-
-  Widget _buildRoleCard(String currentRole) {
-    final roleLabel = switch (currentRole) {
-      'usuario_general' => 'Usuario General',
-      'tutor' => 'Tutor',
-      'usuario_tdah' => 'Usuario TDAH',
-      'usuario_tea' => 'Usuario TEA',
-      'paciente_tdah' => 'Usuario TDAH',
-      'paciente_tea' => 'Usuario TEA',
-      _ => currentRole.isEmpty ? 'Sin rol asignado' : currentRole,
-    };
-
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: ListTile(
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: const Icon(Icons.manage_accounts_outlined,
-            color: _Palette.accent, size: 28),
-        title: const Text('Rol actual',
-            style: TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text(roleLabel,
-            style: const TextStyle(color: _Palette.textDark, fontSize: 14)),
-        trailing: TextButton(
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const RoleSelectionScreen()),
-          ),
-          child: const Text('Cambiar'),
-        ),
-      ),
-    );
   }
 
   Widget _buildEmergencyCard() {

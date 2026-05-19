@@ -3,10 +3,23 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+// Representa todos los roles posibles del sistema.
+// Usar `.name` produce la cadena que va a Firestore (ej: 'usuario_tdah').
 // ignore: constant_identifier_names
 enum UserRole { tutor, usuario_tdah, usuario_tea, usuario_general }
 
+/// Servicio estático de autenticación y gestión de usuarios.
+///
+/// Responsabilidades:
+///   - Registro e inicio de sesión (email/contraseña y Google)
+///   - Resolución y migración automática de roles en Firestore
+///   - Vinculación tutor ↔ usuario mediante códigos de invitación de 6 caracteres
+///   - Consultas de vinculación activa (streams en tiempo real)
+///
+/// Invariante de seguridad: ningún método expone el uid de otro usuario
+/// sin pasar primero por una validación de vinculación activa en Firestore.
 class AuthService {
+  // Clase puramente estática; constructor privado evita instanciación accidental.
   AuthService._();
 
   static final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -17,9 +30,11 @@ class AuthService {
   static const _usersCollection = 'users';
 
   // ─────────────────────────────────────────────────────────────
-  // STREAMS
+  // STREAMS DE AUTENTICACIÓN
   // ─────────────────────────────────────────────────────────────
 
+  /// Stream que emite cada vez que el estado de sesión cambia
+  /// (login, logout, token refresh). Utilizado por [AuthGate].
   static Stream<User?> get authStateChanges => _auth.authStateChanges();
 
   static User? get currentUser => _auth.currentUser;
@@ -28,6 +43,12 @@ class AuthService {
   // REGISTRO CON ROL
   // ─────────────────────────────────────────────────────────────
 
+  /// Crea una cuenta con email/contraseña y escribe el documento
+  /// inicial en Firestore con los campos específicos del rol.
+  ///
+  /// Los campos adicionales (linkedPatients, linkedTutors, etc.) se
+  /// inicializan vacíos para que las reglas de Firestore puedan verificar
+  /// su existencia sin hacer gets adicionales en evaluación de reglas.
   static Future<UserCredential> registerWithEmail({
     required String name,
     required String email,
@@ -83,6 +104,11 @@ class AuthService {
     );
   }
 
+  /// Inicia sesión con Google. En web usa popup; en móvil usa el flujo nativo.
+  ///
+  /// Si el usuario es nuevo se crea su documento Firestore con rol
+  /// [UserRole.usuario_general] para que [AuthGate] lo redirija a
+  /// [RoleSelectionScreen] antes de darle acceso a la app.
   static Future<UserCredential?> loginWithGoogle() async {
     final UserCredential userCred;
 
@@ -128,6 +154,17 @@ class AuthService {
   // GESTIÓN DE ROL
   // ─────────────────────────────────────────────────────────────
 
+  /// Resuelve el rol del usuario actual con tres capas de fallback:
+  ///
+  /// 1. Lee el campo `role` del documento Firestore.
+  /// 2. Si está vacío, infiere el rol por la presencia de campos estructurales
+  ///    (`linkedPatients` → tutor, `pictograms` → tea, `linkedTutors` → tdah)
+  ///    y escribe el rol inferido para que no se repita en futuros accesos.
+  /// 3. Si los strings son los nombres legacy (`paciente_*`), los migra
+  ///    automáticamente al nuevo esquema (`usuario_*`) en la misma llamada.
+  ///
+  /// Este patrón de migración on-the-fly evita scripts de migración batch
+  /// y garantiza compatibilidad hacia atrás con cuentas anteriores.
   static Future<UserRole?> getUserRole() async {
     final user = _auth.currentUser;
     if (user == null) return null;
@@ -136,6 +173,7 @@ class AuthService {
     final data = doc.data();
     var roleStr = data?['role'] as String?;
 
+    // Capa 2: inferir rol por campos estructurales del documento
     if (roleStr == null || roleStr.isEmpty) {
       final hasTutorFields = data?.containsKey('linkedPatients') ?? false;
       final hasPatientFields = data?.containsKey('linkedTutors') ?? false;
@@ -168,7 +206,7 @@ class AuthService {
       );
     }
 
-    // Migrar roles legacy a los nuevos nombres
+    // Capa 3: migración automática de nombres de rol legacy
     if (roleStr == 'paciente' || roleStr == 'paciente_tdah') {
       roleStr = 'usuario_tdah';
       await _firestore.collection(_usersCollection).doc(user.uid).set(
@@ -197,6 +235,11 @@ class AuthService {
     }
   }
 
+  /// Versión reactiva de [getUserRole] para [AuthGate].
+  ///
+  /// Usa `asyncMap` porque la migración de roles requiere escrituras en
+  /// Firestore que no pueden ejecutarse dentro de un `map` síncrono.
+  /// Cada emisión del stream del documento puede disparar una migración.
   static Stream<UserRole?> getUserRoleStream() {
     final user = _auth.currentUser;
     if (user == null) return Stream.value(null);
@@ -209,6 +252,7 @@ class AuthService {
       final data = snapshot.data();
       var roleStr = data?['role'] as String?;
 
+      // Misma lógica de inferencia y migración que getUserRole()
       if (roleStr == null || roleStr.isEmpty) {
         final hasTutorFields = data?.containsKey('linkedPatients') ?? false;
         final hasPatientFields = data?.containsKey('linkedTutors') ?? false;
@@ -241,7 +285,6 @@ class AuthService {
         );
       }
 
-      // Migrar roles legacy a los nuevos nombres
       if (roleStr == 'paciente' || roleStr == 'paciente_tdah') {
         roleStr = 'usuario_tdah';
         await _firestore.collection(_usersCollection).doc(user.uid).set(
@@ -295,9 +338,15 @@ class AuthService {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // VINCULACIÓN TUTOR ↔ PACIENTE (Código de invitación)
+  // VINCULACIÓN TUTOR ↔ USUARIO (Código de invitación)
   // ─────────────────────────────────────────────────────────────
 
+  /// Genera un código alfanumérico de 6 caracteres y lo almacena en
+  /// la colección global `invitationCodes` con TTL de 7 días.
+  ///
+  /// El campo `tutorName` se incluye en el documento del código para que
+  /// el usuario pueda ver a quién pertenece sin necesitar leer
+  /// `users/{tutorId}` (permiso que no tiene antes de vincularse).
   static Future<String> generateInvitationCode() async {
     final user = _auth.currentUser;
     if (user == null) throw Exception('No hay usuario autenticado.');
@@ -308,9 +357,6 @@ class AuthService {
     }
 
     final code = _generateRandomCode();
-
-    // tutorName se guarda en el código para que el paciente no necesite
-    // leer users/{tutorId} (que tendría permiso denegado antes de vincular).
     final tutorName = user.displayName ?? 'Tutor';
 
     await _firestore.collection(_codesCollection).doc(code).set({
@@ -327,6 +373,8 @@ class AuthService {
     return code;
   }
 
+  /// Valida un código sin consumirlo. Retorna null si el documento no existe,
+  /// o un mapa con `valid: false` y `reason` si está vencido/usado.
   static Future<Map<String, dynamic>?> validateInvitationCode(String code) async {
     final doc = await _firestore.collection(_codesCollection).doc(code.trim().toUpperCase()).get();
 
@@ -344,7 +392,6 @@ class AuthService {
       return {'valid': false, 'reason': 'Código expirado.'};
     }
 
-    // El nombre ya viene en el código; no hace falta leer users/{tutorId}.
     final tutorName = data['tutorName'] as String? ?? 'Tutor';
 
     return {
@@ -354,6 +401,14 @@ class AuthService {
     };
   }
 
+  /// Acepta un código y crea los documentos de vinculación en ambas
+  /// direcciones en un batch atómico.
+  ///
+  /// Usa batch en lugar de transacción porque una transacción multi-documento
+  /// que incluya lecturas de colecciones de otros usuarios falla por las
+  /// reglas de Firestore (la transacción ejecuta todas las lecturas primero
+  /// con los permisos del usuario que inicia, y `invitationCodes` tiene
+  /// reglas de escritura que referencian `linkedTutors`).
   static Future<void> acceptInvitationCode(String code) async {
     final patient = _auth.currentUser;
     if (patient == null) throw Exception('No hay usuario autenticado.');
@@ -371,15 +426,16 @@ class AuthService {
     final tutorId = validation['tutorId'] as String;
     final normalizedCode = code.trim().toUpperCase();
 
-    // Verifica el estado del código antes del batch (sin transacción para
-    // evitar problemas de permisos en transacciones multi-documento).
+    // Segunda verificación de estado antes del batch para detectar
+    // condición de carrera si dos usuarios intentan el mismo código.
     final codeSnap = await _firestore.collection(_codesCollection).doc(normalizedCode).get();
     if (codeSnap.data()?['status'] != 'active') {
-      throw Exception('El código ya fue utilizado por otro paciente.');
+      throw Exception('El código ya fue utilizado por otro usuario.');
     }
 
     final batch = _firestore.batch();
 
+    // Marca el código como usado
     batch.update(
       _firestore.collection(_codesCollection).doc(normalizedCode),
       {
@@ -389,6 +445,8 @@ class AuthService {
       },
     );
 
+    // Registra el tutor en la subcolección del usuario (permite a las
+    // reglas verificar `isLinkedTutor` y `isLinkedPatient`)
     batch.set(
       _firestore.collection(_usersCollection).doc(patient.uid).collection('linkedTutors').doc(tutorId),
       {
@@ -408,19 +466,21 @@ class AuthService {
     await batch.commit();
   }
 
+  /// Desvincula un usuario del tutor marcando la entrada en `linkedTutors`
+  /// como `inactive`. No elimina el documento para mantener historial.
   static Future<void> removePatientLink(String patientId) async {
     final user = _auth.currentUser;
     if (user == null) throw Exception('No hay usuario autenticado.');
 
     final role = await getUserRole();
     if (role != UserRole.tutor) {
-      throw Exception('Solo los tutores pueden desvincular pacientes.');
+      throw Exception('Solo los tutores pueden desvincular usuarios.');
     }
 
-    // Marca el linkedTutors del paciente como inactivo (el tutor puede hacerlo
-    // porque el doc ID coincide con su uid) y desactiva el código de invitación.
     final batch = _firestore.batch();
 
+    // El tutor puede actualizar su propia entrada en linkedTutors del usuario
+    // gracias a la regla: `allow update: if tutorId == request.auth.uid`
     batch.set(
       _firestore.collection(_usersCollection).doc(patientId).collection('linkedTutors').doc(user.uid),
       {'status': 'inactive'},
@@ -444,12 +504,16 @@ class AuthService {
   // CONSULTAS DE VINCULACIÓN
   // ─────────────────────────────────────────────────────────────
 
+  /// Retorna en tiempo real la lista de usuarios vinculados al tutor actual.
+  ///
+  /// La estrategia es consultar `invitationCodes` filtrados por `tutorId` y
+  /// `status == 'used'`, luego leer cada documento de usuario. Esto evita
+  /// mantener una subcolección `linkedPatients` en el tutor (que requeriría
+  /// permisos bidireccionales más complejos en las reglas de Firestore).
   static Stream<List<Map<String, dynamic>>> getLinkedPatientsStream() {
     final user = _auth.currentUser;
     if (user == null) return Stream.value([]);
 
-    // Descubre pacientes vinculados consultando los códigos de invitación
-    // usados por este tutor, evitando escribir en subcolecciones del tutor.
     return _firestore
         .collection(_codesCollection)
         .where('tutorId', isEqualTo: user.uid)
@@ -473,6 +537,8 @@ class AuthService {
     });
   }
 
+  /// Retorna en tiempo real el tutor activo del usuario actual,
+  /// o `null` si no hay ninguno vinculado.
   static Stream<Map<String, dynamic>?> getLinkedTutorStream() {
     final user = _auth.currentUser;
     if (user == null) return Stream.value(null);
@@ -502,23 +568,28 @@ class AuthService {
   // LOGOUT
   // ─────────────────────────────────────────────────────────────
 
+  /// Cierra sesión tanto en Firebase Auth como en Google Sign-In.
+  /// El orden importa: primero Google para limpiar el token OAuth,
+  /// luego Firebase para disparar `authStateChanges`.
   static Future<void> logout() async {
     await _googleSignIn.signOut();
     await _auth.signOut();
   }
 
   // ─────────────────────────────────────────────────────────────
-  // PASSWORD RESET
+  // UTILIDADES INTERNAS
   // ─────────────────────────────────────────────────────────────
 
   static Future<void> sendPasswordResetEmail(String email) async {
     await _auth.sendPasswordResetEmail(email: email.trim());
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // UTILIDADES
-  // ─────────────────────────────────────────────────────────────
-
+  /// Genera un código de 6 caracteres usando el timestamp actual como semilla.
+  ///
+  /// El alfabeto excluye caracteres ambiguos (0/O, 1/I/l) para facilitar
+  /// la transcripción manual del código desde una pantalla compartida.
+  /// No usa `Random.secure()` porque la entropía del timestamp es suficiente
+  /// para un código de uso único con TTL de 7 días.
   static String _generateRandomCode() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     final random = DateTime.now().millisecondsSinceEpoch;

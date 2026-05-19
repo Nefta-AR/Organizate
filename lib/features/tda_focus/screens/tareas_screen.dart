@@ -1,4 +1,25 @@
-// lib/screens/tareas_screen.dart
+// lib/features/tda_focus/screens/tareas_screen.dart
+//
+// Pantalla de gestión de tareas del usuario TDAH.
+//
+// ## Arquitectura de datos
+//
+// Las tareas se almacenan en `users/{uid}/tasks`. El tutor puede crear tareas
+// para el usuario (campo `addedByTutor: true`); el usuario solo puede editarlas.
+//
+// ## Soft-delete
+//
+// Cuando el usuario elimina una tarea, se marca con `deletedByUser: true`
+// en lugar de borrarse físicamente. Esto preserva el registro para el tutor
+// en [_TutorTasksTab], que filtra por ese campo para mostrar una sección
+// separada de "Eliminadas por el usuario". El stream del usuario filtra
+// los documentos con ese flag para que no aparezcan en su vista.
+//
+// ## Sistema de puntos y racha
+//
+// Al completar una tarea se suman puntos (+10) y se delega en [StreakService]
+// para actualizar la racha diaria. El streak se basa en si el usuario completó
+// al menos una tarea en días consecutivos (no en el número de tareas).
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -202,7 +223,9 @@ class _TareasScreenState extends State<TareasScreen> {
           return const Center(child: Text('Error al cargar tareas'));
         }
 
-        final all = snapshot.data?.docs ?? [];
+        final all = (snapshot.data?.docs ?? [])
+            .where((d) => d.data()['deletedByUser'] != true)
+            .toList();
         final filtered = _selectedCategory == null
             ? all
             : all
@@ -248,6 +271,7 @@ class _TareasScreenState extends State<TareasScreen> {
             final dueDate = data['dueDate'] as Timestamp?;
             final isDone = data['done'] as bool? ?? false;
             final reminderMinutes = extractReminderMinutes(data);
+            final addedByTutor = data['addedByTutor'] == true;
 
             return Dismissible(
               key: ValueKey(taskId),
@@ -267,6 +291,7 @@ class _TareasScreenState extends State<TareasScreen> {
                   category: category,
                   dueDate: dueDate,
                   isDone: isDone,
+                  addedByTutor: addedByTutor,
                   onToggle: () => _toggleTask(taskId, isDone),
                 ),
               ),
@@ -284,6 +309,7 @@ class _TareasScreenState extends State<TareasScreen> {
     required bool isDone,
     required VoidCallback onToggle,
     Timestamp? dueDate,
+    bool addedByTutor = false,
   }) {
     final color = _colorOf(category);
     final icon = _iconOf(category);
@@ -324,10 +350,22 @@ class _TareasScreenState extends State<TareasScreen> {
                   isDone ? TextDecoration.lineThrough : TextDecoration.none,
             ),
           ),
-          subtitle: dueDate != null
-              ? Text(
-                  'Entrega: ${_dateFormatter.format(dueDate.toDate())}',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+          subtitle: (dueDate != null || addedByTutor)
+              ? Row(
+                  children: [
+                    if (addedByTutor) ...[
+                      const Icon(Icons.person_pin, size: 12, color: Colors.blue),
+                      const SizedBox(width: 3),
+                      const Text('Tutor',
+                          style: TextStyle(fontSize: 11, color: Colors.blue)),
+                      if (dueDate != null) const SizedBox(width: 8),
+                    ],
+                    if (dueDate != null)
+                      Text(
+                        'Entrega: ${_dateFormatter.format(dueDate.toDate())}',
+                        style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                      ),
+                  ],
                 )
               : null,
           trailing: GestureDetector(
@@ -394,7 +432,10 @@ class _TareasScreenState extends State<TareasScreen> {
 
   Future<void> _deleteTask(String taskId, String text) async {
     try {
-      await _tasksCollection.doc(taskId).delete();
+      await _tasksCollection.doc(taskId).update({
+        'deletedByUser': true,
+        'deletedAt': FieldValue.serverTimestamp(),
+      });
       await ReminderDispatcher.cancelTaskReminder(
           userDocRef: _userDocRef, taskId: taskId);
       await ActivityLogService.log(
@@ -567,7 +608,10 @@ class _TareasScreenState extends State<TareasScreen> {
               final nav = Navigator.of(dlgCtx);
               final msg = ScaffoldMessenger.of(dlgCtx);
               try {
-                await _tasksCollection.doc(taskId).delete();
+                await _tasksCollection.doc(taskId).update({
+                  'deletedByUser': true,
+                  'deletedAt': FieldValue.serverTimestamp(),
+                });
                 await ReminderDispatcher.cancelTaskReminder(
                     userDocRef: _userDocRef, taskId: taskId);
                 await ActivityLogService.log(

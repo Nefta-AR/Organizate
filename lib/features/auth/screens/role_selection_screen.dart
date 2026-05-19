@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:simple/core/navigation/auth_gate.dart';
 import 'package:simple/core/services/auth_service.dart';
 
 
@@ -47,7 +48,15 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
           .collection('users')
           .doc(uid)
           .set({'hasCompletedOnboarding': true}, SetOptions(merge: true));
-      // La navegación la maneja automáticamente el stream de AuthGate
+
+      // Clear the entire navigation stack so AuthGate re-dispatches based on the new role.
+      // Simply relying on the AuthGate stream doesn't work here because RoleSelectionScreen
+      // sits on top of the stack and the user never sees AuthGate rebuild underneath.
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const AuthGate()),
+        (route) => false,
+      );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

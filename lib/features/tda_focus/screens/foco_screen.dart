@@ -1,3 +1,29 @@
+// lib/features/tda_focus/screens/foco_screen.dart
+//
+// Pantalla de modo Foco: temporizador Pomodoro + ejercicio de respiración.
+//
+// ## Temporizador Pomodoro
+//
+// La lógica del timer vive en [PomodoroService] (ChangeNotifier inyectado via
+// Provider). Esta pantalla solo reacciona a los cambios de estado del servicio.
+// [_lastPomodoroStatus] rastrea el estado anterior para detectar la transición
+// `running → finished` y ejecutar el callback `_handlePomodoroFinished` una
+// sola vez (evita disparos duplicados si el widget se reconstruye).
+//
+// ## Animación de respiración (4-4-6)
+//
+// Usa un TweenSequence sobre un AnimationController de 14s (4 inhalar +
+// 4 sostener + 6 exhalar). El [_breathingTimer] desacoplado lleva la cuenta
+// de segundos reales y actualiza la instrucción de texto en pantalla.
+// La animación visual (escala del círculo) corre independientemente del timer
+// de texto para evitar jitter al actualizar el estado de la instrucción.
+//
+// ## Tareas de Foco
+//
+// Lista paralela de tareas con `category == 'Foco'` que el usuario puede
+// gestionar mientras corre el temporizador. Se muestran colapsadas para no
+// distraer durante la sesión de concentración.
+
 import 'dart:async';
 import 'dart:math';
 
@@ -9,6 +35,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/services/activity_log_service.dart';
 import '../../../core/services/reminder_dispatcher.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_time_helper.dart';
@@ -111,12 +138,18 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _handlePomodoroFinished(PomodoroService service) async {
+    final minutes = service.totalDuration.inMinutes;
     try {
       await userDocRef.set({
         'focusSessionsCompleted': FieldValue.increment(1),
-        'totalFocusMinutes': FieldValue.increment(service.totalDuration.inMinutes),
+        'totalFocusMinutes': FieldValue.increment(minutes),
       }, SetOptions(merge: true));
     } catch (_) {}
+    ActivityLogService.log(
+      type: ActivityType.pomodoroCompleted,
+      description: 'Sesión de foco completada ($minutes min)',
+      metadata: {'minutes': minutes},
+    ).catchError((_) {});
     if (mounted) {
       HapticFeedback.mediumImpact();
       ScaffoldMessenger.of(context).showSnackBar(

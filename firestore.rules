@@ -1,6 +1,27 @@
 rules_version = '2';
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// REGLAS DE SEGURIDAD DE FIRESTORE — Proyecto: Simple
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+// Modelo de identidad del sistema:
+//   - tutor        : puede supervisar usuarios vinculados y gestionar códigos
+//   - usuario_tdah : accede a tareas y timer Pomodoro
+//   - usuario_tea  : accede a tablero de pictogramas (tabs configurables por tutor)
+//   - usuario_general: rol temporal hasta que el usuario elige su perfil
+//
+// Principio clave de vinculación:
+//   La relación tutor ↔ usuario se establece mediante una subcolección
+//   `linkedTutors/{tutorId}` en el documento del usuario. Las funciones
+//   isLinkedPatient e isLinkedTutor leen este documento como fuente de verdad.
+//   Ninguna regla confía únicamente en el campo `role` del documento propio.
+//
+// ═══════════════════════════════════════════════════════════════════════════════
+
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // ─── FUNCIONES DE IDENTIDAD Y ROL ────────────────────────────
 
     function isAuthenticated() {
       return request.auth != null;
@@ -18,25 +39,40 @@ service cloud.firestore {
       return isAuthenticated() && getUserRole() == 'tutor';
     }
 
+    // Acepta tanto los roles nuevos como los legacy para compatibilidad
+    // durante el período de migración automática en AuthService.
     function isUsuario() {
-      return isAuthenticated() && (getUserRole() == 'usuario_tdah' || getUserRole() == 'usuario_tea' || getUserRole() == 'paciente_tdah' || getUserRole() == 'paciente_tea' || getUserRole() == 'paciente');
+      return isAuthenticated() && (
+        getUserRole() == 'usuario_tdah'  ||
+        getUserRole() == 'usuario_tea'   ||
+        getUserRole() == 'paciente_tdah' ||  // legacy
+        getUserRole() == 'paciente_tea'  ||  // legacy
+        getUserRole() == 'paciente'          // legacy
+      );
     }
 
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    // ─── FUNCIONES DE VINCULACIÓN ────────────────────────────────
+
+    // Verifica que el tutor (tutorId) está activamente vinculado al usuario (patientId).
+    // Requiere que el documento linkedTutors/{tutorId} exista y tenga status 'active'.
     function isLinkedPatient(tutorId, patientId) {
       return exists(/databases/$(database)/documents/users/$(patientId)/linkedTutors/$(tutorId)) &&
         get(/databases/$(database)/documents/users/$(patientId)/linkedTutors/$(tutorId)).data.status == 'active';
     }
 
-    // Permite al paciente leer el perfil del tutor con quien está vinculado
+    // Simétrico a isLinkedPatient pero desde la perspectiva del usuario.
+    // Permite al usuario leer datos del tutor (ej: nombre en la pantalla de vinculación).
     function isLinkedTutor(patientId, tutorId) {
       return exists(/databases/$(database)/documents/users/$(patientId)/linkedTutors/$(tutorId)) &&
         get(/databases/$(database)/documents/users/$(patientId)/linkedTutors/$(tutorId)).data.status == 'active';
     }
 
+    // Un usuario puede leer su propio documento, el tutor puede leer el de su usuario
+    // vinculado, y el usuario puede leer el documento de su tutor.
     function canReadUser(userId) {
       return isOwner(userId) ||
         (isTutor() && isLinkedPatient(request.auth.uid, userId)) ||
@@ -44,48 +80,72 @@ service cloud.firestore {
     }
 
     // ─── /users/{userId} ──────────────────────────────────────────
+
     match /users/{userId} {
 
+      // Solo puede crear su propio documento en el registro, con los campos
+      // mínimos requeridos y un rol válido del sistema.
       allow create: if isAuthenticated() && request.auth.uid == userId &&
         request.resource.data.keys().hasAny(['role', 'name', 'email']) &&
-        request.resource.data.role in ['tutor', 'usuario_tdah', 'usuario_tea', 'usuario_general', 'paciente_tdah', 'paciente_tea'];
+        request.resource.data.role in [
+          'tutor', 'usuario_tdah', 'usuario_tea', 'usuario_general',
+          'paciente_tdah', 'paciente_tea'  // legacy — aceptados durante migración
+        ];
 
-      allow read: if canReadUser(userId);
-      allow update: if isOwner(userId);
+      allow read:   if canReadUser(userId);
+      allow update: if isOwner(userId);   // Solo el propio usuario actualiza su perfil
       allow delete: if isOwner(userId);
 
+      // ─── /users/{userId}/tasks ────────────────────────────────
+      // El tutor puede crear tareas para el usuario (addedByTutor: true).
+      // El soft-delete (deletedByUser: true) es solo un update del usuario;
+      // el documento permanece para que el tutor conserve el registro.
       match /tasks/{taskId} {
         allow read, create, update, delete: if canReadUser(userId);
       }
 
+      // ─── /users/{userId}/progress ─────────────────────────────
       match /progress/{progressId} {
-        allow read: if canReadUser(userId);
+        allow read:                 if canReadUser(userId);
         allow create, update, delete: if isOwner(userId);
       }
 
+      // ─── /users/{userId}/communications ───────────────────────
       match /communications/{commId} {
-        allow read: if canReadUser(userId);
+        allow read:                 if canReadUser(userId);
         allow create, update, delete: if isOwner(userId);
       }
 
+      // ─── /users/{userId}/pictograms ───────────────────────────
+      // El tutor puede agregar y eliminar pictogramas personalizados
+      // del tablero del usuario vinculado.
       match /pictograms/{pictogramId} {
-        allow read: if canReadUser(userId);
+        allow read:                 if canReadUser(userId);
         allow create, update, delete: if isOwner(userId) ||
           (isTutor() && isLinkedPatient(request.auth.uid, userId));
       }
 
+      // ─── /users/{userId}/activityLog ──────────────────────────
+      // Solo el propio usuario escribe su log de actividad.
+      // El tutor puede leerlo para supervisión.
       match /activityLog/{logId} {
-        allow read: if canReadUser(userId);
+        allow read:   if canReadUser(userId);
         allow create: if isOwner(userId);
       }
 
+      // ─── /users/{userId}/pictogramSettings ────────────────────
+      // Almacena overrides de categoría y visibilidad para el banco de pictogramas.
+      // También se usa el doc reservado '_features' para los feature flags
+      // del usuario TEA (featurePictogramas, featureFoco) que el tutor gestiona.
       match /pictogramSettings/{settingId} {
-        allow read: if canReadUser(userId);
+        allow read:  if canReadUser(userId);
         allow write: if isOwner(userId) ||
           (isTutor() && isLinkedPatient(request.auth.uid, userId));
       }
 
-      // El tutor gestiona su lista; el paciente puede añadir su propia entrada
+      // ─── /users/{userId}/linkedPatients ───────────────────────
+      // El tutor gestiona su lista de pacientes.
+      // El usuario puede añadir su propia entrada al vincularse.
       match /linkedPatients/{patientId} {
         allow read: if isOwner(userId);
         allow create, update: if isOwner(userId) ||
@@ -93,25 +153,33 @@ service cloud.firestore {
         allow delete: if isOwner(userId);
       }
 
-      // El paciente gestiona sus propios tutores vinculados.
-      // El tutor puede actualizar su propia entrada para desvincular.
+      // ─── /users/{userId}/linkedTutors ─────────────────────────
+      // El usuario gestiona sus vinculaciones con tutores.
+      // El tutor puede actualizar su propia entrada (ej: para desvincular)
+      // porque el doc ID es su uid: `tutorId == request.auth.uid`.
       match /linkedTutors/{tutorId} {
         allow read, write: if isOwner(userId);
-        allow update: if isAuthenticated() && tutorId == request.auth.uid;
+        allow update:      if isAuthenticated() && tutorId == request.auth.uid;
       }
 
+      // ─── /users/{userId}/invitationCodes ──────────────────────
       match /invitationCodes/{codeId} {
         allow read, write: if isOwner(userId) && isTutor();
       }
     }
 
     // ─── /sensitiveData ───────────────────────────────────────────
+    // Colección para datos clínicos adicionales gestionados exclusivamente
+    // por el tutor. Completamente bloqueada para el propio usuario.
     match /sensitiveData/{patientId} {
       allow read, create, update, delete: if isTutor() &&
         isLinkedPatient(request.auth.uid, patientId);
     }
 
-    // ─── /invitationCodes (global) ────────────────────────────────
+    // ─── /invitationCodes (colección global) ─────────────────────
+    // Cualquier usuario autenticado puede leer un código (para validarlo).
+    // Solo el tutor propietario puede crearlo o eliminarlo.
+    // El usuario puede marcarlo como 'used' al aceptarlo (regla de update).
     match /invitationCodes/{code} {
       allow read: if isAuthenticated();
 
@@ -120,7 +188,10 @@ service cloud.firestore {
         request.resource.data.tutorId == request.auth.uid &&
         getUserRole() == 'tutor';
 
-      // resource.data = estado actual del doc (sin get() extra, funciona en transacciones)
+      // El tutor puede actualizar su propio código.
+      // El usuario puede marcarlo como 'used' si está activo y el usedBy coincide.
+      // `resource.data` lee el estado actual sin un get() extra, lo que
+      // funciona correctamente dentro de transacciones y batch writes.
       allow update: if isAuthenticated() && (
         resource.data.tutorId == request.auth.uid
         ||
@@ -134,8 +205,10 @@ service cloud.firestore {
     }
 
     // ─── /pictogramTemplates ──────────────────────────────────────
+    // Banco público de plantillas de pictogramas. Cualquier usuario
+    // autenticado puede leerlas; solo tutores pueden gestionarlas.
     match /pictogramTemplates/{templateId} {
-      allow read: if isAuthenticated();
+      allow read:                 if isAuthenticated();
       allow create, update, delete: if isTutor();
     }
   }

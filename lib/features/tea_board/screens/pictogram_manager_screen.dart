@@ -1,4 +1,35 @@
+// lib/features/tea_board/screens/pictogram_manager_screen.dart
+//
+// Gestor de pictogramas para el tutor. Permite reorganizar y configurar
+// el banco completo de pictogramas del usuario TEA seleccionado.
+//
+// ## Separación de datos vs. configuración
+//
+// El banco predefinido ([kBancoBuiltins]) es estático en el código.
+// La configuración personalizada (categoría, visibilidad) se almacena en
+// `pictogramSettings/{pictoId}` en Firestore. Este diseño permite que
+// múltiples usuarios compartan el banco SVG sin duplicar datos, y que
+// el tutor personalice la experiencia sin modificar datos maestros.
+//
+// La función `_efectiva()` aplica el override de categoría si existe,
+// o devuelve la categoría por defecto del pictograma. El merge se hace
+// en cliente para evitar un join en Firestore.
+//
+// ## Modelo [PictoEntry]
+//
+// Unifica pictogramas predefinidos (con `svgPath`) y personalizados
+// (con `imageUrl`) bajo una misma interfaz para que la cuadrícula de
+// gestión pueda renderizar ambos tipos con el mismo widget [_PictoManagerCard].
+//
+// ## Persistencia de la configuración
+//
+// [_setCategoria] y [_toggleVisible] aplican el cambio localmente en
+// `_settings` para feedback inmediato (optimistic UI), luego escriben a
+// Firestore. Si la escritura falla, el stream de [_loadSettings] revertirá
+// el estado al próximo snapshot.
+
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:simple/core/services/pictogram_service.dart';
 
 // Categorías disponibles para asignar
@@ -218,7 +249,7 @@ class _PictogramManagerScreenState extends State<PictogramManagerScreen> {
               children: [
                 _buildFilterBar(),
                 _buildLegend(),
-                Expanded(child: _buildList()),
+                Expanded(child: _buildGrid()),
               ],
             ),
     );
@@ -299,7 +330,7 @@ class _PictogramManagerScreenState extends State<PictogramManagerScreen> {
           const Icon(Icons.touch_app, size: 13, color: Colors.grey),
           const SizedBox(width: 4),
           Text(
-            'Toca la categoría para cambiarla',
+            'Toca la sección · 👁 para ocultar',
             style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
           ),
         ],
@@ -307,7 +338,7 @@ class _PictogramManagerScreenState extends State<PictogramManagerScreen> {
     );
   }
 
-  Widget _buildList() {
+  Widget _buildGrid() {
     final entries = _filtered;
     if (entries.isEmpty) {
       return Center(
@@ -323,19 +354,26 @@ class _PictogramManagerScreenState extends State<PictogramManagerScreen> {
       );
     }
 
-    return ListView.separated(
+    return GridView.builder(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 24),
-      itemCount: entries.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 6),
-      itemBuilder: (context, i) => _PictoManagerTile(
-        entry: entries[i],
-        settings: _settings[entries[i].id] ?? {},
-        categoriaEfectiva:
-            _efectiva(entries[i].id, entries[i].defaultCategoria),
-        isVisible: _visible(entries[i].id),
-        onCategoryTap: () => _showCategoryPicker(entries[i]),
-        onToggleVisible: () => _toggleVisible(entries[i].id),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        childAspectRatio: 0.72,
       ),
+      itemCount: entries.length,
+      itemBuilder: (context, i) {
+        final e = entries[i];
+        return _PictoManagerCard(
+          entry: e,
+          settings: _settings[e.id] ?? {},
+          categoriaEfectiva: _efectiva(e.id, e.defaultCategoria),
+          isVisible: _visible(e.id),
+          onCategoryTap: () => _showCategoryPicker(e),
+          onToggleVisible: () => _toggleVisible(e.id),
+        );
+      },
     );
   }
 
@@ -448,9 +486,9 @@ class _PictogramManagerScreenState extends State<PictogramManagerScreen> {
   }
 }
 
-// ─── Tile de un pictograma en el manager ──────────────────────────────────────
+// ─── Tarjeta de pictograma en cuadrícula ─────────────────────────────────────
 
-class _PictoManagerTile extends StatelessWidget {
+class _PictoManagerCard extends StatelessWidget {
   final PictoEntry entry;
   final Map<String, dynamic> settings;
   final String categoriaEfectiva;
@@ -458,7 +496,7 @@ class _PictoManagerTile extends StatelessWidget {
   final VoidCallback onCategoryTap;
   final VoidCallback onToggleVisible;
 
-  const _PictoManagerTile({
+  const _PictoManagerCard({
     required this.entry,
     required this.settings,
     required this.categoriaEfectiva,
@@ -473,7 +511,8 @@ class _PictoManagerTile extends StatelessWidget {
         .where((c) => c.label == categoriaEfectiva)
         .firstOrNull;
     final catColor = catOpt?.color ?? Colors.grey;
-    final isModified = settings.containsKey('categoria') || settings['visible'] == false;
+    final isModified =
+        settings.containsKey('categoria') || settings['visible'] == false;
 
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 200),
@@ -486,118 +525,132 @@ class _PictoManagerTile extends StatelessWidget {
             color: isModified
                 ? Colors.blue.withValues(alpha: 0.3)
                 : Colors.grey.shade200,
+            width: isModified ? 1.5 : 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withValues(alpha: 0.06),
-              blurRadius: 4,
+              color: Colors.grey.withValues(alpha: 0.07),
+              blurRadius: 5,
               offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: Row(
+        child: Stack(
           children: [
-            // Thumbnail
-            Container(
-              width: 64,
-              height: 64,
-              margin: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: _buildImage(),
-            ),
+            // Main content
+            Column(
+              children: [
+                // Image area
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 14, 8, 4),
+                    child: _buildImage(),
+                  ),
+                ),
 
-            // Label + category badge
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+                // Label
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Text(
+                    entry.etiqueta,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: isVisible ? Colors.black87 : Colors.grey,
+                      decoration:
+                          isVisible ? null : TextDecoration.lineThrough,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+
+                const SizedBox(height: 5),
+
+                // Category chip
+                GestureDetector(
+                  onTap: onCategoryTap,
+                  child: Container(
+                    margin: const EdgeInsets.fromLTRB(6, 0, 6, 8),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 6, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: catColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border:
+                          Border.all(color: catColor.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        if (catOpt != null)
+                          Icon(catOpt.icon, size: 9, color: catColor),
+                        const SizedBox(width: 3),
                         Flexible(
                           child: Text(
-                            entry.etiqueta,
+                            categoriaEfectiva,
                             style: TextStyle(
+                              fontSize: 9,
+                              color: catColor,
                               fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                              color: isVisible
-                                  ? Colors.black87
-                                  : Colors.grey,
-                              decoration: isVisible
-                                  ? null
-                                  : TextDecoration.lineThrough,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (isModified) ...[
-                          const SizedBox(width: 4),
-                          const Icon(Icons.edit,
-                              size: 11, color: Colors.blue),
-                        ],
+                        const SizedBox(width: 2),
+                        Icon(Icons.arrow_drop_down,
+                            size: 11, color: catColor),
                       ],
                     ),
-                    const SizedBox(height: 5),
-                    // Category chip (tappable)
-                    GestureDetector(
-                      onTap: onCategoryTap,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: catColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                              color: catColor.withValues(alpha: 0.3)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (catOpt != null)
-                              Icon(catOpt.icon,
-                                  size: 11, color: catColor),
-                            const SizedBox(width: 4),
-                            Text(
-                              categoriaEfectiva,
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  color: catColor,
-                                  fontWeight: FontWeight.w600),
-                            ),
-                            const SizedBox(width: 3),
-                            Icon(Icons.arrow_drop_down,
-                                size: 13, color: catColor),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
+                ),
+              ],
+            ),
+
+            // Visibility toggle — top-right corner
+            Positioned(
+              top: 2,
+              right: 2,
+              child: GestureDetector(
+                onTap: onToggleVisible,
+                child: Container(
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    color: isVisible
+                        ? Colors.blueGrey.withValues(alpha: 0.12)
+                        : Colors.grey.shade200,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    isVisible
+                        ? Icons.visibility_rounded
+                        : Icons.visibility_off_rounded,
+                    size: 12,
+                    color: isVisible
+                        ? Colors.blueGrey
+                        : Colors.grey.shade400,
+                  ),
                 ),
               ),
             ),
 
-            // Visibility toggle
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: IconButton(
-                icon: Icon(
-                  isVisible
-                      ? Icons.visibility_rounded
-                      : Icons.visibility_off_rounded,
-                  color: isVisible
-                      ? Colors.blueGrey
-                      : Colors.grey.shade400,
+            // Modified indicator — top-left corner
+            if (isModified)
+              Positioned(
+                top: 4,
+                left: 4,
+                child: Container(
+                  width: 7,
+                  height: 7,
+                  decoration: const BoxDecoration(
+                    color: Colors.blue,
+                    shape: BoxShape.circle,
+                  ),
                 ),
-                tooltip: isVisible ? 'Ocultar' : 'Mostrar',
-                onPressed: onToggleVisible,
               ),
-            ),
           ],
         ),
       ),
@@ -606,22 +659,19 @@ class _PictoManagerTile extends StatelessWidget {
 
   Widget _buildImage() {
     if (entry.svgPath != null) {
-      return Image.asset(
-        entry.svgPath!,
-        fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) =>
-            const Icon(Icons.image, color: Colors.grey),
-      );
+      return SvgPicture.asset(entry.svgPath!, fit: BoxFit.contain);
     }
     if (entry.imageUrl != null && entry.imageUrl!.isNotEmpty) {
-      final isAsset = entry.imageUrl!.startsWith('assets/');
-      if (isAsset) {
-        return Image.asset(entry.imageUrl!,
-            fit: BoxFit.contain,
-            errorBuilder: (_, __, ___) =>
-                const Icon(Icons.image, color: Colors.grey));
+      final url = entry.imageUrl!;
+      if (url.startsWith('assets/')) {
+        return url.endsWith('.svg')
+            ? SvgPicture.asset(url, fit: BoxFit.contain)
+            : Image.asset(url,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) =>
+                    const Icon(Icons.image, color: Colors.grey));
       }
-      return Image.network(entry.imageUrl!,
+      return Image.network(url,
           fit: BoxFit.contain,
           errorBuilder: (_, __, ___) =>
               const Icon(Icons.image, color: Colors.grey));

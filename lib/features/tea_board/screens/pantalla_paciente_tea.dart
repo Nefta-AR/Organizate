@@ -1,3 +1,32 @@
+// lib/features/tea_board/screens/pantalla_paciente_tea.dart
+//
+// Tablero de comunicación aumentativa y alternativa (CAA) para usuarios TEA.
+//
+// ## Modelo de datos unificado
+//
+// [PictogramaDisplay] unifica dos fuentes de pictogramas:
+//   - **Banco estático** (SVG en assets): 25+ pictogramas predefinidos,
+//     organizados por categoría (Mañana, Tarde, Noche, Emergencias, etc.).
+//   - **Pictogramas personalizados** (JPEG en Firebase Storage): creados por
+//     el propio usuario o por el tutor desde el panel de supervisión.
+//
+// La configuración de categoría y visibilidad se lee de `pictogramSettings/`
+// para cada usuario, permitiendo al tutor reorganizar el banco sin modificar
+// los datos maestros. Los pictogramas ocultos (`visible: false`) se omiten.
+//
+// ## Síntesis de voz (TTS)
+//
+// Se usa `flutter_tts` con voz en español. El primer tap activa el TTS;
+// el segundo tap en el mismo pictograma lo selecciona para activar una acción
+// extendida (si aplica). La vibración acompaña el audio como feedback háptico
+// para usuarios con dificultades auditivas.
+//
+// ## Registro de actividad
+//
+// Cada uso de pictograma escribe una entrada en `activityLog` via
+// [ActivityLogService] para que el tutor pueda ver los pictogramas más usados
+// en el tab de Historial.
+
 import 'dart:async';
 import 'dart:math';
 
@@ -410,6 +439,11 @@ class _PantallaPacienteTEAState extends State<PantallaPacienteTEA>
     HapticFeedback.lightImpact();
     final texto = _localOverrides[picto.id] ?? picto.textoTts;
     _hablar(texto);
+    ActivityLogService.log(
+      type: ActivityType.pictogramUsed,
+      description: 'Pictograma usado: "${picto.etiqueta}"',
+      metadata: {'etiqueta': picto.etiqueta, 'texto': texto},
+    ).catchError((_) {});
   }
 
   Future<void> _editarTexto(PictogramaDisplay picto) async {
