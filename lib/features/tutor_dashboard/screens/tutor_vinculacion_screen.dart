@@ -55,7 +55,7 @@ class _TutorVinculacionScreenState extends State<TutorVinculacionScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Desvincular paciente'),
+        title: const Text('Desvincular usuario'),
         content: Text('¿Estás seguro de que deseas desvincular a $patientName?'),
         actions: [
           TextButton(
@@ -153,7 +153,7 @@ class _TutorVinculacionScreenState extends State<TutorVinculacionScreen> {
           ),
           const SizedBox(height: 8),
           const Text(
-            'El paciente deberá ingresar este código para vincularse contigo. El código expira en 7 días.',
+            'El usuario deberá ingresar este código para vincularse contigo. El código expira en 7 días.',
             style: TextStyle(fontSize: 13, color: Colors.white70),
           ),
           const SizedBox(height: 16),
@@ -259,7 +259,7 @@ class _TutorVinculacionScreenState extends State<TutorVinculacionScreen> {
                 Icon(Icons.people_outline, size: 48, color: Colors.grey.shade400),
                 const SizedBox(height: 8),
                 Text(
-                  'No tienes pacientes vinculados aún',
+                  'No tienes usuarios vinculados aún',
                   style: TextStyle(color: Colors.grey.shade600),
                   textAlign: TextAlign.center,
                 ),

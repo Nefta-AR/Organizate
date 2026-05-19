@@ -18,8 +18,8 @@ service cloud.firestore {
       return isAuthenticated() && getUserRole() == 'tutor';
     }
 
-    function isPaciente() {
-      return isAuthenticated() && (getUserRole() == 'paciente_tdah' || getUserRole() == 'paciente_tea' || getUserRole() == 'paciente');
+    function isUsuario() {
+      return isAuthenticated() && (getUserRole() == 'usuario_tdah' || getUserRole() == 'usuario_tea' || getUserRole() == 'paciente_tdah' || getUserRole() == 'paciente_tea' || getUserRole() == 'paciente');
     }
 
     function isOwner(userId) {
@@ -48,7 +48,7 @@ service cloud.firestore {
 
       allow create: if isAuthenticated() && request.auth.uid == userId &&
         request.resource.data.keys().hasAny(['role', 'name', 'email']) &&
-        request.resource.data.role in ['tutor', 'paciente_tdah', 'paciente_tea', 'usuario_general'];
+        request.resource.data.role in ['tutor', 'usuario_tdah', 'usuario_tea', 'usuario_general', 'paciente_tdah', 'paciente_tea'];
 
       allow read: if canReadUser(userId);
       allow update: if isOwner(userId);

@@ -98,7 +98,8 @@ class RoleDispatcher extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (role) {
       'tutor' => const TutorSupervisarScreen(),
-      'paciente_tea' => const PantallaPacienteTEA(),
+      'usuario_tea' => const PantallaPacienteTEA(),
+      'paciente_tea' => const PantallaPacienteTEA(), // legacy
       _ => const HomeScreen(),
     };
   }

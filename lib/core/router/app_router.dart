@@ -8,8 +8,8 @@ import '../../features/tea_board/screens/pantalla_paciente_tea.dart';
 class AppRouter {
   static const String onboarding = '/onboarding';
   static const String home = '/home';
-  static const String pacienteTea = '/paciente-tea';
-  static const String vincularPaciente = '/vincular-paciente';
+  static const String usuarioTea = '/usuario-tea';
+  static const String vincularUsuario = '/vincular-usuario';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -17,9 +17,9 @@ class AppRouter {
         return _fade(const OnboardingScreen(), settings);
       case home:
         return _fade(const HomeScreen(), settings);
-      case pacienteTea:
+      case usuarioTea:
         return _fade(const PantallaPacienteTEA(), settings);
-      case vincularPaciente:
+      case vincularUsuario:
         return _fade(const PacienteVinculacionScreen(), settings);
       default:
         return MaterialPageRoute(

@@ -37,7 +37,7 @@ class _CustomNavBarState extends State<CustomNavBar> {
     if (mounted) setState(() => _role = doc.data()?['role'] as String?);
   }
 
-  bool get _isTea => _role == 'paciente_tea';
+  bool get _isTea => _role == 'usuario_tea' || _role == 'paciente_tea';
 
   Widget _screenForIndex(int index) => switch (index) {
         0 => const HomeScreen(),

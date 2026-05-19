@@ -86,7 +86,7 @@ class _TutorSupervisarScreenState extends State<TutorSupervisarScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
               child: Text(
-                'Cambiar paciente',
+                'Cambiar usuario',
                 style: Theme.of(ctx)
                     .textTheme
                     .titleMedium
@@ -263,13 +263,13 @@ class _TutorSupervisarScreenState extends State<TutorSupervisarScreen> {
                   size: 80, color: Colors.grey.shade300),
               const SizedBox(height: 20),
               const Text(
-                'Sin pacientes vinculados',
+                'Sin usuarios vinculados',
                 style:
                     TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(
-                'Ve a Configuración y genera un código de invitación para vincular un paciente.',
+                'Ve a Configuración y genera un código de invitación para vincular un usuario.',
                 style: TextStyle(color: Colors.grey.shade600),
                 textAlign: TextAlign.center,
               ),

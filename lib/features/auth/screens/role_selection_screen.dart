@@ -36,8 +36,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
 
       final userRole = switch (role) {
         'tutor' => UserRole.tutor,
-        'paciente_tdah' => UserRole.paciente_tdah,
-        'paciente_tea' => UserRole.paciente_tea,
+        'usuario_tdah' => UserRole.usuario_tdah,
+        'usuario_tea' => UserRole.usuario_tea,
         _ => UserRole.usuario_general,
       };
 
@@ -116,27 +116,27 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
               ),
               const SizedBox(height: 16),
               _RoleCard(
-                role: 'paciente_tdah',
-                label: 'Paciente TDAH',
+                role: 'usuario_tdah',
+                label: 'Usuario TDAH',
                 description: 'Gestiona tu foco, rutinas\ny bienestar diario',
                 icon: Icons.bolt_rounded,
                 cardColor: const Color(0xFFF5F1EE),
                 accentColor: const Color(0xFFB89270),
-                isLoading: _loadingRole == 'paciente_tdah',
+                isLoading: _loadingRole == 'usuario_tdah',
                 isDisabled: _loadingRole != null,
-                onTap: () => _selectRole('paciente_tdah'),
+                onTap: () => _selectRole('usuario_tdah'),
               ),
               const SizedBox(height: 16),
               _RoleCard(
-                role: 'paciente_tea',
-                label: 'Paciente TEA',
+                role: 'usuario_tea',
+                label: 'Usuario TEA',
                 description: 'Comunicación con pictogramas\ny voz',
                 icon: Icons.record_voice_over_rounded,
                 cardColor: const Color(0xFFF1EEF6),
                 accentColor: const Color(0xFF9B8DB2),
-                isLoading: _loadingRole == 'paciente_tea',
+                isLoading: _loadingRole == 'usuario_tea',
                 isDisabled: _loadingRole != null,
-                onTap: () => _selectRole('paciente_tea'),
+                onTap: () => _selectRole('usuario_tea'),
               ),
               const Spacer(),
               const Text(

@@ -397,7 +397,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildVinculacionCard(),
                   const SizedBox(height: 16),
                 ],
-                if (role == 'paciente_tea' || role == 'paciente_tdah') ...[
+                if (role == 'usuario_tea' || role == 'usuario_tdah' || role == 'paciente_tea' || role == 'paciente_tdah') ...[
                   _buildVinculacionPacienteCard(),
                   const SizedBox(height: 16),
                 ],
@@ -405,7 +405,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 16),
                 _buildNotificacionesCard(notiTaskEnabled, notiOffset),
                 const SizedBox(height: 16),
-                if (role != 'paciente_tea') ...[
+                if (role != 'usuario_tea' && role != 'paciente_tea') ...[
                   _buildFocoCard(
                     pomodoroSoundEnabled,
                     pomodoroVibrationEnabled,
@@ -529,10 +529,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: const Icon(Icons.people_alt_outlined,
             color: _Palette.accent, size: 28),
-        title: const Text('Vincular pacientes',
+        title: const Text('Vincular usuarios',
             style: TextStyle(fontWeight: FontWeight.w600)),
         subtitle: const Text(
-            'Genera códigos y gestiona pacientes vinculados',
+            'Genera códigos y gestiona usuarios vinculados',
             style: TextStyle(color: _Palette.textMuted, fontSize: 14)),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => Navigator.push(
@@ -744,8 +744,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final roleLabel = switch (currentRole) {
       'usuario_general' => 'Usuario General',
       'tutor' => 'Tutor',
-      'paciente_tdah' => 'Paciente TDAH',
-      'paciente_tea' => 'Paciente TEA',
+      'usuario_tdah' => 'Usuario TDAH',
+      'usuario_tea' => 'Usuario TEA',
+      'paciente_tdah' => 'Usuario TDAH',
+      'paciente_tea' => 'Usuario TEA',
       _ => currentRole.isEmpty ? 'Sin rol asignado' : currentRole,
     };
 

@@ -3,7 +3,7 @@
 Este documento consolida la **Carta Gantt** y la planificación de **Sprints** para el desarrollo de la aplicación Simple.
 
 **Período:** 27 Abril 2026 - 07 Julio 2026 (10 semanas)  
-**Estado Actual:** 85% Completado | Fase 5: Integración y Correcciones (75%)  
+**Estado Actual:** 87% Completado | Fase 5: Integración y Correcciones (85%)  
 **Próximo Hito:** Sincronización Completa (26 Mayo 2026)
 
 ---
@@ -184,7 +184,7 @@ Este documento consolida la **Carta Gantt** y la planificación de **Sprints** p
 
 ### 🔄 Fase 5: Integración y Correcciones (09-26 Mayo 2026)
 
-**Estado:** 75% Completado | **Proyección:** 26 Mayo 2026
+**Estado:** 85% Completado | **Proyección:** 26 Mayo 2026
 
 **Objetivo:** Conectar todos los módulos y corregir bugs de integración.
 
@@ -193,16 +193,23 @@ Este documento consolida la **Carta Gantt** y la planificación de **Sprints** p
 - `f953774` (09 May): Solución de superposición de botones en Pictogramas
 - `89ec05e` (09 May): Conexiones arregladas, nuevo SHA, nuevo JSON
 - `ce5c88a` (13 May): Tutor conectado a paciente (vinculación completada) ⭐ **HITO 1**
+- `e6d1494` (14 May): Inicio de sesión con Google corregido
+- *(19 May)*: Pantalla de configuración de perfil post-rol + renombrado completo paciente → usuario
 
-#### Tareas Completadas (75%):
+#### Tareas Completadas (85%):
 - ✅ Corrección SHA-1 para inicio de sesión estable con Google
 - ✅ Reestructuración de conexiones Firebase
 - ✅ Eliminación del Modo Foco (reemplazado por Pictogramas en perfil TEA)
 - ✅ Fix de superposición de botones en el apartado pictogramas
 - ✅ Vinculación tutor-paciente mediante código de invitación
 - ✅ Sistema de vinculación funcional en tiempo real
+- ✅ Pantalla `ProfileSetupScreen` (nombre + avatar) después de elegir rol
+- ✅ Eliminación de pictogramas por el tutor (botón × visible en tarjeta)
+- ✅ Corrección Súper Experto: desglose de tareas con IA funcionando
+- ✅ Corrección dialog de añadir tarea (se cierra automáticamente al guardar)
+- ✅ Renombrado completo `paciente_tdah` → `usuario_tdah` y `paciente_tea` → `usuario_tea` en código, reglas Firestore y base de datos (migración automática al abrir sesión)
 
-#### Tareas Pendientes (25%):
+#### Tareas Pendientes (15%):
 - 🔄 Completar supervisión tutor -> detalle de paciente
   - Ver tareas completadas por el paciente en tiempo real
   - Ver uso de pictogramas con timestamps
@@ -336,6 +343,8 @@ Este documento consolida la **Carta Gantt** y la planificación de **Sprints** p
 | 06 May | `IndexedStack` + `ValueKey(patientId)` en panel tutor | Forzar reconstrucción de tabs al cambiar de paciente activo | Fase 3 |
 | 09 May | Eliminación Modo Foco | Reemplazo por Pictogramas en perfil TEA (más funcional) | Fase 5 |
 | 13 May | Sistema de vinculación por código | Más seguro y simple que vinculación por email | Fase 5 |
+| 19 May | `ProfileSetupScreen` post-rol | Garantizar que todo usuario tenga nombre y avatar antes de entrar a la app | Fase 5 |
+| 19 May | Renombrado `paciente_*` → `usuario_*` | Terminología más inclusiva; migración automática en `getUserRole()` para retrocompatibilidad | Fase 5 |
 
 ---
 
@@ -381,6 +390,6 @@ Este documento consolida la **Carta Gantt** y la planificación de **Sprints** p
 
 ## Notas de Actualización
 
-**Última actualización:** 14 Mayo 2026  
-**Próxima revisión:** 20 Mayo 2026 (revisión de avance Fase 5)  
+**Última actualización:** 19 Mayo 2026  
+**Próxima revisión:** 26 Mayo 2026 (cierre de Fase 5)  
 **Próximo milestone:** 26 Mayo 2026 (Sincronización Completa)
