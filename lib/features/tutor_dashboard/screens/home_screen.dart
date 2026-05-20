@@ -57,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     return Scaffold(
-      bottomNavigationBar: const CustomNavBar(initialIndex: 0),
+      bottomNavigationBar: const CustomNavBar(screen: NavScreen.inicio),
       appBar: _buildAppBar(),
       floatingActionButton: FloatingActionButton.large(
         onPressed: () => SuperExpertoSheet.show(context),

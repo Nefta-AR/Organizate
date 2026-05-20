@@ -35,12 +35,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) throw Exception('Sin usuario autenticado');
 
-      final userRole = switch (role) {
-        'tutor' => UserRole.tutor,
-        'usuario_tdah' => UserRole.usuario_tdah,
-        'usuario_tea' => UserRole.usuario_tea,
-        _ => UserRole.usuario_general,
-      };
+      final userRole = role == 'tutor' ? UserRole.tutor : UserRole.usuario;
 
       await AuthService.setRole(userRole);
 
@@ -101,15 +96,15 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
               ),
               const Spacer(),
               _RoleCard(
-                role: 'usuario_general',
-                label: 'Usuario General',
-                description: 'Organiza tareas, horarios y tu día a día',
+                role: 'usuario',
+                label: 'Usuario',
+                description: 'Organiza tu día, tareas y bienestar.\nPersonaliza tus pestañas desde Ajustes.',
                 icon: Icons.person_rounded,
                 cardColor: const Color(0xFFEDF2F7),
                 accentColor: const Color(0xFF7EA3BC),
-                isLoading: _loadingRole == 'usuario_general',
+                isLoading: _loadingRole == 'usuario',
                 isDisabled: _loadingRole != null,
-                onTap: () => _selectRole('usuario_general'),
+                onTap: () => _selectRole('usuario'),
               ),
               const SizedBox(height: 16),
               _RoleCard(
@@ -122,30 +117,6 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                 isLoading: _loadingRole == 'tutor',
                 isDisabled: _loadingRole != null,
                 onTap: () => _selectRole('tutor'),
-              ),
-              const SizedBox(height: 16),
-              _RoleCard(
-                role: 'usuario_tdah',
-                label: 'Usuario TDAH',
-                description: 'Gestiona tu foco, rutinas\ny bienestar diario',
-                icon: Icons.bolt_rounded,
-                cardColor: const Color(0xFFF5F1EE),
-                accentColor: const Color(0xFFB89270),
-                isLoading: _loadingRole == 'usuario_tdah',
-                isDisabled: _loadingRole != null,
-                onTap: () => _selectRole('usuario_tdah'),
-              ),
-              const SizedBox(height: 16),
-              _RoleCard(
-                role: 'usuario_tea',
-                label: 'Usuario TEA',
-                description: 'Comunicación con pictogramas\ny voz',
-                icon: Icons.record_voice_over_rounded,
-                cardColor: const Color(0xFFF1EEF6),
-                accentColor: const Color(0xFF9B8DB2),
-                isLoading: _loadingRole == 'usuario_tea',
-                isDisabled: _loadingRole != null,
-                onTap: () => _selectRole('usuario_tea'),
               ),
               const Spacer(),
               const Text(

@@ -258,7 +258,7 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
 
     return Scaffold(
       backgroundColor: AppTheme.warmCream,
-      bottomNavigationBar: const CustomNavBar(initialIndex: 2),
+      bottomNavigationBar: const CustomNavBar(screen: NavScreen.foco),
       appBar: _buildAppBar(),
       floatingActionButton: _buildFab(),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,

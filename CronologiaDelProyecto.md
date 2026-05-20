@@ -3,8 +3,8 @@
 Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y el registro de avance real del desarrollo de la aplicación Simple.
 
 **Período:** 27 Abril 2026 - 07 Julio 2026 (10 semanas)  
-**Estado Actual:** 93% Completado | Fase 5 cerrada → entrando a Fase 6  
-**Próximo Hito:** ⭐ HITO 2 — Sincronización Completa (26 Mayo 2026) — **prácticamente alcanzado**
+**Estado Actual:** 94% Completado | Dashboard de progreso integrado  
+**Próximo Hito:** Kiosk Mode para usuario TEA
 
 ---
 
@@ -19,7 +19,7 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
 | **Fase 3** | 30 Abr-06 May | Módulo TEA (Pictogramas) | ✅ Completado | 100% |
 | **Fase 4** | 05-09 May | Módulo TDAH (Tareas y Foco) | ✅ Completado | 100% |
 | **Fase 5** | 09-23 May | Integración y Correcciones | ✅ Completado | 100% |
-| **Fase 6** | 24 May-16 Jun | Pulido y Testing | 🔄 En Curso | 0% |
+| **Fase 6** | 24 May-16 Jun | Pulido y Testing | 🔄 En Curso | 25% |
 | **Fase 7** | 17 Jun-07 Jul | Documentación y Entrega | ⏳ Pendiente | 0% |
 
 ### Hitos del Proyecto
@@ -189,7 +189,7 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
 
 ### 🔄 Fase 6: Pulido y Testing (24 Mayo - 16 Junio 2026)
 
-**Estado:** 0% iniciado | **Proyección:** 16 Junio 2026
+**Estado:** 40% iniciado | **Proyección:** 16 Junio 2026
 
 **Objetivo:** Pulir la UX, agregar funcionalidades de control parental, notificaciones y testing exhaustivo.
 
@@ -202,11 +202,25 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
   - PIN para salir de la app (para el tutor/cuidador)
   - Prevención de cambio de app accidental
 
-- 🔲 **Dashboard de progreso visual** *(alta prioridad)*
-  - Gráfico de tareas completadas por día (`fl_chart`)
-  - Gráfico de uso de pictogramas por categoría
-  - Estadísticas de sesiones Pomodoro (resumen semanal)
-  - Visible tanto para el usuario como para el tutor
+- ✅ **Dashboard de progreso visual** *(alta prioridad)*
+  - ✅ Gráfico de barras: tareas completadas por categoría (`fl_chart`)
+  - ✅ Gráfico de anillo: pictogramas más usados por categoría (extraído de `activityLog`)
+  - ✅ Gráfico de línea: sesiones Pomodoro semanales (minutos por día)
+  - ✅ Tarjeta resumen: puntos, racha, sesiones, minutos de foco
+  - ✅ Integrado en `CustomNavBar` (tab "Progreso" para TDAH/general/TEA)
+  - ✅ Integrado en `TutorSupervisarScreen` (tab "Progreso" con `userId` del paciente)
+  - ✅ `ProgresoScreen` reescrito (420 líneas) con 3 gráficos independientes + resumen
+
+- ✅ **Control granular de pestañas (tutor)** *(alta prioridad)*
+  - ✅ Nuevos toggles en tab "Ajustes" del tutor: **Inicio** + **Tareas** (además de Pictogramas y Foco)
+  - ✅ `CustomNavBar` lee `featureInicio` y `featureTareas` desde `pictogramSettings/_features`
+  - ✅ Tabs Inicio y Tareas ahora son condicionales en la app del usuario TEA
+  - ✅ 4 toggles totales: Inicio, Tareas, Pictogramas, Foco — todos controlables por el tutor
+
+- ✅ **Fix: contenido tapado por nav bar** *(bug crítico)*
+  - ✅ `SettingsScreen`: padding inferior dinámico (`widget.showNavBar ? 96 : 16`)
+  - ✅ `ProgresoScreen`: padding inferior 96px para consistencia
+  - ✅ Verificado: `FocoScreen` (100px), `HomeScreen` (110px), `TareasScreen` (Expanded), `PantallaPacienteTEA` (Expanded) ya protegidos
 
 **Sprint B — Notificaciones y QA (03 - 16 Jun):**
 
@@ -262,14 +276,14 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
 
 ## Próximo Sprint: Prioridades (Semana del 20 Mayo)
 
-### Tareas Críticas — Inicio Fase 6
+### Tareas Críticas — Fase 6 en Curso
 
-| Prioridad | Tarea | Estimación |
-|:---|:---|:---:|
-| 🔴 **Alta** | Dashboard de progreso con `fl_chart` | 3 días |
-| 🔴 **Alta** | Kiosk Mode para usuario TEA | 3 días |
-| 🟡 **Media** | Notificaciones push FCM | 4 días |
-| 🟡 **Media** | QA — testing en dispositivos reales | 2 días |
+| Prioridad | Tarea | Estimación | Estado |
+|:---|:---|:---:|:---:|
+| 🔴 **Alta** | Dashboard de progreso con `fl_chart` | 3 días | ✅ Completado |
+| 🔴 **Alta** | Kiosk Mode para usuario TEA | 3 días | 🔲 Pendiente |
+| 🟡 **Media** | Notificaciones push FCM | 4 días | ✅ Infraestructura lista |
+| 🟡 **Media** | QA — testing en dispositivos reales | 2 días | 🔲 Pendiente |
 
 **Objetivo del Sprint:** Cerrar funcionalidades de pulido antes del 16 de junio para entrar a Fase 7.
 
@@ -297,6 +311,12 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
 | 19 May | Documentación profesional de código (comentarios de arquitectura) | 8 archivos comentados: servicios core, navegación, reglas Firestore, pantallas principales | Fase 7 |
 | 19 May | Tarjeta unificada perfil+rol en `SettingsScreen` | Combina foto, nombre (editable), email y rol (editable) en una sola tarjeta — elimina la duplicidad visual y mejora la UX con íconos de lápiz | Fase 6 |
 | 19 May | `Navigator.pushAndRemoveUntil(AuthGate)` al confirmar cambio de rol | `RoleSelectionScreen` estaba sobre `AuthGate` en el stack; el stream de rol se disparaba pero el usuario nunca salía de la pantalla — limpiar el stack fuerza la re-evaluación correcta | Fase 5 |
+| 19 May | Unificación de roles: `usuario_tea`/`usuario_tdah`/`usuario_general` → `usuario` | Un solo rol simplifica onboarding y evita fragmentación; el usuario controla sus pestañas desde Ajustes; migración automática on-the-fly en `getUserRole()` y `getUserRoleStream()` | Fase 6 |
+| 19 May | `NavScreen` enum reemplaza `initialIndex: int` en `CustomNavBar` | El índice numérico quedaba desincronizado al cambiar el número de tabs dinámicamente; la identidad semántica se resuelve en `build()` buscando la entrada que coincide | Fase 6 |
+| 19 May | Card "Personalización de pantalla" en Ajustes para rol `usuario` | El usuario puede activar/desactivar pestañas Pictogramas y Foco desde su propio perfil; si tiene tutor vinculado, los switches se bloquean y solo el tutor puede modificarlos | Fase 6 |
+| 19 May | `ProgresoScreen` unificado con 3 gráficos (`BarChart`, `PieChart`, `LineChart`) | Dashboard único reutilizable: acepta `userId` opcional para modo tutor; datos de `activityLog` evitan leer colecciones separadas; tooltips interactivos en gráficos | Fase 6 |
+| 19 May | Toggles `featureInicio` + `featureTareas` en panel tutor | El tutor puede ocultar Inicio y Tareas al usuario TEA; `CustomNavBar` lee 4 flags desde `pictogramSettings/_features`; default `true` para no romper UX existente | Fase 6 |
+| 19 May | Padding inferior dinámico en `SettingsScreen` y `ProgresoScreen` | `widget.showNavBar ? 96 : 16` evita que el contenido quede tapado por `BottomNavigationBar`; otras pantallas ya usaban `Expanded` o padding fijo suficiente | Fase 6 |
 
 ---
 

@@ -3,10 +3,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-// Representa todos los roles posibles del sistema.
-// Usar `.name` produce la cadena que va a Firestore (ej: 'usuario_tdah').
+// Roles posibles del sistema. Los valores legacy (usuario_tea, etc.) se
+// mantienen para migración automática on-the-fly — no se asignan a cuentas nuevas.
 // ignore: constant_identifier_names
-enum UserRole { tutor, usuario_tdah, usuario_tea, usuario_general }
+enum UserRole { tutor, usuario }
 
 /// Servicio estático de autenticación y gestión de usuarios.
 ///
@@ -81,7 +81,7 @@ class AuthService {
         'invitationCodes': {},
         'kioskModeEnabled': false,
       },
-      if (role == UserRole.usuario_tdah || role == UserRole.usuario_tea) ...{
+      if (role == UserRole.usuario) ...{
         'linkedTutors': {},
         'acceptedInvitationCode': null,
       },
@@ -136,7 +136,7 @@ class AuthService {
       await _firestore.collection(_usersCollection).doc(user.uid).set({
         'name': user.displayName ?? 'Usuario de Simple',
         'email': user.email,
-        'role': UserRole.usuario_general.name,
+        'role': UserRole.usuario.name,
         'avatar': 'emoticon',
         'points': 0,
         'streak': 0,
@@ -176,17 +176,11 @@ class AuthService {
     // Capa 2: inferir rol por campos estructurales del documento
     if (roleStr == null || roleStr.isEmpty) {
       final hasTutorFields = data?.containsKey('linkedPatients') ?? false;
-      final hasPatientFields = data?.containsKey('linkedTutors') ?? false;
-      final hasTeaFields = data?.containsKey('pictograms') ?? false;
 
       if (hasTutorFields) {
         roleStr = 'tutor';
-      } else if (hasTeaFields) {
-        roleStr = 'usuario_tea';
-      } else if (hasPatientFields) {
-        roleStr = 'usuario_tdah';
       } else {
-        roleStr = 'usuario_general';
+        roleStr = 'usuario';
       }
 
       await _firestore.collection(_usersCollection).doc(user.uid).set(
@@ -197,7 +191,7 @@ class AuthService {
             'invitationCodes': {},
             'kioskModeEnabled': false,
           },
-          if (roleStr == 'usuario_tdah' || roleStr == 'usuario_tea') ...{
+          if (roleStr == 'usuario') ...{
             'linkedTutors': {},
             'acceptedInvitationCode': null,
           },
@@ -206,33 +200,16 @@ class AuthService {
       );
     }
 
-    // Capa 3: migración automática de nombres de rol legacy
-    if (roleStr == 'paciente' || roleStr == 'paciente_tdah') {
-      roleStr = 'usuario_tdah';
+    // Capa 3: migración automática de roles legacy → 'usuario'
+    if (roleStr != 'tutor' && roleStr != 'usuario') {
+      roleStr = 'usuario';
       await _firestore.collection(_usersCollection).doc(user.uid).set(
         {'role': roleStr, 'linkedTutors': {}, 'acceptedInvitationCode': null},
         SetOptions(merge: true),
       );
-    } else if (roleStr == 'paciente_tea') {
-      roleStr = 'usuario_tea';
-      await _firestore.collection(_usersCollection).doc(user.uid).set(
-        {'role': roleStr},
-        SetOptions(merge: true),
-      );
     }
 
-    switch (roleStr) {
-      case 'tutor':
-        return UserRole.tutor;
-      case 'usuario_tdah':
-        return UserRole.usuario_tdah;
-      case 'usuario_tea':
-        return UserRole.usuario_tea;
-      case 'usuario_general':
-        return UserRole.usuario_general;
-      default:
-        return UserRole.usuario_general;
-    }
+    return roleStr == 'tutor' ? UserRole.tutor : UserRole.usuario;
   }
 
   /// Versión reactiva de [getUserRole] para [AuthGate].
@@ -255,19 +232,7 @@ class AuthService {
       // Misma lógica de inferencia y migración que getUserRole()
       if (roleStr == null || roleStr.isEmpty) {
         final hasTutorFields = data?.containsKey('linkedPatients') ?? false;
-        final hasPatientFields = data?.containsKey('linkedTutors') ?? false;
-        final hasTeaFields = data?.containsKey('pictograms') ?? false;
-
-        if (hasTutorFields) {
-          roleStr = 'tutor';
-        } else if (hasTeaFields) {
-          roleStr = 'usuario_tea';
-        } else if (hasPatientFields) {
-          roleStr = 'usuario_tdah';
-        } else {
-          roleStr = 'usuario_general';
-        }
-
+        roleStr = hasTutorFields ? 'tutor' : 'usuario';
         await _firestore.collection(_usersCollection).doc(user.uid).set(
           {
             'role': roleStr,
@@ -276,7 +241,7 @@ class AuthService {
               'invitationCodes': {},
               'kioskModeEnabled': false,
             },
-            if (roleStr == 'usuario_tdah' || roleStr == 'usuario_tea') ...{
+            if (roleStr == 'usuario') ...{
               'linkedTutors': {},
               'acceptedInvitationCode': null,
             },
@@ -285,32 +250,16 @@ class AuthService {
         );
       }
 
-      if (roleStr == 'paciente' || roleStr == 'paciente_tdah') {
-        roleStr = 'usuario_tdah';
+      // Migración de roles legacy → 'usuario'
+      if (roleStr != 'tutor' && roleStr != 'usuario') {
+        roleStr = 'usuario';
         await _firestore.collection(_usersCollection).doc(user.uid).set(
           {'role': roleStr, 'linkedTutors': {}, 'acceptedInvitationCode': null},
           SetOptions(merge: true),
         );
-      } else if (roleStr == 'paciente_tea') {
-        roleStr = 'usuario_tea';
-        await _firestore.collection(_usersCollection).doc(user.uid).set(
-          {'role': roleStr},
-          SetOptions(merge: true),
-        );
       }
 
-      switch (roleStr) {
-        case 'tutor':
-          return UserRole.tutor;
-        case 'usuario_tdah':
-          return UserRole.usuario_tdah;
-        case 'usuario_tea':
-          return UserRole.usuario_tea;
-        case 'usuario_general':
-          return UserRole.usuario_general;
-        default:
-          return UserRole.usuario_general;
-      }
+      return roleStr == 'tutor' ? UserRole.tutor : UserRole.usuario;
     });
   }
 
@@ -414,7 +363,7 @@ class AuthService {
     if (patient == null) throw Exception('No hay usuario autenticado.');
 
     final role = await getUserRole();
-    if (role != UserRole.usuario_tdah && role != UserRole.usuario_tea) {
+    if (role != UserRole.usuario) {
       throw Exception('Solo los usuarios pueden aceptar códigos de invitación.');
     }
 

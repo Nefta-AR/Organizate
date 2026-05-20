@@ -313,7 +313,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       backgroundColor: _Palette.background,
       bottomNavigationBar: widget.showNavBar
-          ? const CustomNavBar(initialIndex: 3)
+          ? const CustomNavBar(screen: NavScreen.perfil)
           : null,
       appBar: AppBar(
         backgroundColor: _Palette.background,
@@ -385,7 +385,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           }
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.fromLTRB(16, 16, 16, widget.showNavBar ? 96 : 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -395,26 +395,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildVinculacionCard(),
                   const SizedBox(height: 16),
                 ],
-                if (role == 'usuario_tea' || role == 'usuario_tdah' || role == 'paciente_tea' || role == 'paciente_tdah') ...[
+                if (role != 'tutor') ...[
                   _buildVinculacionPacienteCard(),
+                  const SizedBox(height: 16),
+                  _buildPantallasCard(),
                   const SizedBox(height: 16),
                 ],
                 _buildEmergencyCard(),
                 const SizedBox(height: 16),
                 _buildNotificacionesCard(notiTaskEnabled, notiOffset),
                 const SizedBox(height: 16),
-                if (role != 'usuario_tea' && role != 'paciente_tea') ...[
-                  _buildFocoCard(
-                    pomodoroSoundEnabled,
-                    pomodoroVibrationEnabled,
-                    pomodoroSound,
-                    focusSessions,
-                    totalFocusMinutes,
-                    points,
-                    streak,
-                  ),
-                  const SizedBox(height: 16),
-                ],
+                _buildFocoCard(
+                  pomodoroSoundEnabled,
+                  pomodoroVibrationEnabled,
+                  pomodoroSound,
+                  focusSessions,
+                  totalFocusMinutes,
+                  points,
+                  streak,
+                ),
+                const SizedBox(height: 16),
                 _buildBackupCard(),
                 const SizedBox(height: 16),
                 _buildLogoutCard(),
@@ -430,12 +430,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildProfileRoleCard(
       String name, String email, String? photoUrl, String? avatar, String role) {
     final roleLabel = switch (role) {
-      'usuario_general' => 'Usuario General',
-      'tutor' => 'Tutor',
-      'usuario_tdah' => 'Usuario TDAH',
-      'usuario_tea' => 'Usuario TEA',
-      'paciente_tdah' => 'Usuario TDAH',
-      'paciente_tea' => 'Usuario TEA',
+      'tutor'   => 'Tutor',
+      'usuario' => 'Usuario',
+      // Legacy roles pendientes de migración automática
+      'usuario_tea' || 'paciente_tea' || 'usuario_tdah' ||
+      'paciente_tdah' || 'usuario_general' => 'Usuario',
       _ => role.isEmpty ? 'Sin rol asignado' : role,
     };
 
@@ -874,6 +873,111 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ));
       }
     }
+  }
+
+  /// Tarjeta de personalización de pantalla para el rol `usuario`.
+  /// Si el usuario tiene tutor vinculado, los switches se muestran bloqueados
+  /// con un mensaje informativo — solo el tutor puede modificarlos desde su panel.
+  Widget _buildPantallasCard() {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final featuresRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('pictogramSettings')
+        .doc('_features');
+
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: featuresRef.snapshots(),
+      builder: (context, snap) {
+        final data = snap.data?.data() ?? {};
+        final picto = data['featurePictogramas'] as bool? ?? false;
+        final foco  = data['featureFoco']        as bool? ?? false;
+
+        return StreamBuilder<Map<String, dynamic>?>(
+          stream: AuthService.getLinkedTutorStream(),
+          builder: (context, tutorSnap) {
+            final hasTutor = tutorSnap.data != null;
+
+            return Card(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.tune_rounded,
+                            color: _Palette.accent, size: 20),
+                        const SizedBox(width: 8),
+                        const Text('Personalización de pantalla',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    if (hasTutor) ...[
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: _Palette.accent.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.lock_outline_rounded,
+                                size: 14,
+                                color: _Palette.accent.withValues(alpha: 0.8)),
+                            const SizedBox(width: 6),
+                            const Expanded(
+                              child: Text(
+                                'Tu tutor gestiona esta configuración',
+                                style: TextStyle(
+                                    fontSize: 12, color: _Palette.textMuted),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 8),
+                    SwitchListTile.adaptive(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Pestaña Pictogramas'),
+                      subtitle: const Text('Tablero de comunicación aumentativa',
+                          style: TextStyle(fontSize: 12)),
+                      value: picto,
+                      // If tutor is linked, ignore taps
+                      onChanged: hasTutor
+                          ? null
+                          : (_) => featuresRef.set(
+                                {'featurePictogramas': !picto},
+                                SetOptions(merge: true),
+                              ),
+                    ),
+                    SwitchListTile.adaptive(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Pestaña Foco'),
+                      subtitle: const Text('Pomodoro y respiración guiada',
+                          style: TextStyle(fontSize: 12)),
+                      value: foco,
+                      onChanged: hasTutor
+                          ? null
+                          : (_) => featuresRef.set(
+                                {'featureFoco': !foco},
+                                SetOptions(merge: true),
+                              ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   Widget _buildEmergencyCard() {

@@ -93,7 +93,7 @@ class _TareasScreenState extends State<TareasScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      bottomNavigationBar: const CustomNavBar(initialIndex: 1),
+      bottomNavigationBar: const CustomNavBar(screen: NavScreen.tareas),
       appBar: _buildAppBar(),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddTaskDialog(context),

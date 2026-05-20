@@ -684,7 +684,7 @@ class _PantallaPacienteTEAState extends State<PantallaPacienteTEA>
             _buildAyudaRow(colors),
           ],
         ),
-        bottomNavigationBar: const CustomNavBar(initialIndex: 2),
+        bottomNavigationBar: const CustomNavBar(screen: NavScreen.pictogramas),
       ),
     );
   }

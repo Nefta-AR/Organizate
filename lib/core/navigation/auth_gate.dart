@@ -9,7 +9,6 @@ import 'package:simple/features/tutor_dashboard/screens/tutor_supervise_screen.d
 import 'package:simple/features/auth/screens/login_screen.dart';
 import 'package:simple/features/auth/screens/role_selection_screen.dart';
 import 'package:simple/features/auth/screens/profile_setup_screen.dart';
-import 'package:simple/features/tea_board/screens/pantalla_paciente_tea.dart';
 import 'package:simple/core/services/push_notification_service.dart';
 
 /// Punto de entrada del árbol de widgets post-MaterialApp.
@@ -121,8 +120,7 @@ class _UserOnboardingGateState extends State<_UserOnboardingGate> {
 ///
 /// Usa un `switch` exhaustivo para que agregar un nuevo rol en el futuro
 /// produzca un warning del compilador si no se maneja el caso.
-/// Los roles legacy (`paciente_tea`) se mantienen como alias temporales
-/// hasta que todos los usuarios migren automáticamente via [AuthService].
+/// Todos los roles legacy son migrados automáticamente a 'usuario' por [AuthService].
 class RoleDispatcher extends StatelessWidget {
   final String role;
 
@@ -131,10 +129,8 @@ class RoleDispatcher extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (role) {
-      'tutor'        => const TutorSupervisarScreen(),
-      'usuario_tea'  => const PantallaPacienteTEA(),
-      'paciente_tea' => const PantallaPacienteTEA(), // alias legacy → migrar vía AuthService
-      _              => const HomeScreen(),           // tutor_tdah, usuario_general, usuario_tdah
+      'tutor' => const TutorSupervisarScreen(),
+      _       => const HomeScreen(), // 'usuario' + cualquier rol legacy pendiente de migrar
     };
   }
 }

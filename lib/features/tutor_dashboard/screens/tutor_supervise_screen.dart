@@ -1,7 +1,7 @@
 // lib/features/tutor_dashboard/screens/tutor_supervise_screen.dart
 //
 // Panel de supervisión del tutor. Muestra datos en tiempo real del usuario
-// seleccionado, organizado en cuatro tabs:
+// seleccionado, organizado en seis tabs:
 //
 //   1. **Tareas** [_TutorTasksTab]: lista de tareas con tres secciones
 //      (Pendientes / Completadas / Eliminadas por el usuario). Las tareas
@@ -12,14 +12,17 @@
 //      del usuario. El tutor puede agregar del banco SVG predefinido o abrir
 //      el gestor completo [PictogramManagerScreen].
 //
-//   3. **Historial** [_TutorHistorialTab]: tarjeta de estadísticas en tiempo
+//   3. **Progreso** [ProgresoScreen]: dashboard con tres gráficos en tiempo real
+//      (tareas por categoría, uso de pictogramas, sesiones Pomodoro semanales).
+//
+//   4. **Historial** [_TutorHistorialTab]: tarjeta de estadísticas en tiempo
 //      real ([_StatsCard]) + log de actividad de las últimas 100 entradas
 //      (tareas completadas, pictogramas usados, sesiones Pomodoro).
 //
-//   4. **Ajustes** [_TutorConfigTab]: toggles para habilitar/deshabilitar las
-//      pestañas de Pictogramas y Foco en la app del usuario TEA. Los flags
-//      se persisten en `pictogramSettings/_features` (subcolección con permisos
-//      de tutor ya establecidos en las reglas, sin necesidad de deploy extra).
+//   5. **Ajustes** [_TutorConfigTab]: toggles para habilitar/deshabilitar las
+//      pestañas de Inicio, Tareas, Pictogramas y Foco en la app del usuario TEA.
+//      Los flags se persisten en `pictogramSettings/_features` (subcolección
+//      con permisos de tutor ya establecidos en las reglas, sin deploy extra).
 //
 // ## Manejo de múltiples usuarios
 //
@@ -37,6 +40,7 @@ import 'package:simple/core/services/activity_log_service.dart';
 import 'package:simple/core/services/auth_service.dart';
 import 'package:simple/core/services/pictogram_service.dart';
 import 'package:simple/features/tea_board/screens/pictogram_manager_screen.dart';
+import 'package:simple/features/tda_focus/screens/progreso_screen.dart';
 import 'package:simple/features/tutor_dashboard/screens/settings_screen.dart';
 
 // ─── Pantalla principal del tutor ─────────────────────────────────────────────
@@ -189,6 +193,10 @@ class _TutorSupervisarScreenState extends State<TutorSupervisarScreen> {
             patientId: pk,
             patientName: _patientName,
           ),
+          ProgresoScreen(
+            key: ValueKey('progreso_$pk'),
+            userId: pk,
+          ),
           _TutorHistorialTab(
             key: ValueKey('history_$pk'),
             patientId: pk,
@@ -213,6 +221,11 @@ class _TutorSupervisarScreenState extends State<TutorSupervisarScreen> {
             icon: Icon(Icons.image_outlined),
             selectedIcon: Icon(Icons.image_rounded),
             label: 'Pictogramas',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.bar_chart_outlined),
+            selectedIcon: Icon(Icons.bar_chart_rounded),
+            label: 'Progreso',
           ),
           NavigationDestination(
             icon: Icon(Icons.history),
@@ -1005,6 +1018,8 @@ class _TutorConfigTab extends StatefulWidget {
 }
 
 class _TutorConfigTabState extends State<_TutorConfigTab> {
+  bool? _featureInicio;
+  bool? _featureTareas;
   bool? _featurePictogramas;
   bool? _featureFoco;
   late final StreamSubscription<DocumentSnapshot<Map<String, dynamic>>> _sub;
@@ -1024,8 +1039,10 @@ class _TutorConfigTabState extends State<_TutorConfigTab> {
       if (!mounted) return;
       final data = snap.data() ?? {};
       setState(() {
+        _featureInicio      = data['featureInicio']      as bool? ?? true;
+        _featureTareas      = data['featureTareas']      as bool? ?? true;
         _featurePictogramas = data['featurePictogramas'] as bool? ?? true;
-        _featureFoco = data['featureFoco'] as bool? ?? false;
+        _featureFoco        = data['featureFoco']        as bool? ?? false;
       });
     });
   }
@@ -1045,7 +1062,7 @@ class _TutorConfigTabState extends State<_TutorConfigTab> {
 
   @override
   Widget build(BuildContext context) {
-    if (_featurePictogramas == null) {
+    if (_featureInicio == null) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -1065,6 +1082,26 @@ class _TutorConfigTabState extends State<_TutorConfigTab> {
           style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
         ),
         const SizedBox(height: 20),
+        _FeatureToggleTile(
+          icon: Icons.home_rounded,
+          color: Colors.blue,
+          title: 'Pestaña de Inicio',
+          subtitle:
+              'El usuario puede ver la pantalla principal con frases motivacionales y resumen',
+          value: _featureInicio!,
+          onChanged: (_) => _toggle('featureInicio', _featureInicio!),
+        ),
+        const SizedBox(height: 12),
+        _FeatureToggleTile(
+          icon: Icons.task_alt,
+          color: Colors.green,
+          title: 'Pestaña de Tareas',
+          subtitle:
+              'El usuario puede ver y gestionar sus tareas asignadas',
+          value: _featureTareas!,
+          onChanged: (_) => _toggle('featureTareas', _featureTareas!),
+        ),
+        const SizedBox(height: 12),
         _FeatureToggleTile(
           icon: Icons.image_rounded,
           color: Colors.purple,

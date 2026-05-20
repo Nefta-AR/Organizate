@@ -9,65 +9,62 @@ import '../../features/tutor_dashboard/screens/home_screen.dart';
 import '../../features/tutor_dashboard/screens/settings_screen.dart';
 import '../../features/tda_focus/screens/tareas_screen.dart';
 import '../../features/tea_board/screens/pantalla_paciente_tea.dart';
+import '../../features/tda_focus/screens/progreso_screen.dart';
 
-/// Barra de navegación inferior con tabs dinámicos según rol y configuración
-/// del tutor.
+/// Identifica qué pantalla está actualmente activa en la barra de navegación.
+/// Usar una identidad semántica en lugar de un índice numérico evita
+/// que el índice quede desincronizado cuando el número de tabs cambia
+/// dinámicamente (el tutor activa/desactiva pestañas).
+enum NavScreen { inicio, tareas, pictogramas, foco, progreso, perfil }
+
+/// Barra de navegación inferior con tabs configurables mediante feature flags.
 ///
-/// ## Comportamiento por rol
-///
-/// - **TDAH / usuario_general**: tabs fijos (Inicio, Tareas, Foco, Perfil).
-/// - **TEA**: tabs reactivos. El tutor puede habilitar o deshabilitar
-///   individualmente la pestaña de Pictogramas y la de Foco desde el panel
-///   de supervisión. Los cambios se reflejan en tiempo real sin reiniciar la app.
+/// Todos los usuarios (rol `usuario`) comparten la misma lógica reactiva:
+/// las pestañas Pictogramas y Foco se activan o desactivan desde el documento
+/// `users/{uid}/pictogramSettings/_features` — el propio usuario lo controla
+/// desde Ajustes si no tiene tutor vinculado; si tiene tutor, solo el tutor
+/// puede modificarlo desde su panel de supervisión.
 ///
 /// ## Fuentes de datos (dos streams paralelos)
+///   1. `users/{uid}` → campo `role` (solo para discriminar si es tutor)
+///   2. `users/{uid}/pictogramSettings/_features` → flags de pestañas
 ///
-///   1. `users/{uid}` → campo `role` para determinar el tipo de usuario.
-///   2. `users/{uid}/pictogramSettings/_features` → campos `featurePictogramas`
-///      y `featureFoco`, escritos por el tutor con acceso ya autorizado en reglas.
-///
-/// ## Manejo de índice fuera de rango
-///
-/// Cuando el número de tabs cambia (el tutor activa/desactiva una pestaña),
-/// `_currentIndex` puede quedar fuera de los límites del nuevo `_entries`.
-/// El `.clamp()` en `build()` evita el crash de [BottomNavigationBar] en ese caso.
+/// ## Corrección de índice
+/// En lugar de `initialIndex: int`, el widget recibe `screen: NavScreen`.
+/// El índice real se calcula en cada `build()` buscando la entrada cuya
+/// pantalla coincide, lo que lo hace robusto ante cambios en el número de tabs.
 class CustomNavBar extends StatefulWidget {
-  final int initialIndex;
-  const CustomNavBar({super.key, this.initialIndex = 0});
+  final NavScreen screen;
+  const CustomNavBar({super.key, this.screen = NavScreen.inicio});
 
   @override
   State<CustomNavBar> createState() => _CustomNavBarState();
 }
 
-/// Modelo de datos interno para cada entrada de la barra de navegación.
-/// [builder] es una factory en lugar de una instancia de [Widget] para evitar
-/// crear instancias de pantalla que nunca se muestran.
 class _NavEntry {
+  final NavScreen screen;
   final IconData icon;
   final String label;
   final Widget Function() builder;
-  const _NavEntry(this.icon, this.label, this.builder);
+  const _NavEntry(this.screen, this.icon, this.label, this.builder);
 }
 
 class _CustomNavBarState extends State<CustomNavBar> {
-  late int _currentIndex;
-  String? _role;
-  bool _featurePictogramas = true;  // Default para TEA: pictogramas activos
-  bool _featureFoco        = false; // Default para TEA: foco inactivo
+  late NavScreen _currentScreen;
+  bool _featurePictogramas = false; // opt-in: desactivado por defecto
+  bool _featureFoco        = false; // opt-in: desactivado por defecto
 
-  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _roleSub;
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _featuresSub;
 
   @override
   void initState() {
     super.initState();
-    _currentIndex = widget.initialIndex;
+    _currentScreen = widget.screen;
     _listenSettings();
   }
 
   @override
   void dispose() {
-    _roleSub?.cancel();
     _featuresSub?.cancel();
     super.dispose();
   }
@@ -78,16 +75,9 @@ class _CustomNavBarState extends State<CustomNavBar> {
 
     final userRef = FirebaseFirestore.instance.collection('users').doc(uid);
 
-    // Stream 1: rol del usuario (determina qué conjunto de tabs mostrar)
-    _roleSub = userRef.snapshots().listen((snap) {
-      if (!mounted) return;
-      setState(() => _role = snap.data()?['role'] as String?);
-    });
-
-    // Stream 2: feature flags escritos por el tutor.
-    // Se almacenan en pictogramSettings/_features porque esa subcolección
-    // ya tiene permisos de escritura para el tutor en las reglas actuales,
-    // sin necesitar un deploy adicional de reglas.
+    // Los flags se leen desde pictogramSettings/_features porque esa
+    // subcolección tiene permisos de escritura tanto para el dueño (usuario)
+    // como para el tutor vinculado, sin necesitar un deploy de reglas adicional.
     _featuresSub = userRef
         .collection('pictogramSettings')
         .doc('_features')
@@ -96,40 +86,36 @@ class _CustomNavBarState extends State<CustomNavBar> {
       if (!mounted) return;
       final data = snap.data() ?? {};
       setState(() {
-        _featurePictogramas = data['featurePictogramas'] as bool? ?? true;
+        _featurePictogramas = data['featurePictogramas'] as bool? ?? false;
         _featureFoco        = data['featureFoco']        as bool? ?? false;
       });
     });
   }
 
-  bool get _isTea => _role == 'usuario_tea' || _role == 'paciente_tea';
+  List<_NavEntry> get _entries => [
+    _NavEntry(NavScreen.inicio,      Icons.home_rounded,      'Inicio',      () => const HomeScreen()),
+    _NavEntry(NavScreen.tareas,      Icons.task_alt,          'Tareas',      () => const TareasScreen()),
+    if (_featurePictogramas)
+      _NavEntry(NavScreen.pictogramas, Icons.image_rounded,   'Pictogramas', () => const PantallaPacienteTEA()),
+    if (_featureFoco)
+      _NavEntry(NavScreen.foco,      Icons.self_improvement,  'Foco',        () => const FocoScreen()),
+    _NavEntry(NavScreen.progreso,    Icons.bar_chart_rounded, 'Progreso',    () => const ProgresoScreen()),
+    _NavEntry(NavScreen.perfil,      Icons.person_rounded,    'Perfil',      () => const SettingsScreen()),
+  ];
 
-  /// Construye la lista de tabs según el rol y los feature flags actuales.
-  /// Para usuarios TDAH los tabs son fijos; para TEA son configurables.
-  List<_NavEntry> get _entries {
-    if (!_isTea) {
-      return [
-        _NavEntry(Icons.home_rounded,      'Inicio',  () => const HomeScreen()),
-        _NavEntry(Icons.task_alt,           'Tareas',  () => const TareasScreen()),
-        _NavEntry(Icons.self_improvement,   'Foco',    () => const FocoScreen()),
-        _NavEntry(Icons.person_rounded,     'Perfil',  () => const SettingsScreen()),
-      ];
-    }
-    return [
-      _NavEntry(Icons.home_rounded,    'Inicio',      () => const HomeScreen()),
-      _NavEntry(Icons.task_alt,         'Tareas',      () => const TareasScreen()),
-      if (_featurePictogramas)
-        _NavEntry(Icons.image_rounded,  'Pictogramas', () => const PantallaPacienteTEA()),
-      if (_featureFoco)
-        _NavEntry(Icons.self_improvement, 'Foco',      () => const FocoScreen()),
-      _NavEntry(Icons.person_rounded,   'Perfil',      () => const SettingsScreen()),
-    ];
+  /// Busca el índice de la pantalla activa en la lista actual de entries.
+  /// Si la pantalla no existe (fue desactivada por el tutor), vuelve a 0.
+  int _indexOf(NavScreen screen, List<_NavEntry> entries) {
+    final idx = entries.indexWhere((e) => e.screen == screen);
+    return idx < 0 ? 0 : idx;
   }
 
   void _onItemTapped(int index) {
     final entries = _entries;
-    if (index == _currentIndex || index >= entries.length) return;
-    setState(() => _currentIndex = index);
+    if (index >= entries.length) return;
+    final target = entries[index].screen;
+    if (target == _currentScreen) return;
+    setState(() => _currentScreen = target);
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
@@ -143,8 +129,7 @@ class _CustomNavBarState extends State<CustomNavBar> {
   @override
   Widget build(BuildContext context) {
     final entries   = _entries;
-    // Protección contra índice fuera de rango cuando el tutor cambia los features
-    final safeIndex = _currentIndex.clamp(0, entries.length - 1);
+    final safeIndex = _indexOf(_currentScreen, entries);
 
     return BottomNavigationBar(
       currentIndex:        safeIndex,
