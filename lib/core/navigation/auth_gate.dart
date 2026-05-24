@@ -96,11 +96,20 @@ class _UserOnboardingGateState extends State<_UserOnboardingGate> {
             body: Center(child: Text('Error al cargar usuario')),
           );
         }
+        // El documento aún no existe: la cuenta se acaba de crear y el write
+        // de Firestore todavía no completó. Mostrar spinner y esperar el
+        // siguiente evento del stream en lugar de saltar a RoleSelectionScreen.
+        if (snapshot.data?.exists == false) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
         final data = snapshot.data?.data();
         final role = data?['role'] as String?;
 
-        // Sin rol → el usuario acaba de registrarse con Google o hay un
-        // documento corrupto. Forzar selección de rol.
+        // Sin rol → documento existe pero está corrupto o incompleto.
+        // Forzar selección de rol.
         if (role == null || role.isEmpty) return const RoleSelectionScreen();
 
         // Sin nombre → el usuario no completó el setup de perfil.

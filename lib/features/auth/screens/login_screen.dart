@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:simple/core/navigation/auth_gate.dart';
+import 'package:simple/features/auth/screens/role_selection_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _Palette {
@@ -64,17 +65,14 @@ class _LoginScreenState extends State<LoginScreen> {
     await prefs.setString('saved_email', email);
   }
 
-  Future<void> _handleAuthSuccess(User user) async {
-    if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const AuthGate()),
-      (route) => false,
-    );
-  }
-
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
+
+    // Capturar navigator al inicio: authStateChanges se disparará durante los
+    // awaits siguientes y desmontará LoginScreen; usar la referencia capturada
+    // en lugar de Navigator.of(context) cuando ya no estemos montados.
+    final navigator = Navigator.of(context);
 
     final auth = FirebaseAuth.instance;
     final email = _emailController.text.trim();
@@ -87,7 +85,12 @@ class _LoginScreenState extends State<LoginScreen> {
           password: password,
         );
         await _saveEmail(email);
-        if (cred.user != null) await _handleAuthSuccess(cred.user!);
+        if (cred.user != null) {
+          navigator.pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const AuthGate()),
+            (route) => false,
+          );
+        }
       } else {
         final cred = await auth.createUserWithEmailAndPassword(
           email: email,
@@ -105,17 +108,21 @@ class _LoginScreenState extends State<LoginScreen> {
             'avatar': 'emoticon',
             'points': 0,
             'streak': 0,
+            'hasCompletedProfile': true,
             'hasCompletedOnboarding': false,
             'createdAt': FieldValue.serverTimestamp(),
           }, SetOptions(merge: true));
           await _saveEmail(email);
-          await _handleAuthSuccess(user);
+          navigator.pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const RoleSelectionScreen()),
+            (route) => false,
+          );
         }
       }
     } on FirebaseAuthException catch (e) {
-      _showError(_mapAuthError(e.code));
+      if (mounted) _showError(_mapAuthError(e.code));
     } catch (_) {
-      _showError('Ocurrió un error inesperado. Intenta de nuevo.');
+      if (mounted) _showError('Ocurrió un error inesperado. Intenta de nuevo.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -124,6 +131,11 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleGoogleLogin() async {
     if (_isGoogleLoading) return;
     setState(() => _isGoogleLoading = true);
+
+    // Capturar navigator al inicio: authStateChanges se disparará durante
+    // signInWithCredential y desmontará LoginScreen antes de que podamos
+    // navegar; la referencia al NavigatorState sigue siendo válida.
+    final navigator = Navigator.of(context);
 
     try {
       final UserCredential userCred;
@@ -161,22 +173,31 @@ class _LoginScreenState extends State<LoginScreen> {
             'avatar': 'emoticon',
             'points': 0,
             'streak': 0,
+            'hasCompletedProfile': true,
             'hasCompletedOnboarding': false,
             'createdAt': FieldValue.serverTimestamp(),
-          });
+          }, SetOptions(merge: true));
+          if (user.email != null) await _saveEmail(user.email!);
+          navigator.pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const RoleSelectionScreen()),
+            (route) => false,
+          );
         } else {
           await FirebaseFirestore.instance
               .collection('users')
               .doc(user.uid)
               .set(payload, SetOptions(merge: true));
+          if (user.email != null) await _saveEmail(user.email!);
+          navigator.pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const AuthGate()),
+            (route) => false,
+          );
         }
-        if (user.email != null) await _saveEmail(user.email!);
-        await _handleAuthSuccess(user);
       }
     } on FirebaseAuthException catch (e) {
-      _showError(_mapAuthError(e.code));
+      if (mounted) _showError(_mapAuthError(e.code));
     } catch (_) {
-      _showError('No pudimos iniciar sesión con Google. Intenta de nuevo.');
+      if (mounted) _showError('No pudimos iniciar sesión con Google. Intenta de nuevo.');
     } finally {
       if (mounted) setState(() => _isGoogleLoading = false);
     }

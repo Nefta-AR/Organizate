@@ -322,6 +322,8 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
 | 24 May | Contacto de emergencia del usuario editable por el tutor | Agregado en `_TutorConfigTab` del panel de supervisión — el tutor puede leer y guardar `emergencyName`/`emergencyPhone` del paciente directamente | Fase 6 |
 | 24 May | `PantallasConfigScreen` — pantalla dedicada de selección de tabs | Reemplaza los switches inline de Ajustes; muestra tarjetas visuales por pestaña (Inicio/Perfil siempre activos y bloqueados); si hay tutor vinculado todos los controles se deshabilitan | Fase 6 |
 | 24 May | Defaults de pestañas: Inicio, Tareas, Foco, Perfil activos por defecto | Foco cambia de `false` a `true` como default en `CustomNavBar` y en `PantallasConfigScreen`; Pictogramas sigue desactivado por ser opt-in | Fase 6 |
+| 24 May | Fix race condition en creación de cuenta (parte 1) | `_UserOnboardingGate` navegaba a `RoleSelectionScreen` cuando el doc Firestore aún no existía; fix: comprobar `snapshot.data?.exists == false` y mostrar spinner | Fase 6 |
+| 24 May | Fix parpadeo de pantallas en registro nuevo (parte 2) | El stream de `_UserOnboardingGate` emitía estados intermedios (RoleSelectionScreen → flash avatar → RoleSelectionScreen) porque el registro navegaba a `AuthGate` antes de seleccionar rol; fix: registro email y Google nuevo navegan directamente a `RoleSelectionScreen` antes de `AuthGate`; `hasCompletedProfile: true` en el write inicial; navigator capturado al inicio de la función (antes de awaits que desmontan `LoginScreen`) | Fase 6 |
 
 ---
 
@@ -388,6 +390,6 @@ El Trello original tenía 5 sprints. Estado actual vs lo planificado:
 
 ## Notas de Actualización
 
-**Última actualización:** 24 Mayo 2026 — personalización de tabs, ajustes por rol, contacto emergencia tutor  
+**Última actualización:** 24 Mayo 2026 — fix completo del flujo de registro: sin parpadeo de pantallas en cuentas nuevas  
 **Próxima revisión:** 02 Junio 2026 (cierre Sprint A de Fase 6)  
 **Próximo milestone:** 16 Junio 2026 (cierre Fase 6 — inicio documentación)
