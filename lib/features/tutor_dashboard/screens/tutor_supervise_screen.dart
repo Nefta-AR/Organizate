@@ -1024,6 +1024,11 @@ class _TutorConfigTabState extends State<_TutorConfigTab> {
   bool? _featureFoco;
   late final StreamSubscription<DocumentSnapshot<Map<String, dynamic>>> _sub;
 
+  final _emergencyNameCtrl  = TextEditingController();
+  final _emergencyPhoneCtrl = TextEditingController();
+  bool _emergencyDirty   = false;
+  bool _emergencySaving  = false;
+
   static const _featuresDocId = '_features';
 
   CollectionReference<Map<String, dynamic>> get _settingsRef =>
@@ -1031,6 +1036,9 @@ class _TutorConfigTabState extends State<_TutorConfigTab> {
           .collection('users')
           .doc(widget.patientId)
           .collection('pictogramSettings');
+
+  DocumentReference<Map<String, dynamic>> get _patientDoc =>
+      FirebaseFirestore.instance.collection('users').doc(widget.patientId);
 
   @override
   void initState() {
@@ -1041,8 +1049,8 @@ class _TutorConfigTabState extends State<_TutorConfigTab> {
       setState(() {
         _featureInicio      = data['featureInicio']      as bool? ?? true;
         _featureTareas      = data['featureTareas']      as bool? ?? true;
-        _featurePictogramas = data['featurePictogramas'] as bool? ?? true;
-        _featureFoco        = data['featureFoco']        as bool? ?? false;
+        _featurePictogramas = data['featurePictogramas'] as bool? ?? false;
+        _featureFoco        = data['featureFoco']        as bool? ?? true;
       });
     });
   }
@@ -1050,6 +1058,8 @@ class _TutorConfigTabState extends State<_TutorConfigTab> {
   @override
   void dispose() {
     _sub.cancel();
+    _emergencyNameCtrl.dispose();
+    _emergencyPhoneCtrl.dispose();
     super.dispose();
   }
 
@@ -1060,68 +1070,164 @@ class _TutorConfigTabState extends State<_TutorConfigTab> {
     );
   }
 
+  Future<void> _saveEmergency() async {
+    setState(() => _emergencySaving = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await _patientDoc.set({
+        'emergencyName':
+            _emergencyNameCtrl.text.trim().isEmpty
+                ? FieldValue.delete()
+                : _emergencyNameCtrl.text.trim(),
+        'emergencyPhone':
+            _emergencyPhoneCtrl.text.trim().isEmpty
+                ? FieldValue.delete()
+                : _emergencyPhoneCtrl.text.trim(),
+      }, SetOptions(merge: true));
+      setState(() => _emergencyDirty = false);
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Contacto de emergencia guardado')),
+      );
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('No se pudo guardar')),
+      );
+    } finally {
+      if (mounted) setState(() => _emergencySaving = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_featureInicio == null) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
-      children: [
-        Text(
-          'Pestañas de ${widget.patientName}',
-          style: Theme.of(context)
-              .textTheme
-              .titleMedium
-              ?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Activa o desactiva las secciones visibles en la app del usuario.',
-          style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-        ),
-        const SizedBox(height: 20),
-        _FeatureToggleTile(
-          icon: Icons.home_rounded,
-          color: Colors.blue,
-          title: 'Pestaña de Inicio',
-          subtitle:
-              'El usuario puede ver la pantalla principal con frases motivacionales y resumen',
-          value: _featureInicio!,
-          onChanged: (_) => _toggle('featureInicio', _featureInicio!),
-        ),
-        const SizedBox(height: 12),
-        _FeatureToggleTile(
-          icon: Icons.task_alt,
-          color: Colors.green,
-          title: 'Pestaña de Tareas',
-          subtitle:
-              'El usuario puede ver y gestionar sus tareas asignadas',
-          value: _featureTareas!,
-          onChanged: (_) => _toggle('featureTareas', _featureTareas!),
-        ),
-        const SizedBox(height: 12),
-        _FeatureToggleTile(
-          icon: Icons.image_rounded,
-          color: Colors.purple,
-          title: 'Pestaña de Pictogramas',
-          subtitle:
-              'El usuario puede acceder al tablero de comunicación por pictogramas',
-          value: _featurePictogramas!,
-          onChanged: (_) => _toggle('featurePictogramas', _featurePictogramas!),
-        ),
-        const SizedBox(height: 12),
-        _FeatureToggleTile(
-          icon: Icons.self_improvement,
-          color: Colors.deepOrange,
-          title: 'Pestaña de Foco',
-          subtitle:
-              'El usuario puede usar el temporizador Pomodoro y gestión de concentración',
-          value: _featureFoco!,
-          onChanged: (_) => _toggle('featureFoco', _featureFoco!),
-        ),
-      ],
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: _patientDoc.snapshots(),
+      builder: (context, patSnap) {
+        final patData = patSnap.data?.data() ?? {};
+        if (!_emergencyDirty) {
+          _emergencyNameCtrl.text =
+              (patData['emergencyName'] as String?) ?? '';
+          _emergencyPhoneCtrl.text =
+              (patData['emergencyPhone'] as String?) ??
+              (patData['phone'] as String?) ?? '';
+        }
+
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+          children: [
+            // ── Pestañas ────────────────────────────────────────────
+            Text(
+              'Pestañas de ${widget.patientName}',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Activa o desactiva las secciones visibles en la app del usuario.',
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+            ),
+            const SizedBox(height: 20),
+            _FeatureToggleTile(
+              icon: Icons.home_rounded,
+              color: Colors.blue,
+              title: 'Pestaña de Inicio',
+              subtitle: 'Pantalla principal con frases y resumen',
+              value: _featureInicio!,
+              onChanged: (_) => _toggle('featureInicio', _featureInicio!),
+            ),
+            const SizedBox(height: 12),
+            _FeatureToggleTile(
+              icon: Icons.task_alt,
+              color: Colors.green,
+              title: 'Pestaña de Tareas',
+              subtitle: 'El usuario puede ver y gestionar sus tareas',
+              value: _featureTareas!,
+              onChanged: (_) => _toggle('featureTareas', _featureTareas!),
+            ),
+            const SizedBox(height: 12),
+            _FeatureToggleTile(
+              icon: Icons.image_rounded,
+              color: Colors.purple,
+              title: 'Pestaña de Pictogramas',
+              subtitle: 'Tablero de comunicación aumentativa',
+              value: _featurePictogramas!,
+              onChanged: (_) =>
+                  _toggle('featurePictogramas', _featurePictogramas!),
+            ),
+            const SizedBox(height: 12),
+            _FeatureToggleTile(
+              icon: Icons.self_improvement,
+              color: Colors.deepOrange,
+              title: 'Pestaña de Foco',
+              subtitle: 'Temporizador Pomodoro y respiración guiada',
+              value: _featureFoco!,
+              onChanged: (_) => _toggle('featureFoco', _featureFoco!),
+            ),
+            const SizedBox(height: 32),
+            // ── Contacto de emergencia ───────────────────────────────
+            Text(
+              'Contacto de emergencia',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Número al que llamar si ${widget.patientName} necesita ayuda.',
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _emergencyNameCtrl,
+              textCapitalization: TextCapitalization.words,
+              decoration: const InputDecoration(
+                labelText: 'Nombre del contacto',
+                hintText: 'Ej: Mamá, Tutor, Médico',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (_) {
+                if (!_emergencyDirty) setState(() => _emergencyDirty = true);
+              },
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _emergencyPhoneCtrl,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(
+                labelText: 'Teléfono',
+                hintText: 'Ej: +56 9 1234 5678',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (_) {
+                if (!_emergencyDirty) setState(() => _emergencyDirty = true);
+              },
+            ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerRight,
+              child: ElevatedButton.icon(
+                onPressed: _emergencyDirty && !_emergencySaving
+                    ? _saveEmergency
+                    : null,
+                icon: _emergencySaving
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.save),
+                label: const Text('Guardar'),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -317,6 +317,11 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
 | 19 May | `ProgresoScreen` unificado con 3 gráficos (`BarChart`, `PieChart`, `LineChart`) | Dashboard único reutilizable: acepta `userId` opcional para modo tutor; datos de `activityLog` evitan leer colecciones separadas; tooltips interactivos en gráficos | Fase 6 |
 | 19 May | Toggles `featureInicio` + `featureTareas` en panel tutor | El tutor puede ocultar Inicio y Tareas al usuario TEA; `CustomNavBar` lee 4 flags desde `pictogramSettings/_features`; default `true` para no romper UX existente | Fase 6 |
 | 19 May | Padding inferior dinámico en `SettingsScreen` y `ProgresoScreen` | `widget.showNavBar ? 96 : 16` evita que el contenido quede tapado por `BottomNavigationBar`; otras pantallas ya usaban `Expanded` o padding fijo suficiente | Fase 6 |
+| 24 May | Pestaña Progreso eliminada de la nav bar del usuario | El usuario no necesita un tab dedicado de estadísticas; las métricas se ven desde Perfil → Modo Foco en Ajustes; el tutor las ve en su propio panel | Fase 6 |
+| 24 May | Ajustes del tutor simplificado | Contacto de emergencia y Modo Foco retirados del perfil del tutor (irrelevantes para ese rol); el tutor solo ve perfil, vinculación, backup y logout | Fase 6 |
+| 24 May | Contacto de emergencia del usuario editable por el tutor | Agregado en `_TutorConfigTab` del panel de supervisión — el tutor puede leer y guardar `emergencyName`/`emergencyPhone` del paciente directamente | Fase 6 |
+| 24 May | `PantallasConfigScreen` — pantalla dedicada de selección de tabs | Reemplaza los switches inline de Ajustes; muestra tarjetas visuales por pestaña (Inicio/Perfil siempre activos y bloqueados); si hay tutor vinculado todos los controles se deshabilitan | Fase 6 |
+| 24 May | Defaults de pestañas: Inicio, Tareas, Foco, Perfil activos por defecto | Foco cambia de `false` a `true` como default en `CustomNavBar` y en `PantallasConfigScreen`; Pictogramas sigue desactivado por ser opt-in | Fase 6 |
 
 ---
 
@@ -383,6 +388,6 @@ El Trello original tenía 5 sprints. Estado actual vs lo planificado:
 
 ## Notas de Actualización
 
-**Última actualización:** 19 Mayo 2026 — sesión 2 (panel tutor, nav bar reactiva, ajustes rediseñados, fix cambio de rol)  
+**Última actualización:** 24 Mayo 2026 — personalización de tabs, ajustes por rol, contacto emergencia tutor  
 **Próxima revisión:** 02 Junio 2026 (cierre Sprint A de Fase 6)  
 **Próximo milestone:** 16 Junio 2026 (cierre Fase 6 — inicio documentación)

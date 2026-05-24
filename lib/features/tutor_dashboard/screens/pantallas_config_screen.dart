@@ -1,0 +1,257 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:simple/core/services/auth_service.dart';
+
+class _Palette {
+  _Palette._();
+  static const background = Color(0xFFF4F6F8);
+  static const primary    = Color(0xFF607D8B);
+  static const surface    = Colors.white;
+  static const textDark   = Color(0xFF37474F);
+  static const textMuted  = Color(0xFF78909C);
+  static const accent     = Color(0xFF7EA3BC);
+}
+
+/// Pantalla de selección de pestañas visibles para el usuario.
+///
+/// Lee y escribe `users/{uid}/pictogramSettings/_features`.
+/// Inicio y Perfil siempre están activos y no se pueden desactivar.
+/// Si el usuario tiene tutor vinculado todos los switches se muestran
+/// bloqueados — solo el tutor puede modificarlos desde su panel.
+class PantallasConfigScreen extends StatelessWidget {
+  const PantallasConfigScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final featuresRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('pictogramSettings')
+        .doc('_features');
+
+    return Scaffold(
+      backgroundColor: _Palette.background,
+      appBar: AppBar(
+        backgroundColor: _Palette.background,
+        elevation: 0,
+        title: const Text(
+          'Personalización',
+          style: TextStyle(
+              color: _Palette.primary, fontWeight: FontWeight.w600),
+        ),
+        iconTheme: const IconThemeData(color: _Palette.primary),
+      ),
+      body: StreamBuilder<Map<String, dynamic>?>(
+        stream: AuthService.getLinkedTutorStream(),
+        builder: (context, tutorSnap) {
+          final hasTutor = tutorSnap.data != null;
+
+          return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+            stream: featuresRef.snapshots(),
+            builder: (context, featSnap) {
+              final data = featSnap.data?.data() ?? {};
+              final tareas  = data['featureTareas']      as bool? ?? true;
+              final picto   = data['featurePictogramas'] as bool? ?? false;
+              final foco    = data['featureFoco']        as bool? ?? true;
+
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+                children: [
+                  const Text(
+                    'Elige qué pestañas quieres ver en la app',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: _Palette.textDark,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Inicio y Perfil siempre están disponibles.',
+                    style: TextStyle(
+                        fontSize: 13, color: Colors.grey.shade600),
+                  ),
+                  if (hasTutor) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: _Palette.accent.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.lock_outline_rounded,
+                              size: 16,
+                              color:
+                                  _Palette.accent.withValues(alpha: 0.85)),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text(
+                              'Tu tutor gestiona esta configuración',
+                              style: TextStyle(
+                                  fontSize: 13, color: _Palette.textMuted),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                  _TabTile(
+                    icon: Icons.home_rounded,
+                    color: Colors.blue,
+                    title: 'Inicio',
+                    subtitle: 'Pantalla principal con resumen y motivación',
+                    value: true,
+                    locked: true, // siempre activo
+                    onToggle: null,
+                  ),
+                  const SizedBox(height: 12),
+                  _TabTile(
+                    icon: Icons.task_alt,
+                    color: Colors.green,
+                    title: 'Tareas',
+                    subtitle: 'Gestión de tareas y recordatorios',
+                    value: tareas,
+                    locked: hasTutor,
+                    onToggle: hasTutor
+                        ? null
+                        : () => featuresRef.set(
+                              {'featureTareas': !tareas},
+                              SetOptions(merge: true),
+                            ),
+                  ),
+                  const SizedBox(height: 12),
+                  _TabTile(
+                    icon: Icons.image_rounded,
+                    color: Colors.purple,
+                    title: 'Pictogramas',
+                    subtitle: 'Tablero de comunicación aumentativa',
+                    value: picto,
+                    locked: hasTutor,
+                    onToggle: hasTutor
+                        ? null
+                        : () => featuresRef.set(
+                              {'featurePictogramas': !picto},
+                              SetOptions(merge: true),
+                            ),
+                  ),
+                  const SizedBox(height: 12),
+                  _TabTile(
+                    icon: Icons.self_improvement,
+                    color: Colors.deepOrange,
+                    title: 'Foco',
+                    subtitle: 'Temporizador Pomodoro y respiración guiada',
+                    value: foco,
+                    locked: hasTutor,
+                    onToggle: hasTutor
+                        ? null
+                        : () => featuresRef.set(
+                              {'featureFoco': !foco},
+                              SetOptions(merge: true),
+                            ),
+                  ),
+                  const SizedBox(height: 12),
+                  _TabTile(
+                    icon: Icons.person_rounded,
+                    color: _Palette.primary,
+                    title: 'Perfil',
+                    subtitle: 'Configuración y estadísticas personales',
+                    value: true,
+                    locked: true, // siempre activo
+                    onToggle: null,
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _TabTile extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String subtitle;
+  final bool value;
+  final bool locked;
+  final VoidCallback? onToggle;
+
+  const _TabTile({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.locked,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final active = value;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      decoration: BoxDecoration(
+        color: _Palette.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: active && !locked
+              ? color.withValues(alpha: 0.35)
+              : Colors.grey.shade200,
+          width: active && !locked ? 1.5 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withValues(alpha: 0.06),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ListTile(
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        leading: Container(
+          padding: const EdgeInsets.all(9),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: active ? 0.12 : 0.06),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon,
+              color: active ? color : Colors.grey.shade400, size: 22),
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: active ? _Palette.textDark : Colors.grey.shade500,
+          ),
+        ),
+        subtitle: Text(subtitle,
+            style: TextStyle(
+                fontSize: 12, color: Colors.grey.shade500, height: 1.4)),
+        trailing: locked
+            ? Icon(
+                active
+                    ? Icons.check_circle_rounded
+                    : Icons.lock_outline_rounded,
+                color: active ? Colors.green.shade400 : Colors.grey.shade400,
+                size: 22,
+              )
+            : Switch.adaptive(
+                value: active,
+                onChanged: onToggle == null ? null : (_) => onToggle!(),
+                activeThumbColor: color,
+              ),
+      ),
+    );
+  }
+}

@@ -16,6 +16,7 @@ import 'package:simple/core/services/notification_service.dart';
 import 'package:simple/core/services/google_drive_service.dart';
 import 'package:simple/core/utils/reminder_options.dart';
 import 'package:simple/core/widgets/custom_nav_bar.dart';
+import 'package:simple/features/tutor_dashboard/screens/pantallas_config_screen.dart';
 
 class _Palette {
   _Palette._();
@@ -398,23 +399,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 if (role != 'tutor') ...[
                   _buildVinculacionPacienteCard(),
                   const SizedBox(height: 16),
-                  _buildPantallasCard(),
+                  _buildPantallasNavTile(),
+                  const SizedBox(height: 16),
+                  _buildEmergencyCard(),
+                  const SizedBox(height: 16),
+                  _buildNotificacionesCard(notiTaskEnabled, notiOffset),
+                  const SizedBox(height: 16),
+                  _buildFocoCard(
+                    pomodoroSoundEnabled,
+                    pomodoroVibrationEnabled,
+                    pomodoroSound,
+                    focusSessions,
+                    totalFocusMinutes,
+                    points,
+                    streak,
+                  ),
                   const SizedBox(height: 16),
                 ],
-                _buildEmergencyCard(),
-                const SizedBox(height: 16),
-                _buildNotificacionesCard(notiTaskEnabled, notiOffset),
-                const SizedBox(height: 16),
-                _buildFocoCard(
-                  pomodoroSoundEnabled,
-                  pomodoroVibrationEnabled,
-                  pomodoroSound,
-                  focusSessions,
-                  totalFocusMinutes,
-                  points,
-                  streak,
-                ),
-                const SizedBox(height: 16),
                 _buildBackupCard(),
                 const SizedBox(height: 16),
                 _buildLogoutCard(),
@@ -875,108 +876,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  /// Tarjeta de personalización de pantalla para el rol `usuario`.
-  /// Si el usuario tiene tutor vinculado, los switches se muestran bloqueados
-  /// con un mensaje informativo — solo el tutor puede modificarlos desde su panel.
-  Widget _buildPantallasCard() {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-    final featuresRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .collection('pictogramSettings')
-        .doc('_features');
-
-    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: featuresRef.snapshots(),
-      builder: (context, snap) {
-        final data = snap.data?.data() ?? {};
-        final picto = data['featurePictogramas'] as bool? ?? false;
-        final foco  = data['featureFoco']        as bool? ?? false;
-
-        return StreamBuilder<Map<String, dynamic>?>(
-          stream: AuthService.getLinkedTutorStream(),
-          builder: (context, tutorSnap) {
-            final hasTutor = tutorSnap.data != null;
-
-            return Card(
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16)),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.tune_rounded,
-                            color: _Palette.accent, size: 20),
-                        const SizedBox(width: 8),
-                        const Text('Personalización de pantalla',
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                    if (hasTutor) ...[
-                      const SizedBox(height: 10),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: _Palette.accent.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.lock_outline_rounded,
-                                size: 14,
-                                color: _Palette.accent.withValues(alpha: 0.8)),
-                            const SizedBox(width: 6),
-                            const Expanded(
-                              child: Text(
-                                'Tu tutor gestiona esta configuración',
-                                style: TextStyle(
-                                    fontSize: 12, color: _Palette.textMuted),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 8),
-                    SwitchListTile.adaptive(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Pestaña Pictogramas'),
-                      subtitle: const Text('Tablero de comunicación aumentativa',
-                          style: TextStyle(fontSize: 12)),
-                      value: picto,
-                      // If tutor is linked, ignore taps
-                      onChanged: hasTutor
-                          ? null
-                          : (_) => featuresRef.set(
-                                {'featurePictogramas': !picto},
-                                SetOptions(merge: true),
-                              ),
-                    ),
-                    SwitchListTile.adaptive(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Pestaña Foco'),
-                      subtitle: const Text('Pomodoro y respiración guiada',
-                          style: TextStyle(fontSize: 12)),
-                      value: foco,
-                      onChanged: hasTutor
-                          ? null
-                          : (_) => featuresRef.set(
-                                {'featureFoco': !foco},
-                                SetOptions(merge: true),
-                              ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
+  Widget _buildPantallasNavTile() {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: ListTile(
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: const Icon(Icons.tune_rounded,
+            color: _Palette.accent, size: 28),
+        title: const Text('Personalización de pantalla',
+            style: TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: const Text('Elige qué pestañas ver en la app',
+            style: TextStyle(color: _Palette.textMuted, fontSize: 14)),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (_) => const PantallasConfigScreen()),
+        ),
+      ),
     );
   }
 

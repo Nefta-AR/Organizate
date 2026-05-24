@@ -9,13 +9,11 @@ import '../../features/tutor_dashboard/screens/home_screen.dart';
 import '../../features/tutor_dashboard/screens/settings_screen.dart';
 import '../../features/tda_focus/screens/tareas_screen.dart';
 import '../../features/tea_board/screens/pantalla_paciente_tea.dart';
-import '../../features/tda_focus/screens/progreso_screen.dart';
-
 /// Identifica qué pantalla está actualmente activa en la barra de navegación.
 /// Usar una identidad semántica en lugar de un índice numérico evita
 /// que el índice quede desincronizado cuando el número de tabs cambia
 /// dinámicamente (el tutor activa/desactiva pestañas).
-enum NavScreen { inicio, tareas, pictogramas, foco, progreso, perfil }
+enum NavScreen { inicio, tareas, pictogramas, foco, perfil }
 
 /// Barra de navegación inferior con tabs configurables mediante feature flags.
 ///
@@ -52,7 +50,7 @@ class _NavEntry {
 class _CustomNavBarState extends State<CustomNavBar> {
   late NavScreen _currentScreen;
   bool _featurePictogramas = false; // opt-in: desactivado por defecto
-  bool _featureFoco        = false; // opt-in: desactivado por defecto
+  bool _featureFoco        = true;  // activo por defecto
 
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _featuresSub;
 
@@ -87,7 +85,7 @@ class _CustomNavBarState extends State<CustomNavBar> {
       final data = snap.data() ?? {};
       setState(() {
         _featurePictogramas = data['featurePictogramas'] as bool? ?? false;
-        _featureFoco        = data['featureFoco']        as bool? ?? false;
+        _featureFoco        = data['featureFoco']        as bool? ?? true;
       });
     });
   }
@@ -99,7 +97,6 @@ class _CustomNavBarState extends State<CustomNavBar> {
       _NavEntry(NavScreen.pictogramas, Icons.image_rounded,   'Pictogramas', () => const PantallaPacienteTEA()),
     if (_featureFoco)
       _NavEntry(NavScreen.foco,      Icons.self_improvement,  'Foco',        () => const FocoScreen()),
-    _NavEntry(NavScreen.progreso,    Icons.bar_chart_rounded, 'Progreso',    () => const ProgresoScreen()),
     _NavEntry(NavScreen.perfil,      Icons.person_rounded,    'Perfil',      () => const SettingsScreen()),
   ];
 
