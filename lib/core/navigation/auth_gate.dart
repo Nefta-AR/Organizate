@@ -1,5 +1,7 @@
 // lib/core/navigation/auth_gate.dart
 
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -49,15 +51,15 @@ class AuthGate extends StatelessWidget {
   }
 }
 
-/// Segundo nivel del gate: verifica que el usuario tenga rol y perfil
-/// antes de enviarlo a su pantalla definitiva.
+/// Segundo nivel del gate: espera el documento Firestore del usuario y
+/// navega imperativamente a la pantalla correcta una única vez.
 ///
-/// El stream se abre sobre el documento del usuario en Firestore para
-/// reaccionar en tiempo real si el tutor cambia el rol o si el usuario
-/// completa el setup de perfil desde otro dispositivo.
+/// Usa una suscripción directa al stream (no StreamBuilder) para evitar
+/// que los eventos rápidos del stream durante el registro causen parpadeo
+/// de pantallas. El widget siempre muestra un spinner; la navegación se
+/// dispara desde el callback del stream, no desde build().
 ///
-/// También sincroniza el token FCM al montarse, lo que garantiza que
-/// las notificaciones push estén vinculadas al dispositivo actual.
+/// También sincroniza el token FCM al montarse.
 class _UserOnboardingGate extends StatefulWidget {
   const _UserOnboardingGate({required this.user});
   final User user;
@@ -67,69 +69,71 @@ class _UserOnboardingGate extends StatefulWidget {
 }
 
 class _UserOnboardingGateState extends State<_UserOnboardingGate> {
-  late final Stream<DocumentSnapshot<Map<String, dynamic>>> _userDocStream;
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _sub;
+  // Evita navegar más de una vez aunque el stream emita varios eventos.
+  bool _navigating = false;
 
   @override
   void initState() {
     super.initState();
-    // Sincroniza el token FCM del dispositivo actual. Se hace aquí y no en
-    // main() para tener acceso al uid del usuario ya autenticado.
     PushNotificationService.syncUserToken(widget.user);
-    _userDocStream = FirebaseFirestore.instance
+    _sub = FirebaseFirestore.instance
         .collection('users')
         .doc(widget.user.uid)
-        .snapshots();
+        .snapshots()
+        .listen(_onDoc);
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+
+  void _onDoc(DocumentSnapshot<Map<String, dynamic>> snapshot) {
+    if (!mounted || _navigating) return;
+
+    // Doc aún no existe (write en curso tras registro) — esperar.
+    if (!snapshot.exists) return;
+
+    final data = snapshot.data() ?? {};
+    final role = data['role'] as String?;
+
+    final Widget destination;
+    if (role == null || role.isEmpty) {
+      destination = const RoleSelectionScreen();
+    } else {
+      final hasOnboarded = data['hasCompletedOnboarding'] as bool? ?? false;
+      if (!hasOnboarded) {
+        // El usuario aún no ha elegido su rol (recién registrado).
+        destination = const RoleSelectionScreen();
+      } else {
+        final hasProfile = data['hasCompletedProfile'] as bool? ?? false;
+        final hasName   = (data['name'] as String? ?? '').isNotEmpty;
+        if (!hasProfile && !hasName) {
+          destination = const ProfileSetupScreen();
+        } else {
+          destination = RoleDispatcher(role: role);
+        }
+      }
+    }
+
+    _navigating = true;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => destination),
+      (route) => false,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: _userDocStream,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-        if (snapshot.hasError) {
-          return const Scaffold(
-            body: Center(child: Text('Error al cargar usuario')),
-          );
-        }
-        // El documento aún no existe: la cuenta se acaba de crear y el write
-        // de Firestore todavía no completó. Mostrar spinner y esperar el
-        // siguiente evento del stream en lugar de saltar a RoleSelectionScreen.
-        if (snapshot.data?.exists == false) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        final data = snapshot.data?.data();
-        final role = data?['role'] as String?;
-
-        // Sin rol → documento existe pero está corrupto o incompleto.
-        // Forzar selección de rol.
-        if (role == null || role.isEmpty) return const RoleSelectionScreen();
-
-        // Sin nombre → el usuario no completó el setup de perfil.
-        // `hasCompletedProfile` es la fuente de verdad; `name` es el fallback
-        // por si el campo booleano no existe en documentos antiguos.
-        final hasProfile = data?['hasCompletedProfile'] as bool? ?? false;
-        final hasName = (data?['name'] as String? ?? '').isNotEmpty;
-        if (!hasProfile && !hasName) return const ProfileSetupScreen();
-
-        return RoleDispatcher(role: role);
-      },
+    return const Scaffold(
+      body: Center(child: CircularProgressIndicator()),
     );
   }
 }
 
 /// Tercer nivel: despacha al widget raíz correspondiente al rol.
-///
-/// Usa un `switch` exhaustivo para que agregar un nuevo rol en el futuro
-/// produzca un warning del compilador si no se maneja el caso.
-/// Todos los roles legacy son migrados automáticamente a 'usuario' por [AuthService].
 class RoleDispatcher extends StatelessWidget {
   final String role;
 
@@ -139,7 +143,7 @@ class RoleDispatcher extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (role) {
       'tutor' => const TutorSupervisarScreen(),
-      _       => const HomeScreen(), // 'usuario' + cualquier rol legacy pendiente de migrar
+      _       => const HomeScreen(), // 'usuario'
     };
   }
 }

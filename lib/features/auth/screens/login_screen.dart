@@ -5,8 +5,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:simple/core/navigation/auth_gate.dart';
-import 'package:simple/features/auth/screens/role_selection_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _Palette {
@@ -69,28 +67,14 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
 
-    // Capturar navigator al inicio: authStateChanges se disparará durante los
-    // awaits siguientes y desmontará LoginScreen; usar la referencia capturada
-    // en lugar de Navigator.of(context) cuando ya no estemos montados.
-    final navigator = Navigator.of(context);
-
     final auth = FirebaseAuth.instance;
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
     try {
       if (_isLogin) {
-        final cred = await auth.signInWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
+        await auth.signInWithEmailAndPassword(email: email, password: password);
         await _saveEmail(email);
-        if (cred.user != null) {
-          navigator.pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const AuthGate()),
-            (route) => false,
-          );
-        }
       } else {
         final cred = await auth.createUserWithEmailAndPassword(
           email: email,
@@ -105,6 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
               .set({
             'name': _nameController.text.trim(),
             'email': email,
+            'role': 'usuario',
             'avatar': 'emoticon',
             'points': 0,
             'streak': 0,
@@ -113,10 +98,6 @@ class _LoginScreenState extends State<LoginScreen> {
             'createdAt': FieldValue.serverTimestamp(),
           }, SetOptions(merge: true));
           await _saveEmail(email);
-          navigator.pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const RoleSelectionScreen()),
-            (route) => false,
-          );
         }
       }
     } on FirebaseAuthException catch (e) {
@@ -131,11 +112,6 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleGoogleLogin() async {
     if (_isGoogleLoading) return;
     setState(() => _isGoogleLoading = true);
-
-    // Capturar navigator al inicio: authStateChanges se disparará durante
-    // signInWithCredential y desmontará LoginScreen antes de que podamos
-    // navegar; la referencia al NavigatorState sigue siendo válida.
-    final navigator = Navigator.of(context);
 
     try {
       final UserCredential userCred;
@@ -170,6 +146,7 @@ class _LoginScreenState extends State<LoginScreen> {
               .doc(user.uid)
               .set({
             ...payload,
+            'role': 'usuario',
             'avatar': 'emoticon',
             'points': 0,
             'streak': 0,
@@ -178,20 +155,12 @@ class _LoginScreenState extends State<LoginScreen> {
             'createdAt': FieldValue.serverTimestamp(),
           }, SetOptions(merge: true));
           if (user.email != null) await _saveEmail(user.email!);
-          navigator.pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const RoleSelectionScreen()),
-            (route) => false,
-          );
         } else {
           await FirebaseFirestore.instance
               .collection('users')
               .doc(user.uid)
               .set(payload, SetOptions(merge: true));
           if (user.email != null) await _saveEmail(user.email!);
-          navigator.pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const AuthGate()),
-            (route) => false,
-          );
         }
       }
     } on FirebaseAuthException catch (e) {

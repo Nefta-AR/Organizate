@@ -5,10 +5,8 @@ rules_version = '2';
 // ═══════════════════════════════════════════════════════════════════════════════
 //
 // Modelo de identidad del sistema:
-//   - tutor        : puede supervisar usuarios vinculados y gestionar códigos
-//   - usuario_tdah : accede a tareas y timer Pomodoro
-//   - usuario_tea  : accede a tablero de pictogramas (tabs configurables por tutor)
-//   - usuario_general: rol temporal hasta que el usuario elige su perfil
+//   - tutor   : supervisa usuarios vinculados y gestiona códigos de invitación
+//   - usuario : accede a tareas, foco, pictogramas y ajustes personales
 //
 // Principio clave de vinculación:
 //   La relación tutor ↔ usuario se establece mediante una subcolección
@@ -39,16 +37,8 @@ service cloud.firestore {
       return isAuthenticated() && getUserRole() == 'tutor';
     }
 
-    // Acepta tanto los roles nuevos como los legacy para compatibilidad
-    // durante el período de migración automática en AuthService.
     function isUsuario() {
-      return isAuthenticated() && (
-        getUserRole() == 'usuario_tdah'  ||
-        getUserRole() == 'usuario_tea'   ||
-        getUserRole() == 'paciente_tdah' ||  // legacy
-        getUserRole() == 'paciente_tea'  ||  // legacy
-        getUserRole() == 'paciente'          // legacy
-      );
+      return isAuthenticated() && getUserRole() == 'usuario';
     }
 
     function isOwner(userId) {
@@ -86,11 +76,8 @@ service cloud.firestore {
       // Solo puede crear su propio documento en el registro, con los campos
       // mínimos requeridos y un rol válido del sistema.
       allow create: if isAuthenticated() && request.auth.uid == userId &&
-        request.resource.data.keys().hasAny(['role', 'name', 'email']) &&
-        request.resource.data.role in [
-          'tutor', 'usuario_tdah', 'usuario_tea', 'usuario_general',
-          'paciente_tdah', 'paciente_tea'  // legacy — aceptados durante migración
-        ];
+        request.resource.data.keys().hasAll(['role', 'name', 'email']) &&
+        request.resource.data.role in ['tutor', 'usuario'];
 
       allow read:   if canReadUser(userId);
       allow update: if isOwner(userId);   // Solo el propio usuario actualiza su perfil
