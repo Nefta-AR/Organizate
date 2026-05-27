@@ -20,7 +20,8 @@
 //      (tareas completadas, pictogramas usados, sesiones Pomodoro).
 //
 //   5. **Ajustes** [_TutorConfigTab]: toggles para habilitar/deshabilitar las
-//      pestañas de Inicio, Tareas, Pictogramas y Foco en la app del usuario TEA.
+//      pestañas de Inicio, Tareas, Pictogramas y Foco en la app del usuario.
+//      También controla el Modo Kiosk y el contacto de emergencia.
 //      Los flags se persisten en `pictogramSettings/_features` (subcolección
 //      con permisos de tutor ya establecidos en las reglas, sin deploy extra).
 //
@@ -38,6 +39,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:simple/core/services/activity_log_service.dart';
 import 'package:simple/core/services/auth_service.dart';
+import 'package:simple/core/services/kiosk_mode_service.dart';
 import 'package:simple/core/services/pictogram_service.dart';
 import 'package:simple/features/tea_board/screens/pictogram_manager_screen.dart';
 import 'package:simple/features/tda_focus/screens/progreso_screen.dart';
@@ -1022,6 +1024,7 @@ class _TutorConfigTabState extends State<_TutorConfigTab> {
   bool? _featureTareas;
   bool? _featurePictogramas;
   bool? _featureFoco;
+  bool? _featurePerfil;
   late final StreamSubscription<DocumentSnapshot<Map<String, dynamic>>> _sub;
 
   final _emergencyNameCtrl  = TextEditingController();
@@ -1051,6 +1054,7 @@ class _TutorConfigTabState extends State<_TutorConfigTab> {
         _featureTareas      = data['featureTareas']      as bool? ?? true;
         _featurePictogramas = data['featurePictogramas'] as bool? ?? false;
         _featureFoco        = data['featureFoco']        as bool? ?? true;
+        _featurePerfil      = data['featurePerfil']      as bool? ?? true;
       });
     });
   }
@@ -1063,7 +1067,16 @@ class _TutorConfigTabState extends State<_TutorConfigTab> {
     super.dispose();
   }
 
+  int get _activeCount => [
+        _featureInicio,
+        _featureTareas,
+        _featurePictogramas,
+        _featureFoco,
+        _featurePerfil,
+      ].where((v) => v == true).length;
+
   Future<void> _toggle(String field, bool current) async {
+    if (current && _activeCount <= 1) return;
     await _settingsRef.doc(_featuresDocId).set(
       {field: !current},
       SetOptions(merge: true),
@@ -1099,9 +1112,11 @@ class _TutorConfigTabState extends State<_TutorConfigTab> {
 
   @override
   Widget build(BuildContext context) {
-    if (_featureInicio == null) {
+    if (_featureInicio == null || _featurePerfil == null) {
       return const Center(child: CircularProgressIndicator());
     }
+
+    final ac = _activeCount;
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: _patientDoc.snapshots(),
@@ -1138,7 +1153,9 @@ class _TutorConfigTabState extends State<_TutorConfigTab> {
               title: 'Pestaña de Inicio',
               subtitle: 'Pantalla principal con frases y resumen',
               value: _featureInicio!,
-              onChanged: (_) => _toggle('featureInicio', _featureInicio!),
+              onChanged: (_featureInicio! && ac <= 1)
+                  ? null
+                  : (_) => _toggle('featureInicio', _featureInicio!),
             ),
             const SizedBox(height: 12),
             _FeatureToggleTile(
@@ -1147,7 +1164,9 @@ class _TutorConfigTabState extends State<_TutorConfigTab> {
               title: 'Pestaña de Tareas',
               subtitle: 'El usuario puede ver y gestionar sus tareas',
               value: _featureTareas!,
-              onChanged: (_) => _toggle('featureTareas', _featureTareas!),
+              onChanged: (_featureTareas! && ac <= 1)
+                  ? null
+                  : (_) => _toggle('featureTareas', _featureTareas!),
             ),
             const SizedBox(height: 12),
             _FeatureToggleTile(
@@ -1156,8 +1175,9 @@ class _TutorConfigTabState extends State<_TutorConfigTab> {
               title: 'Pestaña de Pictogramas',
               subtitle: 'Tablero de comunicación aumentativa',
               value: _featurePictogramas!,
-              onChanged: (_) =>
-                  _toggle('featurePictogramas', _featurePictogramas!),
+              onChanged: (_featurePictogramas! && ac <= 1)
+                  ? null
+                  : (_) => _toggle('featurePictogramas', _featurePictogramas!),
             ),
             const SizedBox(height: 12),
             _FeatureToggleTile(
@@ -1166,7 +1186,40 @@ class _TutorConfigTabState extends State<_TutorConfigTab> {
               title: 'Pestaña de Foco',
               subtitle: 'Temporizador Pomodoro y respiración guiada',
               value: _featureFoco!,
-              onChanged: (_) => _toggle('featureFoco', _featureFoco!),
+              onChanged: (_featureFoco! && ac <= 1)
+                  ? null
+                  : (_) => _toggle('featureFoco', _featureFoco!),
+            ),
+            const SizedBox(height: 12),
+            _FeatureToggleTile(
+              icon: Icons.person_rounded,
+              color: const Color(0xFF607D8B),
+              title: 'Pestaña de Perfil',
+              subtitle: 'Configuración y estadísticas personales',
+              value: _featurePerfil!,
+              onChanged: (_featurePerfil! && ac <= 1)
+                  ? null
+                  : (_) => _toggle('featurePerfil', _featurePerfil!),
+            ),
+            const SizedBox(height: 32),
+            // ─ Kiosk Mode ───────────────────────────────────────────
+            StreamBuilder<bool>(
+              stream: KioskModeService.streamEnabled(userId: widget.patientId),
+              builder: (context, kioskSnap) {
+                final kioskEnabled = kioskSnap.data ?? false;
+                return _FeatureToggleTile(
+                  icon: Icons.phone_android_rounded,
+                  color: Colors.redAccent,
+                  title: 'Modo Kiosk',
+                  subtitle: kioskEnabled
+                      ? 'App bloqueada — el usuario no puede salir'
+                      : 'Bloquea la app para evitar que el usuario salga',
+                  value: kioskEnabled,
+                  onChanged: (_) => kioskEnabled
+                      ? KioskModeService.disable(userId: widget.patientId)
+                      : KioskModeService.enable(userId: widget.patientId),
+                );
+              },
             ),
             const SizedBox(height: 32),
             // ── Contacto de emergencia ───────────────────────────────
@@ -1238,7 +1291,7 @@ class _FeatureToggleTile extends StatelessWidget {
   final String title;
   final String subtitle;
   final bool value;
-  final ValueChanged<bool> onChanged;
+  final ValueChanged<bool>? onChanged;
 
   const _FeatureToggleTile({
     required this.icon,

@@ -49,8 +49,11 @@ class _NavEntry {
 
 class _CustomNavBarState extends State<CustomNavBar> {
   late NavScreen _currentScreen;
+  bool _featureInicio      = true;  // activo por defecto
+  bool _featureTareas      = true;  // activo por defecto
   bool _featurePictogramas = false; // opt-in: desactivado por defecto
   bool _featureFoco        = true;  // activo por defecto
+  bool _featurePerfil      = true;  // activo por defecto
 
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _featuresSub;
 
@@ -84,20 +87,46 @@ class _CustomNavBarState extends State<CustomNavBar> {
       if (!mounted) return;
       final data = snap.data() ?? {};
       setState(() {
+        _featureInicio      = data['featureInicio']      as bool? ?? true;
+        _featureTareas      = data['featureTareas']      as bool? ?? true;
         _featurePictogramas = data['featurePictogramas'] as bool? ?? false;
         _featureFoco        = data['featureFoco']        as bool? ?? true;
+        _featurePerfil      = data['featurePerfil']      as bool? ?? true;
       });
+
+      // Si la pantalla activa fue desactivada (p.ej. Inicio al arrancar),
+      // redirigir al primer tab disponible tras el frame actual.
+      final entries = _entries;
+      if (entries.isNotEmpty &&
+          !entries.any((e) => e.screen == _currentScreen)) {
+        final first = entries.first;
+        setState(() => _currentScreen = first.screen);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          Navigator.pushReplacement(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (_, __, ___) => first.builder(),
+              transitionDuration:        Duration.zero,
+              reverseTransitionDuration: Duration.zero,
+            ),
+          );
+        });
+      }
     });
   }
 
   List<_NavEntry> get _entries => [
-    _NavEntry(NavScreen.inicio,      Icons.home_rounded,      'Inicio',      () => const HomeScreen()),
-    _NavEntry(NavScreen.tareas,      Icons.task_alt,          'Tareas',      () => const TareasScreen()),
+    if (_featureInicio)
+      _NavEntry(NavScreen.inicio,      Icons.home_rounded,      'Inicio',      () => const HomeScreen()),
+    if (_featureTareas)
+      _NavEntry(NavScreen.tareas,      Icons.task_alt,          'Tareas',      () => const TareasScreen()),
     if (_featurePictogramas)
       _NavEntry(NavScreen.pictogramas, Icons.image_rounded,   'Pictogramas', () => const PantallaPacienteTEA()),
     if (_featureFoco)
       _NavEntry(NavScreen.foco,      Icons.self_improvement,  'Foco',        () => const FocoScreen()),
-    _NavEntry(NavScreen.perfil,      Icons.person_rounded,    'Perfil',      () => const SettingsScreen()),
+    if (_featurePerfil)
+      _NavEntry(NavScreen.perfil,      Icons.person_rounded,    'Perfil',      () => const SettingsScreen()),
   ];
 
   /// Busca el índice de la pantalla activa en la lista actual de entries.
@@ -126,6 +155,7 @@ class _CustomNavBarState extends State<CustomNavBar> {
   @override
   Widget build(BuildContext context) {
     final entries   = _entries;
+    if (entries.length < 2) return const SizedBox.shrink();
     final safeIndex = _indexOf(_currentScreen, entries);
 
     return BottomNavigationBar(

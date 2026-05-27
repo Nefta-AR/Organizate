@@ -39,6 +39,8 @@ import 'package:vibration/vibration.dart';
 
 import 'package:flutter_tts/flutter_tts.dart';
 
+import 'package:url_launcher/url_launcher.dart';
+
 import '../../../core/services/activity_log_service.dart';
 import '../../../core/services/pictogram_service.dart';
 import '../../../core/widgets/custom_nav_bar.dart';
@@ -327,6 +329,10 @@ class _PantallaPacienteTEAState extends State<PantallaPacienteTEA>
   final Map<String, String> _localOverrides = {};
   Map<String, Map<String, dynamic>> _pictoSettings = {};
   StreamSubscription<Map<String, Map<String, dynamic>>>? _settingsSub;
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _userSub;
+
+  String? _emergencyName;
+  String? _emergencyPhone;
 
   bool _transicionNotificada = false;
 
@@ -342,6 +348,18 @@ class _PantallaPacienteTEAState extends State<PantallaPacienteTEA>
     if (uid != null) {
       _settingsSub = PictogramService.getPictogramSettingsStreamFor(uid)
           .listen((s) { if (mounted) setState(() => _pictoSettings = s); });
+      _userSub = FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .snapshots()
+          .listen((snap) {
+        if (!mounted) return;
+        final data = snap.data() ?? {};
+        setState(() {
+          _emergencyName  = data['emergencyName']  as String?;
+          _emergencyPhone = data['emergencyPhone'] as String?;
+        });
+      });
     }
   }
 
@@ -496,8 +514,117 @@ class _PantallaPacienteTEAState extends State<PantallaPacienteTEA>
   @override
   void dispose() {
     _settingsSub?.cancel();
+    _userSub?.cancel();
     _tts.stop();
     super.dispose();
+  }
+
+  Future<void> _showSosDialog() async {
+    HapticFeedback.heavyImpact();
+    try { Vibration.vibrate(duration: 500, amplitude: 255); } catch (_) {}
+    await _hablar('Necesito ayuda urgente, por favor ayúdame');
+
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: Colors.red.shade50,
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.warning_rounded,
+                  color: Colors.white, size: 24),
+            ),
+            const SizedBox(width: 12),
+            const Text('SOS',
+                style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 22,
+                    letterSpacing: 2)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Necesito ayuda urgente',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            ),
+            if (_emergencyName != null || _emergencyPhone != null) ...[
+              const SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Contacto de emergencia',
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.red.shade400,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5)),
+                    const SizedBox(height: 6),
+                    if (_emergencyName != null)
+                      Text(_emergencyName!,
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w700)),
+                    if (_emergencyPhone != null)
+                      Text(_emergencyPhone!,
+                          style: TextStyle(
+                              fontSize: 14, color: Colors.grey.shade700)),
+                  ],
+                ),
+              ),
+            ] else ...[
+              const SizedBox(height: 12),
+              Text(
+                'No hay contacto de emergencia configurado.\nPide a tu tutor que lo agregue.',
+                style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cerrar', style: TextStyle(color: Colors.grey)),
+          ),
+          if (_emergencyPhone != null)
+            ElevatedButton.icon(
+              onPressed: () async {
+                final uri = Uri(scheme: 'tel', path: _emergencyPhone);
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 20, vertical: 12),
+              ),
+              icon: const Icon(Icons.phone_rounded, size: 18),
+              label: const Text('Llamar',
+                  style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+        ],
+      ),
+    );
   }
 
   String get _catHoraria {
@@ -593,6 +720,34 @@ class _PantallaPacienteTEAState extends State<PantallaPacienteTEA>
           elevation: 0,
           scrolledUnderElevation: 0,
           centerTitle: true,
+          leading: Padding(
+            padding: const EdgeInsets.only(left: 8),
+            child: Tooltip(
+              message: 'SOS – Llamada de emergencia',
+              child: InkWell(
+                onTap: _showSosDialog,
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      'SOS',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 13,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
           title: Text(
             'MI DÍA',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(

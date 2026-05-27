@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:simple/core/services/auth_service.dart';
-import 'package:simple/features/tutor_dashboard/screens/tutor_patient_detail_screen.dart';
+import 'package:simple/features/tutor_dashboard/screens/tutor_supervise_screen.dart';
 
 class TutorVinculacionScreen extends StatefulWidget {
   const TutorVinculacionScreen({super.key});
@@ -303,12 +303,7 @@ class _TutorVinculacionScreenState extends State<TutorVinculacionScreen> {
     return InkWell(
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => TutorPatientDetailScreen(
-            patientId: patientId,
-            patientName: name,
-            patientAvatar: avatar,
-            patientEmail: email,
-          ),
+          builder: (_) => const TutorSupervisarScreen(),
         ),
       ),
       borderRadius: BorderRadius.circular(12),

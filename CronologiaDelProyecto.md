@@ -1,10 +1,10 @@
-# Cronología del Proyecto: Simple
+﻿# Cronología del Proyecto: Simple
 
 Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y el registro de avance real del desarrollo de la aplicación Simple.
 
 **Período:** 27 Abril 2026 - 07 Julio 2026 (10 semanas)  
-**Estado Actual:** 94% Completado | Dashboard de progreso integrado  
-**Próximo Hito:** Kiosk Mode para usuario TEA
+**Estado Actual:** 97% Completado | Kiosk Mode implementado  
+**Próximo Hito:** QA en dispositivos reales
 
 ---
 
@@ -19,7 +19,7 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
 | **Fase 3** | 30 Abr-06 May | Módulo TEA (Pictogramas) | ✅ Completado | 100% |
 | **Fase 4** | 05-09 May | Módulo TDAH (Tareas y Foco) | ✅ Completado | 100% |
 | **Fase 5** | 09-23 May | Integración y Correcciones | ✅ Completado | 100% |
-| **Fase 6** | 24 May-16 Jun | Pulido y Testing | 🔄 En Curso | 25% |
+| **Fase 6** | 24 May-16 Jun | Pulido y Testing | 🔄 En Curso | 75% |
 | **Fase 7** | 17 Jun-07 Jul | Documentación y Entrega | ⏳ Pendiente | 0% |
 
 ### Hitos del Proyecto
@@ -54,10 +54,12 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
 | | Panel supervisión tutor completo | | | | | | ██████ | | | | | | |
 | | Sincronización bidireccional tareas | | | | | | ██████ | | | | | | |
 | | Correcciones y renombrado roles | | | | | | ██████ | | | | | | |
-| **FASE 6** | Kiosk Mode usuario TEA | | | | | | | ██████ | | | | | |
-| | Dashboard progreso (fl_chart) | | | | | | | ██████ | | | | | |
+| **FASE 6** | Dashboard progreso + control pestañas | | | | | | | ██████ | | | | | |
+| | Fix flujo auth (registro / login) | | | | | | | ██████ | | | | | |
+| | Limpieza roles legacy + reglas Firebase | | | | | | | ██████ | | | | | |
+| | Kiosk Mode usuario TEA | | | | | | | | ██████ | | | | |
 | | Notificaciones push FCM | | | | | | | | ██████ | | | | |
-| | QA y bugs menores | | | | | | | | ██████ | | | | |
+| | QA y bugs menores | | | | | | | | | ██████ | | | |
 | **FASE 7** | Comentarios en código crítico | | | | | | | | | ██████ | | | |
 | | Pruebas finales con usuarios | | | | | | | | | ██████ | | | |
 | | Manual de usuario (tutores/TEA) | | | | | | | | | | ██████ | | |
@@ -189,7 +191,7 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
 
 ### 🔄 Fase 6: Pulido y Testing (24 Mayo - 16 Junio 2026)
 
-**Estado:** 40% iniciado | **Proyección:** 16 Junio 2026
+**Estado:** 65% | **Proyección:** 16 Junio 2026
 
 **Objetivo:** Pulir la UX, agregar funcionalidades de control parental, notificaciones y testing exhaustivo.
 
@@ -197,10 +199,24 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
 
 **Sprint A — Control y Visualización (24 May - 02 Jun):**
 
-- 🔲 **Kiosk Mode para usuario TEA** *(alta prioridad)*
+- 🔄 **Kiosk Mode para usuario TEA** *(alta prioridad — en curso)*
   - Bloqueo de botones físicos (volumen, home, recientes)
   - PIN para salir de la app (para el tutor/cuidador)
   - Prevención de cambio de app accidental
+
+- ✅ **Fix flujo registro/login end-to-end** *(bug crítico)*
+  - ✅ Race condition: documento Firestore inexistente tras registro
+  - ✅ Parpadeo de pantallas durante onboarding (RoleSelectionScreen → spinner)
+  - ✅ Carga infinita: `_UserOnboardingGate` convertido a `StreamBuilder` declarativo
+  - ✅ "No pudimos guardar tu perfil": write inicial incluye `role:'usuario'` válido
+  - ✅ Login en web se quedaba en `LoginScreen`: eliminado `Navigator.pushAndRemoveUntil` del gate
+  - ✅ `login_screen.dart` liberado de toda lógica de navegación
+
+- ✅ **Limpieza roles legacy + reglas Firestore** *(deuda técnica)*
+  - ✅ Roles unificados a `['tutor', 'usuario']` — eliminados `usuario_tdah`, `usuario_tea`, `usuario_general`, `paciente_*`
+  - ✅ `allow create` en Firestore actualizado con `hasAll` y lista de 2 roles
+  - ✅ `isUsuario()` simplificado; `auth_service.dart` limpiado de migraciones legacy
+  - ✅ `_UserOnboardingGate` usa `hasCompletedOnboarding` como señal de "sin rol elegido"
 
 - ✅ **Dashboard de progreso visual** *(alta prioridad)*
   - ✅ Gráfico de barras: tareas completadas por categoría (`fl_chart`)
@@ -221,6 +237,24 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
   - ✅ `SettingsScreen`: padding inferior dinámico (`widget.showNavBar ? 96 : 16`)
   - ✅ `ProgresoScreen`: padding inferior 96px para consistencia
   - ✅ Verificado: `FocoScreen` (100px), `HomeScreen` (110px), `TareasScreen` (Expanded), `PantallaPacienteTEA` (Expanded) ya protegidos
+
+- ✅ **Fix `CustomNavBar` no leía `featureInicio` ni `featureTareas`** *(bug crítico)*
+  - ✅ Agregados `_featureInicio` y `_featureTareas` al estado del nav bar
+  - ✅ Listener ahora lee los 4 flags desde `pictogramSettings/_features`
+  - ✅ Getter `_entries` condiciona Inicio y Tareas igual que Pictogramas y Foco
+  - ✅ El tutor ahora puede ocultar/mostrar cualquier pestaña desde su panel
+
+- ✅ **Pestaña Perfil toggleable con protección de mínimo activo** *(mejora UX)*
+  - ✅ `featurePerfil` añadido a `pictogramSettings/_features` (5.º flag)
+  - ✅ `PantallasConfigScreen`: todos los 5 tiles son ahora toggleables — eliminado `locked: true` de Inicio y Perfil
+  - ✅ Guard `activeCount`: switch deshabilitado cuando la pestaña es la última activa; subtítulo actualizado a "Debe haber al menos una pestaña activa"
+  - ✅ `CustomNavBar`: `_featurePerfil` leído desde Firestore; Perfil ahora condicional; guard `entries.length < 2` para evitar crash del `BottomNavigationBar`
+  - ✅ `TutorSupervisarScreen`: tile "Pestaña de Perfil" añadido al tab Ajustes con la misma lógica de `activeCount`; `_FeatureToggleTile.onChanged` ahora nullable para mostrar estado deshabilitado visualmente
+
+- ✅ **Eliminada `TutorPatientDetailScreen` (pantalla legacy)** *(limpieza)*
+  - ✅ Pantalla obsoleta con 3 tabs (Tareas/Pictogramas/Registros) eliminada del proyecto
+  - ✅ `tutor_vinculacion_screen.dart` ahora navega a `TutorSupervisarScreen` al tocar un paciente
+  - ✅ `TutorSupervisarScreen` ya maneja cambio de paciente vía `ValueKey(patientId)` en todos sus tabs
 
 **Sprint B — Notificaciones y QA (03 - 16 Jun):**
 
@@ -274,18 +308,19 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
 
 ---
 
-## Próximo Sprint: Prioridades (Semana del 20 Mayo)
+## Próximo Sprint: Prioridades (Semana del 26 Mayo)
 
 ### Tareas Críticas — Fase 6 en Curso
 
 | Prioridad | Tarea | Estimación | Estado |
 |:---|:---|:---:|:---:|
-| 🔴 **Alta** | Dashboard de progreso con `fl_chart` | 3 días | ✅ Completado |
-| 🔴 **Alta** | Kiosk Mode para usuario TEA | 3 días | 🔲 Pendiente |
+| 🔴 **Alta** | Kiosk Mode para usuario TEA | 3 días | 🔄 En Curso |
+| 🔴 **Alta** | Fix flujo auth/registro/login | 4 días | ✅ Completado |
+| 🔴 **Alta** | Limpieza roles legacy + reglas Firebase | 1 día | ✅ Completado |
 | 🟡 **Media** | Notificaciones push FCM | 4 días | ✅ Infraestructura lista |
 | 🟡 **Media** | QA — testing en dispositivos reales | 2 días | 🔲 Pendiente |
 
-**Objetivo del Sprint:** Cerrar funcionalidades de pulido antes del 16 de junio para entrar a Fase 7.
+**Objetivo del Sprint:** Completar Kiosk Mode y cerrar bugs antes del 16 de junio para entrar a Fase 7.
 
 ---
 
@@ -324,8 +359,11 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
 | 24 May | Defaults de pestañas: Inicio, Tareas, Foco, Perfil activos por defecto | Foco cambia de `false` a `true` como default en `CustomNavBar` y en `PantallasConfigScreen`; Pictogramas sigue desactivado por ser opt-in | Fase 6 |
 | 24 May | Fix race condition en creación de cuenta (parte 1) | `_UserOnboardingGate` navegaba a `RoleSelectionScreen` cuando el doc Firestore aún no existía; fix: comprobar `snapshot.data?.exists == false` y mostrar spinner | Fase 6 |
 | 24 May | Fix parpadeo de pantallas en registro nuevo (parte 2) | El stream de `_UserOnboardingGate` emitía estados intermedios (RoleSelectionScreen → flash avatar → RoleSelectionScreen) porque el registro navegaba a `AuthGate` antes de seleccionar rol; fix: registro email y Google nuevo navegan directamente a `RoleSelectionScreen` antes de `AuthGate`; `hasCompletedProfile: true` en el write inicial; navigator capturado al inicio de la función (antes de awaits que desmontan `LoginScreen`) | Fase 6 |
-| 24 May | Fix carga infinita tras registro — arquitectura de navegación centralizada (parte 3) | `_UserOnboardingGate` con `StreamSubscription` imperativa: `build()` siempre muestra spinner, `_onDoc()` navega una sola vez con flag `_navigating`; `login_screen.dart` eliminado de toda lógica de navegación — solo realiza operaciones de auth/Firestore; `AuthGate` es el único responsable de decidir la pantalla destino | Fase 6 |
+| 26 May | Fix login se queda en pantalla de inicio — gate declarativo (parte 3 final) | `_UserOnboardingGate` reconvertido a `StreamBuilder` declarativo: retorna el widget correcto directamente desde `build()` sin llamar a `Navigator`, eliminando el conflicto con el historial del browser en Flutter web que dejaba al usuario pegado en `LoginScreen` tras iniciar sesión; `login_screen.dart` sigue sin lógica de navegación | Fase 6 |
 | 24 May | Fix "No pudimos guardar tu perfil" + limpieza roles (parte 4) | La regla Firestore `allow create` requiere `role` en lista específica; el write inicial sin `role` fallaba en servidor (solo pasaba por cache offline); solución: escribir `role: 'usuario'` en el write inicial (email y Google); `_UserOnboardingGate._onDoc` usa `hasCompletedOnboarding: false` para detectar usuario sin rol elegido; reglas actualizadas: solo `['tutor', 'usuario']`, `isUsuario()` simplificado, roles legacy eliminados | Fase 6 |
+| 26 May | Fix `CustomNavBar` no leía `featureInicio` ni `featureTareas` | Bug crítico: el tutor podía desactivar Inicio y Tareas desde su panel pero la nav bar siempre los mostraba; se agregaron los 2 flags faltantes al listener y al getter `_entries`; Inicio y Tareas ahora son condicionales igual que Pictogramas y Foco | Fase 6 |
+| 26 May | Eliminada `TutorPatientDetailScreen` (pantalla legacy de 3 tabs) | Pantalla obsoleta con tabs Tareas/Pictogramas/Registros que se abría al tocar un paciente en Vincular; reemplazada por navegación directa a `TutorSupervisarScreen` que ya tiene los 5 tabs completos con cambio de paciente vía `ValueKey(patientId)` | Fase 6 |
+| 26 May | Modo Kiosk implementado con `startLockTask()` nativo Android | Plugin Kotlin (`KioskModePlugin`) + servicio Dart (`KioskModeService`) + toggle en `PantallasConfigScreen` (usuario) y `_TutorConfigTab` (tutor); activación automática al abrir app si `kioskModeEnabled: true` en Firestore; el tutor puede activar/desactivar remotamente desde su panel | Fase 6 |
 
 ---
 

@@ -1,7 +1,5 @@
 // lib/core/navigation/auth_gate.dart
 
-import 'dart:async';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -12,25 +10,24 @@ import 'package:simple/features/auth/screens/login_screen.dart';
 import 'package:simple/features/auth/screens/role_selection_screen.dart';
 import 'package:simple/features/auth/screens/profile_setup_screen.dart';
 import 'package:simple/core/services/push_notification_service.dart';
+import 'package:simple/core/services/kiosk_mode_service.dart';
 
 /// Punto de entrada del árbol de widgets post-MaterialApp.
 ///
 /// Implementa una máquina de estados de navegación de tres niveles:
 ///
 ///   1. [AuthGate]             → ¿hay sesión activa de Firebase?
-///   2. [_UserOnboardingGate]  → ¿tiene rol y perfil configurados?
+///   2. [_UserOnboardingGate]  → ¿tiene rol y onboarding completados?
 ///   3. [RoleDispatcher]       → ¿qué pantalla corresponde al rol?
 ///
-/// Cada nivel usa un [StreamBuilder] independiente para que los cambios
-/// en Firebase Auth y en Firestore disparen reconstrucciones aisladas
-/// sin reiniciar el árbol completo.
+/// Cada nivel usa un StreamBuilder independiente para que los cambios
+/// en Firebase Auth y Firestore disparen reconstrucciones aisladas.
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
-      // authStateChanges emite null al logout y User al login/token-refresh
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -51,15 +48,9 @@ class AuthGate extends StatelessWidget {
   }
 }
 
-/// Segundo nivel del gate: espera el documento Firestore del usuario y
-/// navega imperativamente a la pantalla correcta una única vez.
-///
-/// Usa una suscripción directa al stream (no StreamBuilder) para evitar
-/// que los eventos rápidos del stream durante el registro causen parpadeo
-/// de pantallas. El widget siempre muestra un spinner; la navegación se
-/// dispara desde el callback del stream, no desde build().
-///
-/// También sincroniza el token FCM al montarse.
+/// Segundo nivel: lee el documento Firestore del usuario y retorna el widget
+/// correcto de forma declarativa. Al no usar Navigator, no interfiere con el
+/// historial del browser en Flutter web.
 class _UserOnboardingGate extends StatefulWidget {
   const _UserOnboardingGate({required this.user});
   final User user;
@@ -69,66 +60,56 @@ class _UserOnboardingGate extends StatefulWidget {
 }
 
 class _UserOnboardingGateState extends State<_UserOnboardingGate> {
-  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _sub;
-  // Evita navegar más de una vez aunque el stream emita varios eventos.
-  bool _navigating = false;
+  bool _kioskActivated = false;
 
   @override
   void initState() {
     super.initState();
     PushNotificationService.syncUserToken(widget.user);
-    _sub = FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.user.uid)
-        .snapshots()
-        .listen(_onDoc);
-  }
-
-  @override
-  void dispose() {
-    _sub?.cancel();
-    super.dispose();
-  }
-
-  void _onDoc(DocumentSnapshot<Map<String, dynamic>> snapshot) {
-    if (!mounted || _navigating) return;
-
-    // Doc aún no existe (write en curso tras registro) — esperar.
-    if (!snapshot.exists) return;
-
-    final data = snapshot.data() ?? {};
-    final role = data['role'] as String?;
-
-    final Widget destination;
-    if (role == null || role.isEmpty) {
-      destination = const RoleSelectionScreen();
-    } else {
-      final hasOnboarded = data['hasCompletedOnboarding'] as bool? ?? false;
-      if (!hasOnboarded) {
-        // El usuario aún no ha elegido su rol (recién registrado).
-        destination = const RoleSelectionScreen();
-      } else {
-        final hasProfile = data['hasCompletedProfile'] as bool? ?? false;
-        final hasName   = (data['name'] as String? ?? '').isNotEmpty;
-        if (!hasProfile && !hasName) {
-          destination = const ProfileSetupScreen();
-        } else {
-          destination = RoleDispatcher(role: role);
-        }
-      }
-    }
-
-    _navigating = true;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => destination),
-      (route) => false,
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.user.uid)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || !snapshot.data!.exists) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final data = snapshot.data!.data()!;
+        final role = data['role'] as String?;
+
+        if (role == null || role.isEmpty) {
+          return const RoleSelectionScreen();
+        }
+
+        final hasOnboarded = data['hasCompletedOnboarding'] as bool? ?? false;
+        if (!hasOnboarded) {
+          return const RoleSelectionScreen();
+        }
+
+        final hasProfile = data['hasCompletedProfile'] as bool? ?? false;
+        final hasName   = (data['name'] as String? ?? '').isNotEmpty;
+        if (!hasProfile && !hasName) {
+          return const ProfileSetupScreen();
+        }
+
+        // Activar kiosk mode automáticamente si está habilitado en Firestore
+        // y aún no se activó en esta sesión.
+        final kioskEnabled = data['kioskModeEnabled'] as bool? ?? false;
+        if (kioskEnabled && !_kioskActivated && role != 'tutor') {
+          _kioskActivated = true;
+          KioskModeService.enable(userId: widget.user.uid);
+        }
+
+        return RoleDispatcher(role: role);
+      },
     );
   }
 }
