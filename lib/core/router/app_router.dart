@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../features/auth/screens/paciente_vinculacion_screen.dart';
+import '../../features/auth/screens/vinculacion_tutor_screen.dart';
 import '../../features/onboarding/screens/onboarding_screen.dart';
 import '../../features/tutor_dashboard/screens/home_screen.dart';
 import '../../features/tea_board/screens/pantalla_paciente_tea.dart';
@@ -18,9 +18,9 @@ class AppRouter {
       case home:
         return _fade(const HomeScreen(), settings);
       case usuarioTea:
-        return _fade(const PantallaPacienteTEA(), settings);
+        return _fade(const PantallaUsuarioTEA(), settings);
       case vincularUsuario:
-        return _fade(const PacienteVinculacionScreen(), settings);
+        return _fade(const VinculacionTutorScreen(), settings);
       default:
         return MaterialPageRoute(
           settings: settings,

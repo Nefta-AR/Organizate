@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:simple/core/services/auth_service.dart';
 
-class PacienteVinculacionScreen extends StatefulWidget {
-  const PacienteVinculacionScreen({super.key});
+class VinculacionTutorScreen extends StatefulWidget {
+  const VinculacionTutorScreen({super.key});
 
   @override
-  State<PacienteVinculacionScreen> createState() =>
-      _PacienteVinculacionScreenState();
+  State<VinculacionTutorScreen> createState =>
+      _VinculacionTutorScreenState();
 }
 
-class _PacienteVinculacionScreenState extends State<PacienteVinculacionScreen> {
+class _VinculacionTutorScreenState extends State<VinculacionTutorScreen> {
   final _codeController = TextEditingController();
   bool _isValidating = false;
   bool _isAccepting = false;

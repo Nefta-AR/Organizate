@@ -357,9 +357,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _passwordController,
                     label: 'Contraseña',
                     obscureText: _obscurePassword,
-                    validator: (v) => (v == null || v.length < 6)
-                        ? 'Mínimo 6 caracteres'
-                        : null,
+                    validator: (v) {
+                      if (v == null || v.length < 6) {
+                        return 'Debe contener al menos 6 caracteres, una letra y un número';
+                      }
+                      if (!RegExp(r'^(?=.*[A-Z])(?=.*\d)').hasMatch(v)) {
+                        return 'Debe contener al menos 6 caracteres, una letra y un número';
+                      }
+                      return null;
+                    },
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword

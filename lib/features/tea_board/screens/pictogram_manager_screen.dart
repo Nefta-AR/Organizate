@@ -49,7 +49,7 @@ class _CatOption {
   const _CatOption(this.label, this.icon, this.color);
 }
 
-// ─── Banco de pictogramas predeterminados (compartido con paciente y tutor) ───
+// ─── Banco de pictogramas predeterminados (compartido con usuario y tutor) ───
 
 const List<PictoEntry> kBancoBuiltins = [
   PictoEntry(id: 'm1', svgPath: 'assets/images/pictogramas/ducha.svg',          etiqueta: 'DESPERTAR',    defaultCategoria: 'Mañana',   esPersonalizado: false),
@@ -108,7 +108,7 @@ class PictoEntry {
 class PictogramManagerScreen extends StatefulWidget {
   final String userId;
   final String userName;
-  final List<PictoEntry> builtins;   // banco de pictogramas del paciente
+  final List<PictoEntry> builtins;   // banco de pictogramas del usuario
 
   const PictogramManagerScreen({
     super.key,
@@ -127,7 +127,7 @@ class _PictogramManagerScreenState extends State<PictogramManagerScreen> {
   Map<String, Map<String, dynamic>> _settings = {};
   bool _loadingSettings = true;
 
-  // custom pictograms del paciente
+  // custom pictograms del usuario
   List<PictogramaPersonalizado> _customs = [];
   bool _loadingCustoms = true;
 

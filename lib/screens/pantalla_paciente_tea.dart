@@ -93,14 +93,14 @@ enum _Franja { manana, tarde, noche }
 
 // ─── Widget principal ──────────────────────────────────────────────────────────
 
-class PantallaPacienteTEA extends StatefulWidget {
-  const PantallaPacienteTEA({super.key});
+class PantallaUsuarioTEA extends StatefulWidget {
+  const PantallaUsuarioTEA({super.key});
 
   @override
-  State<PantallaPacienteTEA> createState() => _PantallaPacienteTEAState();
+  State<PantallaUsuarioTEA> createState() => _PantallaUsuarioTEAState();
 }
 
-class _PantallaPacienteTEAState extends State<PantallaPacienteTEA> {
+class _PantallaUsuarioTEAState extends State<PantallaUsuarioTEA> {
   late final FlutterTts _tts;
 
   @override

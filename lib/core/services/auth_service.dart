@@ -160,7 +160,7 @@ class AuthService {
   /// 2. Si está vacío, infiere el rol por la presencia de campos estructurales
   ///    (`linkedPatients` → tutor, `pictograms` → tea, `linkedTutors` → tdah)
   ///    y escribe el rol inferido para que no se repita en futuros accesos.
-  /// 3. Si los strings son los nombres legacy (`paciente_*`), los migra
+  /// 3. Si los strings son los nombres legacy (`usuario_*`), los migra
   ///    automáticamente al nuevo esquema (`usuario_*`) en la misma llamada.
   ///
   /// Este patrón de migración on-the-fly evita scripts de migración batch

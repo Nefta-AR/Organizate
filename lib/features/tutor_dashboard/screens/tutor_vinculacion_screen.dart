@@ -77,7 +77,7 @@ class _TutorVinculacionScreenState extends State<TutorVinculacionScreen> {
         if (mounted) {
           messenger.showSnackBar(
             const SnackBar(
-              content: Text('Paciente desvinculado'),
+              content: Text('Usuario desvinculado'),
               backgroundColor: Colors.orange,
             ),
           );
@@ -99,7 +99,7 @@ class _TutorVinculacionScreenState extends State<TutorVinculacionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Vincular Pacientes'),
+        title: const Text('Vincular Usuarios'),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -115,7 +115,7 @@ class _TutorVinculacionScreenState extends State<TutorVinculacionScreen> {
             ],
             const SizedBox(height: 24),
             const Text(
-              'Pacientes vinculados',
+              'Usuarios vinculados',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
@@ -275,7 +275,7 @@ class _TutorVinculacionScreenState extends State<TutorVinculacionScreen> {
           separatorBuilder: (_, __) => const SizedBox(height: 8),
           itemBuilder: (context, index) {
             final patient = patients[index];
-            final patientName = patient['name'] as String? ?? 'Paciente';
+            final patientName = patient['name'] as String? ?? 'Usuario';
             final patientEmail = patient['email'] as String? ?? '';
             final patientAvatar = patient['avatar'] as String?;
             final linkedAt = patient['linkedAt'] as Timestamp?;

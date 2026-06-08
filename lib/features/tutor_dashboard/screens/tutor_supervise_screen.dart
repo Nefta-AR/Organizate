@@ -90,7 +90,7 @@ class _TutorSupervisarScreenState extends State<TutorSupervisarScreen> {
 
   String get _patientId => _selectedPatient?['id'] as String? ?? '';
   String get _patientName =>
-      _selectedPatient?['name'] as String? ?? 'Paciente';
+      _selectedPatient?['name'] as String? ?? 'Usuario';
   String? get _patientAvatar => _selectedPatient?['avatar'] as String?;
 
   void _switchPatient(Map<String, dynamic> patient) {
@@ -132,7 +132,7 @@ class _TutorSupervisarScreenState extends State<TutorSupervisarScreen> {
             const Divider(),
             ..._patients.map((p) {
               final isSelected = p['id'] == _selectedPatient?['id'];
-              final name = p['name'] as String? ?? 'Paciente';
+              final name = p['name'] as String? ?? 'Usuario';
               final email = p['email'] as String? ?? '';
               final avatar = p['avatar'] as String?;
               return ListTile(

@@ -163,8 +163,16 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                             : [],
                       ),
                       child: CircleAvatar(
-                        backgroundImage:
-                            AssetImage('assets/avatars/$name.png'),
+                        backgroundColor: Colors.white,
+                        child: SizedBox.expand(
+                          child: Image.asset(
+                            'assets/avatars/$name.png',
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(Icons.person, color: Colors.grey);
+                            },
+                          ),
+                        ),
                       ),
                     ),
                   );

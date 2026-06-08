@@ -122,7 +122,7 @@ class _CustomNavBarState extends State<CustomNavBar> {
     if (_featureTareas)
       _NavEntry(NavScreen.tareas,      Icons.task_alt,          'Tareas',      () => const TareasScreen()),
     if (_featurePictogramas)
-      _NavEntry(NavScreen.pictogramas, Icons.image_rounded,   'Pictogramas', () => const PantallaPacienteTEA()),
+      _NavEntry(NavScreen.pictogramas, Icons.image_rounded,   'Pictogramas', () => const PantallaUsuarioTEA()),
     if (_featureFoco)
       _NavEntry(NavScreen.foco,      Icons.self_improvement,  'Foco',        () => const FocoScreen()),
     if (_featurePerfil)

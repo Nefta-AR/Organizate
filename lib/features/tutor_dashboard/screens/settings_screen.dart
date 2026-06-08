@@ -397,7 +397,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(height: 16),
                 ],
                 if (role != 'tutor') ...[
-                  _buildVinculacionPacienteCard(),
+                  _buildVinculacionUsuarioCard(),
                   const SizedBox(height: 16),
                   _buildPantallasNavTile(),
                   const SizedBox(height: 16),
@@ -434,8 +434,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       'tutor'   => 'Tutor',
       'usuario' => 'Usuario',
       // Legacy roles pendientes de migración automática
-      'usuario_tea' || 'paciente_tea' || 'usuario_tdah' ||
-      'paciente_tdah' || 'usuario_general' => 'Usuario',
+      'usuario_tea' || 'usuario_tea' || 'usuario_tdah' ||
+      'usuario_tdah' || 'usuario_general' => 'Usuario',
       _ => role.isEmpty ? 'Sin rol asignado' : role,
     };
 
@@ -679,9 +679,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // ── Vinculación paciente ──────────────────────────────────────────────────
+  // ── Vinculación usuario ──────────────────────────────────────────────────
 
-  Widget _buildVinculacionPacienteCard() {
+  Widget _buildVinculacionUsuarioCard() {
     return StreamBuilder<Map<String, dynamic>?>(
       stream: AuthService.getLinkedTutorStream(),
       builder: (context, snapshot) {
