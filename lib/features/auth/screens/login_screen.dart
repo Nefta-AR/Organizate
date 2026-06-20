@@ -100,6 +100,9 @@ class _LoginScreenState extends State<LoginScreen> {
           await _saveEmail(email);
         }
       }
+      if (mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil('/', (_) => false);
+      }
     } on FirebaseAuthException catch (e) {
       if (mounted) _showError(_mapAuthError(e.code));
     } catch (_) {
@@ -161,6 +164,9 @@ class _LoginScreenState extends State<LoginScreen> {
               .doc(user.uid)
               .set(payload, SetOptions(merge: true));
           if (user.email != null) await _saveEmail(user.email!);
+        }
+        if (mounted) {
+          Navigator.of(context).pushNamedAndRemoveUntil('/', (_) => false);
         }
       }
     } on FirebaseAuthException catch (e) {

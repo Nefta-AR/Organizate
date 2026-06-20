@@ -22,13 +22,21 @@ import 'package:simple/core/services/kiosk_mode_service.dart';
 ///
 /// Cada nivel usa un StreamBuilder independiente para que los cambios
 /// en Firebase Auth y Firestore disparen reconstrucciones aisladas.
-class AuthGate extends StatelessWidget {
+class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
+
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  late final Stream<User?> _authStream =
+      FirebaseAuth.instance.authStateChanges();
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
+      stream: _authStream,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
