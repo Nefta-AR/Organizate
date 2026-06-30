@@ -14,7 +14,7 @@
 | 2 | Integración IA (Súper Experto) | 28 abr | 29 abr | ✅ Completado |
 | 3 | Módulo TEA — Pictogramas | 30 abr | 06 may | ✅ Completado |
 | 4 | Módulo TDAH — Tareas y Foco | 05 may | 09 may | ✅ Completado |
-| 5 | Integración y Correcciones | 09 may | 13 may | 🔄 En curso |
+| 5 | Integración y Correcciones | 09 may | 26 may | ✅ Completado |
 
 ---
 
@@ -96,9 +96,11 @@ Infraestructura Firebase ██░░░░░░░░░░░░░░░░�
 
 ## Pendientes identificados (próximo sprint)
 
-- [ ] Completar supervisión tutor → detalle de paciente
-- [ ] Sincronización bidireccional tareas tutor ↔ paciente
-- [ ] Pulir dashboard de progreso (gráficos fl_chart)
+- [x] Completar supervisión tutor → detalle de paciente
+- [x] Sincronización bidireccional tareas tutor ↔ paciente
+- [x] Pulir dashboard de progreso (gráficos fl_chart)
+- [x] Ícono de app generado y funcionando
 - [ ] Notificaciones push FCM completas
 - [ ] Testing y correcciones de bugs menores
-- [ ] Preparación para distribución APK
+- [ ] Generación de APK firmado
+- [ ] Manual de usuario

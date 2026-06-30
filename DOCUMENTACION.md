@@ -900,20 +900,19 @@ assets/
 | Backup en Google Drive | ✅ |
 | Perfil con avatar | ✅ |
 | Contacto de emergencia | ✅ |
+| Ícono de app (Android) | ✅ |
+| Badges de urgencia en tareas | ✅ |
 
 ### Pendientes y trabajo en curso
 
 | Tarea | Prioridad | Notas |
 |-------|-----------|-------|
-| Detalle completo de paciente en tutor | Alta | `tutor_patient_detail_screen.dart` en desarrollo |
-| Sincronización de tareas tutor ↔ paciente | Alta | Requiere lógica en Firestore |
-| Dashboard de progreso con gráficos | Media | `fl_chart` ya instalado |
-| Pulir ProgresoScreen | Media | Datos de `focusSessionsCompleted` disponibles |
-| Arreglar pendientes en vinculación tutor | Alta | Commit `ce5c88a` marca trabajo en curso |
 | Testing y QA general | Alta | Antes de distribución |
-| Preparación Play Store / App Store | Baja | Requiere testing completo previo |
+| Generación de APK firmado | Alta | Entrega julio 2026 |
+| Manual de usuario | Media | Tutores y usuarios |
+| Documentación técnica final | Media | Informe de defensa |
 
 ---
 
-*Documentación generada el 13 de mayo de 2026.*  
+*Documentación actualizada el 30 de junio de 2026.*  
 *Proyecto: Simple — Prótesis Cognitiva para TDAH y TEA*

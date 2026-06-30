@@ -4,7 +4,16 @@
 
 Simple es una aplicación móvil inclusiva diseñada específicamente para apoyar a personas neurodivergentes, con módulos dedicados para el **Trastorno del Espectro Autista (TEA)** y el **Trastorno por Déficit de Atención e Hiperactividad (TDAH)**.
 
-**Estado del Proyecto:** 🟠 En Desarrollo (85% Completado) | **Fecha Estimada:** Julio 2026
+**Estado del Proyecto:** 🟠 En Desarrollo (95% Completado) | **Fecha Estimada:** Julio 2026
+
+### 📝 Registro de Cambios Recientes
+
+- ✅ **Ícono de app generado** y funcionando en Android (mipmap adaptativo).
+- ✅ **Kiosk Mode removido** del MVP (escalabilidad futura).
+- ✅ **Badges de urgencia** en tareas (HOY / MAÑANA / DESPUÉS).
+- ✅ **Promo card de Súper Experto** en HomeScreen.
+- ✅ **Sincronización tutor ↔ paciente** completada.
+- ✅ **Corrección** de sintaxis en `vinculacion_tutor_screen.dart`.
 
 ---
 
@@ -100,19 +109,22 @@ El proyecto ha alcanzado hitos significativos desde su inicio el **27 de Abril 2
 - [x] Timer Pomodoro + respiración
 - [x] Sistema de puntos y racha
 
-#### 🔄 En Curso (Fase 5 - 75% Completado)
+#### ✅ Completado (Fase 5)
 
 **Fase 5: Integración y Correcciones**
 - [x] Corrección SHA + conexiones Firebase (09 May)
 - [x] Eliminación Modo Foco -> reemplazado por Pictogramas TEA (09 May)
 - [x] Fix superposición botones (TEA) (09 May)
 - [x] Tutor conectado a paciente - vinculación completada (13 May) ⭐ **HITO 1**
-- [ ] Completar supervisión tutor -> detalle de paciente
-- [ ] Sincronización bidireccional tareas tutor <-> paciente
+- [x] Sincronización bidireccional tareas tutor <-> paciente (26 May)
+- [x] Panel de supervisión tutor completo
 
-#### ⏳ Pendiente
+#### 🔄 En Curso (Fase 6)
 
 **Fase 6: Pulido y Testing**
+- [x] Ícono de app generado y funcionando
+- [x] Badges de urgencia en tareas
+- [x] Promo card de Súper Experto
 - [ ] Pulir dashboard de progreso (gráficos fl_chart)
 - [ ] Notificaciones push FCM completas
 - [ ] Testing y correcciones de bugs menores

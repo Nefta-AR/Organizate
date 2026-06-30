@@ -1,6 +1,6 @@
 # AGENTS.md — Simple (ex-Organízate)
 
-> Flutter + Firebase app for neurodivergent users (TEA/TDAH). 85% complete. Delivery: July 2026 via APK (NOT Play Store/App Store).
+> Flutter + Firebase app for neurodivergent users (TEA/TDAH). 95% complete. Delivery: July 2026 via APK (NOT Play Store/App Store).
 
 ---
 
@@ -96,6 +96,15 @@ flutter run
 - Tasks use `deletedByUser: true` flag instead of hard delete
 - Tutor retains history even after patient "deletes"
 
+### Documentation Maintenance (REQUIRED)
+- **After every significant code change**, update the project records to keep them accurate:
+  - `README.md` — overall status, feature checklist and progress
+  - `CronologiaDelProyecto.md` — chronology entries, phase progress and current state
+  - `VisionDelProyecto.md` — MVP scope, roadmap and pending tasks
+  - `AGENTS.md` — project status table and next critical tasks
+  - `docs/Informe_Tecnico_Defensa_Titulo.md` — requirements, design and future-work sections
+- Do **not** commit documentation-only changes as standalone fixes unless explicitly requested; include them as part of the feature/refactor commit.
+
 ## Environment
 
 ### Required Files
@@ -128,14 +137,15 @@ flutterfire configure --project=organizate-26065
 | IA / Súper Experto | ✅ Done | 100% |
 | Módulo TEA (Pictogramas) | ✅ Done | 100% |
 | Módulo TDAH (Tareas) | ✅ Done | 100% |
-| Integración y Correcciones | 🔄 In Progress | 75% |
-| Pulido y Testing |  Pending | 0% |
-| Documentación y Entrega |  Pending | 0% |
+| Integración y Correcciones | ✅ Done | 100% |
+| Pulido y Testing | 🔄 In Progress | 85% |
+| Documentación y Entrega | ⏳ Pending | 25% |
 
 **Next critical tasks:**
-- Complete tutor supervision → patient detail view
-- Bidirectional sync tutor ↔ patient tasks
-- Progress dashboard (fl_chart)
+- Generate signed APK for delivery
+- Final user/manual testing
+- Complete technical report (Informe Técnico)
+- User manual
 
 ## References
 

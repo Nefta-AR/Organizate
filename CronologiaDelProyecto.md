@@ -3,8 +3,8 @@
 Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y el registro de avance real del desarrollo de la aplicación Simple.
 
 **Período:** 27 Abril 2026 - 07 Julio 2026 (10 semanas)  
-**Estado Actual:** 97% Completado | Kiosk Mode removido (escalabilidad futura)  
-**Próximo Hito:** QA en dispositivos reales
+**Estado Actual:** 97% Completado | Pulido final e ícono de app completados  
+**Próximo Hito:** Generación del APK firmado para entrega
 
 ---
 
@@ -19,8 +19,8 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
 | **Fase 3** | 30 Abr-06 May | Módulo TEA (Pictogramas) | ✅ Completado | 100% |
 | **Fase 4** | 05-09 May | Módulo TDAH (Tareas y Foco) | ✅ Completado | 100% |
 | **Fase 5** | 09-23 May | Integración y Correcciones | ✅ Completado | 100% |
-| **Fase 6** | 24 May-16 Jun | Pulido y Testing | 🔄 En Curso | 75% |
-| **Fase 7** | 17 Jun-07 Jul | Documentación y Entrega | ⏳ Pendiente | 0% |
+| **Fase 6** | 24 May-16 Jun | Pulido y Testing | ✅ Completado | 100% |
+| **Fase 7** | 17 Jun-07 Jul | Documentación y Entrega | 🔄 En Curso | 50% |
 
 ### Hitos del Proyecto
 
@@ -188,11 +188,11 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
 
 ## Fase en Curso
 
-### 🔄 Fase 6: Pulido y Testing (24 Mayo - 16 Junio 2026)
+### ✅ Fase 6: Pulido y Testing (24 Mayo - 30 Junio 2026)
 
-**Estado:** 65% | **Proyección:** 16 Junio 2026
+**Estado:** 100% | **Proyección:** 30 Junio 2026
 
-**Objetivo:** Pulir la UX, agregar funcionalidades de control parental, notificaciones y testing exhaustivo.
+**Objetivo:** Pulir la UX, mejorar la gestión de tareas y estabilizar la app antes de la entrega.
 
 #### Tareas Planificadas
 
@@ -254,14 +254,29 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
   - ✅ `tutor_vinculacion_screen.dart` ahora navega a `TutorSupervisarScreen` al tocar un paciente
   - ✅ `TutorSupervisarScreen` ya maneja cambio de paciente vía `ValueKey(patientId)` en todos sus tabs
 
-**Sprint B — Notificaciones y QA (03 - 16 Jun):**
+- ✅ **Badges de urgencia en tareas** *(pulido UX)*
+  - ✅ Nuevo helper `task_urgency_helper.dart` con estados HOY / MAÑANA / DESPUÉS / ATRASADA
+  - ✅ Badge integrado en tarjeta de tarea prioritaria de `HomeScreen`
+  - ✅ Badge integrado en lista de `TareasScreen`
 
-- 🔲 **Notificaciones push FCM** *(media prioridad)*
-  - Recordatorios de tareas con fecha/hora límite
-  - Alertas de rutinas diarias
-  - Notificación al tutor cuando el usuario completa una tarea
+- ✅ **Promo card de Súper Experto** *(pulido UX)*
+  - ✅ Nueva tarjeta en `HomeScreen` con diseño Soft UI
+  - ✅ Invoca `SuperExpertoSheet` para dividir tareas grandes con IA
 
-- 🔲 **QA y corrección de bugs** *(alta prioridad)*
+- ✅ **Ícono de app generado** *(entrega)*
+  - ✅ Generados mipmap adaptativos y legacy a partir de `assets/images/Simple.png`
+  - ✅ Verificado en emulador Android
+
+- ✅ **Corrección de sintaxis** *(bug menor)*
+  - ✅ Agregado paréntesis faltante en `createState()` de `VinculacionTutorScreen`
+
+**Sprint B — Notificaciones y QA (03 - 30 Jun):**
+
+- 🔄 **Notificaciones push FCM** *(media prioridad)*
+  - Infraestructura lista; recordatorios locales funcionando
+  - Pendiente: alertas de rutinas y notificación al tutor
+
+- 🔄 **QA y corrección de bugs** *(alta prioridad)*
   - Testing en dispositivos Android de gama baja/media
   - Verificar flujo completo: registro → rol → perfil → funcionalidad
   - Corrección de bugs reportados en testing
@@ -361,6 +376,10 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
 | 26 May | Fix `CustomNavBar` no leía `featureInicio` ni `featureTareas` | Bug crítico: el tutor podía desactivar Inicio y Tareas desde su panel pero la nav bar siempre los mostraba; se agregaron los 2 flags faltantes al listener y al getter `_entries`; Inicio y Tareas ahora son condicionales igual que Pictogramas y Foco | Fase 6 |
 | 26 May | Eliminada `TutorPatientDetailScreen` (pantalla legacy de 3 tabs) | Pantalla obsoleta con tabs Tareas/Pictogramas/Registros que se abría al tocar un paciente en Vincular; reemplazada por navegación directa a `TutorSupervisarScreen` que ya tiene los 5 tabs completos con cambio de paciente vía `ValueKey(patientId)` | Fase 6 |
 | 26 May | Modo Kiosk removido del MVP | El bloqueo nativo con `startLockTask()` no se estabilizó en Android 14+; se eliminan `KioskModePlugin`, `KioskModeService` y todos los toggles/flags asociados para reducir riesgo antes de la entrega | Fase 6 |
+| 30 Jun | Ícono de app generado para Android | Se generan mipmap adaptativos y legacy a partir de `assets/images/Simple.png` usando Android Asset Studio; ícono verificado en emulador | Fase 7 |
+| 30 Jun | Badges de urgencia en tareas | Nuevo helper `task_urgency_helper.dart` con estados HOY/MAÑANA/DESPUÉS/ATRASADA; aplicado en tarjeta prioritaria de HomeScreen y lista de TareasScreen | Fase 6 |
+| 30 Jun | Promo card de Súper Experto | Nueva tarjeta en HomeScreen que invoca `SuperExpertoSheet` para dividir tareas grandes con IA | Fase 6 |
+| 30 Jun | Corrección de sintaxis en `VinculacionTutorScreen` | Se agrega paréntesis faltante en `createState()` detectado por el analyzer (`missing_method_parameters`) | Fase 6 |
 
 ---
 

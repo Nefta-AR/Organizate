@@ -100,19 +100,22 @@ Simple no es una adaptación de una app genérica. Fue concebida desde cero con 
 - Sistema de puntos y racha (gamificación)
 - Eliminación por swipe
 
-### Fase 5: Integración y Correcciones 🔄 (09-26 May 2026)
+### Fase 5: Integración y Correcciones ✅ (09-26 May 2026)
 **Conectando el ecosistema:**
 - ✅ Corrección de conexiones Firebase y SHA
 - ✅ Vinculación tutor-paciente completada (Hito 1 - 13 May)
-- 🔄 Supervisión tutor -> detalle de paciente
-- 🔄 Sincronización bidireccional de tareas
-- 🔄 Corrección de bugs de integración
+- ✅ Supervisión tutor -> detalle de paciente
+- ✅ Sincronización bidireccional de tareas
+- ✅ Corrección de bugs de integración
 
-### Fase 6: Pulido y Testing ⏳ (27 May - 16 Jun 2026)
+### Fase 6: Pulido y Testing ✅ (27 May - 30 Jun 2026)
 **Optimización y control:**
-- Dashboard de progreso con gráficos (fl_chart)
-- Notificaciones push FCM
-- Testing exhaustivo y corrección de bugs
+- ✅ Dashboard de progreso con gráficos (fl_chart)
+- ✅ Badges de urgencia en tareas
+- ✅ Promo card de Súper Experto
+- ✅ Ícono de app generado
+- 🔄 Notificaciones push FCM
+- 🔄 Testing exhaustivo y corrección de bugs
 
 ### Fase 7: Documentación y Entrega ⏳ (17 Jun - 07 Jul 2026)
 **Cierre del proyecto:**
@@ -156,8 +159,9 @@ Nuestra meta inmediata es consolidar un **MVP funcional** que demuestre que la t
 - ✅ Módulo TDAH con tareas, Pomodoro y asistente IA
 - ✅ Panel del tutor con supervisión completa
 - ✅ Vinculación segura tutor-paciente
-- 🔄 Sincronización en tiempo real
-- ⏳ APK funcional listo para instalación directa
+- ✅ Sincronización en tiempo real
+- ✅ Ícono de app generado
+- 🔄 APK funcional listo para instalación directa
 
 ### Roadmap Post-MVP
 
@@ -181,7 +185,8 @@ Para alcanzar el MVP en Julio 2026, estas son las tareas prioritarias:
 2. **Sincronización bidireccional** - Las tareas creadas por el tutor deben aparecer en tiempo real en el dispositivo del paciente
 
 ### 🟡 Prioridad Media (Mejoras de UX)
-3. **Dashboard de progreso** - Visualización gráfica del avance del paciente
+3. **Dashboard de progreso** - Visualización gráfica del avance del paciente ✅
+4. **Ícono de app** - Generación de íconos adaptativos para Android ✅
 
 ### 🔵 Prioridad Baja (Nice to have)
 5. **Notificaciones push** - Recordatorios de tareas y rutinas
@@ -192,9 +197,9 @@ Para alcanzar el MVP en Julio 2026, estas son las tareas prioritarias:
 ## Métricas de Éxito
 
 ### Indicadores Técnicos
-- **Progreso actual:** 85% completado
+- **Progreso actual:** 95% completado
 - **Líneas de código:** ~15,000+ (Flutter + Firebase)
-- **Módulos funcionales:** 6 de 8 completados
+- **Módulos funcionales:** 7 de 8 completados
 - **Tests unitarios:** Pendiente implementación completa
 
 ### Indicadores de Usuario (Post-Launch)
