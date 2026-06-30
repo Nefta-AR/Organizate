@@ -150,7 +150,6 @@ class GoogleDriveService {
       'pomodoroSound': data['pomodoroSound'],
       'focusSessionsCompleted': data['focusSessionsCompleted'],
       'totalFocusMinutes': data['totalFocusMinutes'],
-      'kioskModeEnabled': data['kioskModeEnabled'],
       'backupTimestamp': DateTime.now().toIso8601String(),
       'appVersion': '1.0.0',
     };
@@ -181,7 +180,6 @@ class GoogleDriveService {
     final boolFields = [
       'hasCompletedOnboarding', 'notiTaskEnabled',
       'pomodoroSoundEnabled', 'pomodoroVibrationEnabled',
-      'kioskModeEnabled',
     ];
     for (final field in boolFields) {
       if (settings[field] != null) {

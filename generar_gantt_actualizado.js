@@ -89,7 +89,6 @@ const fasesCompletadas = [
 const tareasPendientes = [
   { prioridad: 'Alta', tarea: 'Completar supervisión tutor -> detalle de paciente', fase: 'Fase 5' },
   { prioridad: 'Alta', tarea: 'Sincronización bidireccional tareas tutor <-> paciente', fase: 'Fase 5' },
-  { prioridad: 'Media', tarea: 'Kiosk Mode para paciente TEA (control parental)', fase: 'Fase 6' },
   { prioridad: 'Media', tarea: 'Pulir dashboard de progreso (gráficos fl_chart)', fase: 'Fase 6' },
   { prioridad: 'Baja', tarea: 'Notificaciones push FCM completas', fase: 'Fase 6' },
   { prioridad: 'Baja', tarea: 'Testing y correcciones de bugs menores', fase: 'Fase 6' },
@@ -107,7 +106,6 @@ const cronograma = [
   { semana: 'S2 (20-26 May)', fase: 'Fase 5', tarea: 'Corrección bugs integración', estado: 'Pendiente', inicio: 2, duracion: 1 },
   
   // Semana 3-4 (27 mayo - 9 junio) - Fase 6: Pulido
-  { semana: 'S3 (27 May-02 Jun)', fase: 'Fase 6', tarea: 'Kiosk Mode paciente TEA', estado: 'Pendiente', inicio: 3, duracion: 2 },
   { semana: 'S3 (27 May-02 Jun)', fase: 'Fase 6', tarea: 'Dashboard progreso (fl_chart)', estado: 'Pendiente', inicio: 3, duracion: 2 },
   { semana: 'S4 (03-09 Jun)', fase: 'Fase 6', tarea: 'Notificaciones push FCM', estado: 'Pendiente', inicio: 4, duracion: 1 },
   { semana: 'S4 (03-09 Jun)', fase: 'Fase 6', tarea: 'Testing y bugs menores', estado: 'Pendiente', inicio: 4, duracion: 1 },

@@ -113,7 +113,6 @@ El proyecto ha alcanzado hitos significativos desde su inicio el **27 de Abril 2
 #### ⏳ Pendiente
 
 **Fase 6: Pulido y Testing**
-- [ ] Kiosk Mode para paciente TEA (control parental)
 - [ ] Pulir dashboard de progreso (gráficos fl_chart)
 - [ ] Notificaciones push FCM completas
 - [ ] Testing y correcciones de bugs menores

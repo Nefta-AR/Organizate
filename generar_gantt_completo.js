@@ -80,8 +80,7 @@ const cronograma = [
   { fase: '', tarea: 'Corrección bugs integración', estado: 'Pendiente', s1: '', s2: '', s3: '', s4: '', s5: '', s6: '', s7: '██████', s8: '', s9: '', s10: '', s11: '', s12: '' },
   
   // FASE 6: Pulido (27 May - 16 Jun)
-  { fase: 'FASE 6: Pulido', tarea: 'Kiosk Mode paciente TEA', estado: 'Pendiente', s1: '', s2: '', s3: '', s4: '', s5: '', s6: '', s7: '', s8: '██████', s9: '', s10: '', s11: '', s12: '' },
-  { fase: '', tarea: 'Dashboard progreso (fl_chart)', estado: 'Pendiente', s1: '', s2: '', s3: '', s4: '', s5: '', s6: '', s7: '', s8: '██████', s9: '', s10: '', s11: '', s12: '' },
+  { fase: 'FASE 6: Pulido', tarea: 'Dashboard progreso (fl_chart)', estado: 'Pendiente', s1: '', s2: '', s3: '', s4: '', s5: '', s6: '', s7: '', s8: '██████', s9: '', s10: '', s11: '', s12: '' },
   { fase: '', tarea: 'Notificaciones push FCM', estado: 'Pendiente', s1: '', s2: '', s3: '', s4: '', s5: '', s6: '', s7: '', s8: '', s9: '██████', s10: '', s11: '', s12: '' },
   { fase: '', tarea: 'Testing y bugs menores', estado: 'Pendiente', s1: '', s2: '', s3: '', s4: '', s5: '', s6: '', s7: '', s8: '', s9: '██████', s10: '', s11: '', s12: '' },
   
@@ -105,7 +104,6 @@ const hitos = [
 const tareasPendientes = [
   { prioridad: 'Alta', tarea: 'Completar supervisión tutor -> detalle de paciente', fase: 'Fase 5' },
   { prioridad: 'Alta', tarea: 'Sincronización bidireccional tareas tutor <-> paciente', fase: 'Fase 5' },
-  { prioridad: 'Media', tarea: 'Kiosk Mode para paciente TEA (control parental)', fase: 'Fase 6' },
   { prioridad: 'Media', tarea: 'Pulir dashboard de progreso (gráficos fl_chart)', fase: 'Fase 6' },
   { prioridad: 'Baja', tarea: 'Notificaciones push FCM completas', fase: 'Fase 6' },
   { prioridad: 'Baja', tarea: 'Testing y correcciones de bugs menores', fase: 'Fase 6' },
@@ -248,7 +246,6 @@ console.log('');
 console.log('📌 TAREAS CRÍTICAS PENDIENTES:');
 console.log('   🔴 Alta: Completar supervisión tutor -> detalle de paciente');
 console.log('   🔴 Alta: Sincronización bidireccional tareas tutor <-> paciente');
-console.log('   🟡 Media: Kiosk Mode paciente TEA');
 console.log('   🟡 Media: Dashboard progreso (fl_chart)');
 console.log('   🟡 Media: Documentación técnica');
 console.log('   🟡 Media: Manual de usuario');

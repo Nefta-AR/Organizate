@@ -21,7 +21,7 @@
 //
 //   5. **Ajustes** [_TutorConfigTab]: toggles para habilitar/deshabilitar las
 //      pestañas de Inicio, Tareas, Pictogramas y Foco en la app del usuario.
-//      También controla el Modo Kiosk y el contacto de emergencia.
+//      También configura el contacto de emergencia.
 //      Los flags se persisten en `pictogramSettings/_features` (subcolección
 //      con permisos de tutor ya establecidos en las reglas, sin deploy extra).
 //
@@ -39,7 +39,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:simple/core/services/activity_log_service.dart';
 import 'package:simple/core/services/auth_service.dart';
-import 'package:simple/core/services/kiosk_mode_service.dart';
 import 'package:simple/core/services/pictogram_service.dart';
 import 'package:simple/features/tea_board/screens/pictogram_manager_screen.dart';
 import 'package:simple/features/tda_focus/screens/progreso_screen.dart';
@@ -1200,26 +1199,6 @@ class _TutorConfigTabState extends State<_TutorConfigTab> {
               onChanged: (_featurePerfil! && ac <= 1)
                   ? null
                   : (_) => _toggle('featurePerfil', _featurePerfil!),
-            ),
-            const SizedBox(height: 32),
-            // ─ Kiosk Mode ───────────────────────────────────────────
-            StreamBuilder<bool>(
-              stream: KioskModeService.streamEnabled(userId: widget.patientId),
-              builder: (context, kioskSnap) {
-                final kioskEnabled = kioskSnap.data ?? false;
-                return _FeatureToggleTile(
-                  icon: Icons.phone_android_rounded,
-                  color: Colors.redAccent,
-                  title: 'Modo Kiosk',
-                  subtitle: kioskEnabled
-                      ? 'App bloqueada — el usuario no puede salir'
-                      : 'Bloquea la app para evitar que el usuario salga',
-                  value: kioskEnabled,
-                  onChanged: (_) => kioskEnabled
-                      ? KioskModeService.disable(userId: widget.patientId)
-                      : KioskModeService.enable(userId: widget.patientId),
-                );
-              },
             ),
             const SizedBox(height: 32),
             // ── Contacto de emergencia ───────────────────────────────

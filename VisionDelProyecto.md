@@ -110,7 +110,6 @@ Simple no es una adaptación de una app genérica. Fue concebida desde cero con 
 
 ### Fase 6: Pulido y Testing ⏳ (27 May - 16 Jun 2026)
 **Optimización y control:**
-- Kiosk Mode para paciente TEA (control parental)
 - Dashboard de progreso con gráficos (fl_chart)
 - Notificaciones push FCM
 - Testing exhaustivo y corrección de bugs
@@ -158,13 +157,13 @@ Nuestra meta inmediata es consolidar un **MVP funcional** que demuestre que la t
 - ✅ Panel del tutor con supervisión completa
 - ✅ Vinculación segura tutor-paciente
 - 🔄 Sincronización en tiempo real
-- 🔄 Kiosk Mode y control parental
 - ⏳ APK funcional listo para instalación directa
 
 ### Roadmap Post-MVP
 
 Las próximas iteraciones apuntan a:
 
+- **Kiosk Mode / Control parental** para evitar que el paciente salga de la app accidentalmente (escalabilidad futura).
 - **Voz natural** con Google Cloud TTS para hacer el tablero TEA más inmersivo y expresivo.
 - **Análisis de patrones** en el historial de actividad para que el tutor pueda identificar tendencias (horarios de mayor concentración, pictogramas más usados).
 - **Modo sin conexión** con sincronización diferida, para que la app funcione incluso en entornos con conectividad limitada.
@@ -182,8 +181,7 @@ Para alcanzar el MVP en Julio 2026, estas son las tareas prioritarias:
 2. **Sincronización bidireccional** - Las tareas creadas por el tutor deben aparecer en tiempo real en el dispositivo del paciente
 
 ### 🟡 Prioridad Media (Mejoras de UX)
-3. **Kiosk Mode** - Control parental para evitar que el paciente salga de la app accidentalmente
-4. **Dashboard de progreso** - Visualización gráfica del avance del paciente
+3. **Dashboard de progreso** - Visualización gráfica del avance del paciente
 
 ### 🔵 Prioridad Baja (Nice to have)
 5. **Notificaciones push** - Recordatorios de tareas y rutinas

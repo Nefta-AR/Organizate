@@ -615,7 +615,6 @@ Wrapper de SharedPreferences para persistencia local:
   // Solo tutores:
   linkedPatients:           map<uid, boolean>
   invitationCodes:          map<code, boolean>
-  kioskModeEnabled:         boolean           // modo quiosco para paciente TEA
 
   // Solo pacientes:
   linkedTutors:             map<uid, boolean>
@@ -908,7 +907,6 @@ assets/
 |-------|-----------|-------|
 | Detalle completo de paciente en tutor | Alta | `tutor_patient_detail_screen.dart` en desarrollo |
 | Sincronización de tareas tutor ↔ paciente | Alta | Requiere lógica en Firestore |
-| Kiosk Mode para TEA | Media | `kioskModeEnabled` ya en schema |
 | Dashboard de progreso con gráficos | Media | `fl_chart` ya instalado |
 | Pulir ProgresoScreen | Media | Datos de `focusSessionsCompleted` disponibles |
 | Arreglar pendientes en vinculación tutor | Alta | Commit `ce5c88a` marca trabajo en curso |

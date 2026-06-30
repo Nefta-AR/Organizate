@@ -16,6 +16,7 @@ import 'package:simple/core/utils/date_time_helper.dart';
 import 'package:simple/core/utils/emergency_contact_helper.dart';
 import 'package:simple/core/utils/reminder_helper.dart';
 import 'package:simple/core/utils/reminder_options.dart';
+import 'package:simple/core/utils/task_urgency_helper.dart';
 import 'package:simple/features/onboarding/screens/super_experto_sheet.dart';
 import 'package:simple/core/widgets/custom_nav_bar.dart';
 
@@ -154,6 +155,8 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildGreeting(name),
               const SizedBox(height: 28),
               _buildPriorityTaskCard(),
+              const SizedBox(height: 24),
+              _buildSuperExpertoPromo(),
               const SizedBox(height: 28),
               _buildQuickAccess(),
             ],
@@ -332,6 +335,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         letterSpacing: 0.5),
                   ),
                 ]),
+                if (dueDate != null) ...[
+                  buildTaskUrgencyBadge(dueDate.toDate()) ??
+                      const SizedBox.shrink(),
+                  if (totalPending > 1) const SizedBox(width: 8),
+                ],
                 if (totalPending > 1)
                   Container(
                     padding:
@@ -413,6 +421,88 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: const Text('Ver todas'),
                 ),
               ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSuperExpertoPromo() {
+    return GestureDetector(
+      onTap: () => SuperExpertoSheet.show(context),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFEDE7F6), Color(0xFFF3E5F5)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: const Color(0xFF7C5CBF).withValues(alpha: 0.25),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF7C5CBF).withValues(alpha: 0.08),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF7C5CBF).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(
+                Icons.auto_fix_high_rounded,
+                color: Color(0xFF7C5CBF),
+                size: 28,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '¿Te cuesta empezar?',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF4A148C),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Divide tareas grandes en pasos simples con Súper Experto.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade700,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF7C5CBF),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.arrow_forward_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
             ),
           ],
         ),

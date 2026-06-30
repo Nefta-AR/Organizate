@@ -5,7 +5,7 @@ class VinculacionTutorScreen extends StatefulWidget {
   const VinculacionTutorScreen({super.key});
 
   @override
-  State<VinculacionTutorScreen> createState =>
+  State<VinculacionTutorScreen> createState() =>
       _VinculacionTutorScreenState();
 }
 

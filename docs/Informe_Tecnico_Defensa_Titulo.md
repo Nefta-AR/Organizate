@@ -150,7 +150,7 @@ Desarrollar una aplicación móvil multiplataforma que funcione como **prótesis
 
 4. **Crear un sistema de vinculación tutor-usuario** mediante códigos de invitación de 6 caracteres, con permisos diferenciados y reglas de seguridad en Firestore.
 
-5. **Desarrollar un módulo de supervisión** para tutores que permita visualizar tareas, pictogramas personalizados, historial de actividad y configurar "modo Kiosk" (bloqueo de aplicación).
+5. **Desarrollar un módulo de supervisión** para tutores que permita visualizar tareas, pictogramas personalizados, historial de actividad y configurar las pestañas visibles del usuario.
 
 6. **Implementar un sistema de roles dinámico** con routing automático basado en el campo `role` del usuario en Firestore.
 
@@ -264,7 +264,7 @@ Se adoptó una metodología **ágil adaptada**, basada en **Scrum** con sprints 
 | Sprint 3 | [Fecha 4] | 2 semanas | Módulo de tareas, categorías, notificaciones locales |
 | Sprint 4 | [Fecha 5] | 2 semanas | Temporizador Pomodoro, sonidos, vibración, historial de foco |
 | Sprint 5 | [Fecha 6] | 2 semanas | Sistema de vinculación tutor-usuario, códigos de invitación |
-| Sprint 6 | [Fecha 7] | 2 semanas | Panel de supervisión del tutor, modo Kiosk, configuración de pestañas |
+| Sprint 6 | [Fecha 7] | 2 semanas | Panel de supervisión del tutor y configuración de pestañas |
 | Sprint 7 | [Fecha 8] | 2 semanas | Respaldo Google Drive, ajustes de perfil, avatares |
 | Sprint 8 | [Fecha 9] | 2 semanas | Pruebas de integración, debugging, optimización de rendimiento |
 | Sprint 9 | [Fecha 10] | 2 semanas | Pruebas con usuarios reales, recolección de feedback, ajustes finales |
@@ -289,8 +289,7 @@ Se adoptó una metodología **ágil adaptada**, basada en **Scrum** con sprints 
 | RF-09 | El tutor debe generar códigos de invitación de 6 caracteres para vincular usuarios | Alta | Vinculación |
 | RF-10 | El tutor debe supervisar tareas, pictogramas, progreso y historial de actividad del usuario vinculado | Alta | Supervisión |
 | RF-11 | El tutor debe poder configurar qué pestañas son visibles para el usuario | Media | Supervisión |
-| RF-12 | El tutor debe poder activar/desactivar el modo Kiosk (bloqueo de app) | Media | Supervisión |
-| RF-13 | El sistema debe registrar un log de actividad (tareas completadas, pictogramas usados, sesiones Pomodoro) | Media | Historial |
+| RF-12 | El sistema debe registrar un log de actividad (tareas completadas, pictogramas usados, sesiones Pomodoro) | Media | Historial |
 | RF-14 | El usuario debe poder respaldar su configuración a Google Drive | Baja | Backup |
 | RF-15 | El sistema debe soportar contacto de emergencia con botón SOS | Media | Seguridad |
 
@@ -347,14 +346,14 @@ Se adoptó una metodología **ágil adaptada**, basada en **Scrum** con sprints 
 2. Sistema lista usuarios vinculados.
 3. Tutor selecciona usuario.
 4. Sistema muestra tabs: Tareas, Pictogramas, Progreso, Historial, Ajustes.
-5. Tutor puede agregar tareas, reorganizar pictogramas, configurar pestañas visibles, activar modo Kiosk.
+5. Tutor puede agregar tareas, reorganizar pictogramas y configurar pestañas visibles.
 
 ### 10.4 Usuarios del sistema y sus roles
 
 | Rol | Descripción | Permisos |
 |-----|-------------|----------|
 | **Usuario** (`usuario`) | Persona neurodivergente que usa la app como prótesis cognitiva | Ver tareas, pictogramas, foco, perfil. Crear/editar pictogramas propios. Completar tareas. Configurar notificaciones. |
-| **Tutor** (`tutor`) | Padre, cuidador, profesor o terapeuta que supervisa al usuario | Generar códigos de invitación. Ver progreso del usuario. Agregar/eliminar tareas. Reorganizar pictogramas. Configurar pestañas visibles. Activar modo Kiosk. Configurar contacto de emergencia. |
+| **Tutor** (`tutor`) | Padre, cuidador, profesor o terapeuta que supervisa al usuario | Generar códigos de invitación. Ver progreso del usuario. Agregar/eliminar tareas. Reorganizar pictogramas. Configurar pestañas visibles. Configurar contacto de emergencia. |
 | **Sin rol** (`null`) | Usuario recién registrado que aún no ha seleccionado su rol | Solo acceso a pantalla de selección de rol. |
 
 ---
@@ -609,8 +608,6 @@ class RoleDispatcher extends StatelessWidget {
 
 **Configuración de pestañas:** El tutor puede habilitar/deshabilitar pestañas mediante flags en `users/{uid}/pictogramSettings/_features`. El `CustomNavBar` lee estos flags en tiempo real y calcula el índice dinámicamente, siendo robusto ante cambios en el número de tabs.
 
-**Modo Kiosk:** Implementado mediante `KioskModeService` que escribe un flag en Firestore. El `CustomNavBar` lo lee y puede bloquear la navegación o mostrar un mensaje de bloqueo.
-
 #### Módulo 7: TTS (Text-to-Speech)
 
 **Arquitectura dual:**
@@ -684,7 +681,6 @@ class RoleDispatcher extends StatelessWidget {
   - Tutores: **Puntuación media [85/100]**.
 - **Feedback cualitativo**:
   - "Los pictogramas son más fáciles que leer listas de tareas" (Usuario TEA, 14 años).
-  - "Me gusta que mi hijo no pueda salir de la app cuando está en modo Kiosk" (Tutor, madre).
   - "El sonido del Pomodoro me ayuda a saber cuándo parar" (Usuario TDAH, 22 años).
 
 #### Pruebas de accesibilidad
@@ -720,8 +716,7 @@ class RoleDispatcher extends StatelessWidget {
 | RF-09: Vinculación tutor | ✅ Cumplido | Códigos de 6 chars + batch atómico |
 | RF-10: Supervisión tutor | ✅ Cumplido | 5 tabs: Tareas, Pictogramas, Progreso, Historial, Ajustes |
 | RF-11: Configuración de pestañas | ✅ Cumplido | `_features` doc con flags booleanos |
-| RF-12: Modo Kiosk | ✅ Cumplido | `KioskModeService` con flag en Firestore |
-| RF-13: Historial de actividad | ✅ Cumplido | `activityLog` con 7 tipos de eventos |
+| RF-12: Historial de actividad | ✅ Cumplido | `activityLog` con 7 tipos de eventos |
 | RF-14: Respaldo Google Drive | ✅ Cumplido | `GoogleDriveService` con backup/restore |
 | RF-15: Contacto de emergencia | ✅ Cumplido | Botón SOS + `tel:` launcher |
 
@@ -756,8 +751,7 @@ El objetivo general fue **completamente alcanzado**: se desarrolló una aplicaci
 **Limitaciones identificadas:**
 1. **Dependencia de Firebase**: La migración a otro backend requeriría reescribir la capa de datos completa.
 2. **TTS en iOS**: La calidad de `flutter_tts` varía según el dispositivo iOS; el fallback a nube requiere conectividad.
-3. **Modo Kiosk limitado**: En Android, el bloqueo total de la app requiere permisos de administrador de dispositivo que no se implementaron en esta versión (solo se bloquea la navegación interna).
-4. **Sincronización offline de tareas**: Las tareas creadas offline se sincronizan al reconectar, pero sin manejo avanzado de conflictos (last-write-wins).
+3. **Sincronización offline de tareas**: Las tareas creadas offline se sincronizan al reconectar, pero sin manejo avanzado de conflictos (last-write-wins).
 
 ---
 
@@ -767,7 +761,7 @@ El objetivo general fue **completamente alcanzado**: se desarrolló una aplicaci
 
 **Aporte técnico:**
 
-Este proyecto representa una **contribución tangible** al campo de la tecnología asistiva (Assistive Technology) para neurodivergencia. A diferencia de aplicaciones comerciales fragmentadas, Organízate demuestra que es posible integrar comunicación aumentativa, gestión de tareas, supervisión remota y control parental en una **arquitectura unificada** de bajo costo operativo (gracias a Firebase BaaS). La implementación de un **RoleDispatcher** con routing reactivo basado en Firestore streams es un patrón replicable para cualquier aplicación multi-rol.
+Este proyecto representa una **contribución tangible** al campo de la tecnología asistiva (Assistive Technology) para neurodivergencia. A diferencia de aplicaciones comerciales fragmentadas, Organízate demuestra que es posible integrar comunicación aumentativa, gestión de tareas y supervisión remota en una **arquitectura unificada** de bajo costo operativo (gracias a Firebase BaaS). La implementación de un **RoleDispatcher** con routing reactivo basado en Firestore streams es un patrón replicable para cualquier aplicación multi-rol.
 
 **Aporte personal:**
 
@@ -811,7 +805,9 @@ El desarrollo de este proyecto consolidó competencias en:
 
 ### 16.1 Mejoras o funcionalidades no implementadas
 
-1. **Sincronización offline completa con conflict resolution**: Implementar **CRDTs** (Conflict-free Replicated Data Types) o un sistema de timestamps vectoriales para manejar ediciones concurrentes de tareas/pictogramas entre usuario y tutor.
+1. **Modo Kiosk / Control parental**: Bloquear la salida de la app mediante `DevicePolicyManager` o `startLockTask()` con permisos de administrador de dispositivo, incluyendo un PIN de emergencia gestionado por el tutor. Se exploró una implementación inicial con `startLockTask()` pero no se estabilizó en Android 14+, por lo que se retiró del MVP para mantener la entrega a tiempo.
+
+2. **Sincronización offline completa con conflict resolution**: Implementar **CRDTs** (Conflict-free Replicated Data Types) o un sistema de timestamps vectoriales para manejar ediciones concurrentes de tareas/pictogramas entre usuario y tutor.
 
 2. **Inteligencia artificial para predicción de rutinas**: Entrenar un modelo de **Machine Learning** (TensorFlow Lite) con el historial de actividad del usuario para predecir la próxima tarea más probable y sugerirla proactivamente.
 
@@ -897,7 +893,6 @@ El desarrollo de este proyecto consolidó competencias en:
 - Vinculación con tutor (código de invitación).
 - Uso del temporizador Pomodoro.
 - Configuración de contacto de emergencia.
-- Activación del modo Kiosk.
 - Respaldo a Google Drive.
 
 ### Anexo C: Encuesta de usabilidad SUS

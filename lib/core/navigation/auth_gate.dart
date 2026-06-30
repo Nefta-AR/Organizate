@@ -10,7 +10,6 @@ import 'package:simple/features/auth/screens/login_screen.dart';
 import 'package:simple/features/auth/screens/role_selection_screen.dart';
 import 'package:simple/features/auth/screens/profile_setup_screen.dart';
 import 'package:simple/core/services/push_notification_service.dart';
-import 'package:simple/core/services/kiosk_mode_service.dart';
 
 /// Punto de entrada del árbol de widgets post-MaterialApp.
 ///
@@ -68,8 +67,6 @@ class _UserOnboardingGate extends StatefulWidget {
 }
 
 class _UserOnboardingGateState extends State<_UserOnboardingGate> {
-  bool _kioskActivated = false;
-
   @override
   void initState() {
     super.initState();
@@ -106,14 +103,6 @@ class _UserOnboardingGateState extends State<_UserOnboardingGate> {
         final hasName   = (data['name'] as String? ?? '').isNotEmpty;
         if (!hasProfile && !hasName) {
           return const ProfileSetupScreen();
-        }
-
-        // Activar kiosk mode automáticamente si está habilitado en Firestore
-        // y aún no se activó en esta sesión.
-        final kioskEnabled = data['kioskModeEnabled'] as bool? ?? false;
-        if (kioskEnabled && !_kioskActivated && role != 'tutor') {
-          _kioskActivated = true;
-          KioskModeService.enable(userId: widget.user.uid);
         }
 
         return RoleDispatcher(role: role);

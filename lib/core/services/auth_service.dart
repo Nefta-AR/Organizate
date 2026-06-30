@@ -79,7 +79,6 @@ class AuthService {
       if (role == UserRole.tutor) ...{
         'linkedPatients': {},
         'invitationCodes': {},
-        'kioskModeEnabled': false,
       },
       if (role == UserRole.usuario) ...{
         'linkedTutors': {},
@@ -189,7 +188,6 @@ class AuthService {
           if (roleStr == 'tutor') ...{
             'linkedPatients': {},
             'invitationCodes': {},
-            'kioskModeEnabled': false,
           },
           if (roleStr == 'usuario') ...{
             'linkedTutors': {},
@@ -239,7 +237,6 @@ class AuthService {
             if (roleStr == 'tutor') ...{
               'linkedPatients': {},
               'invitationCodes': {},
-              'kioskModeEnabled': false,
             },
             if (roleStr == 'usuario') ...{
               'linkedTutors': {},
@@ -274,7 +271,6 @@ class AuthService {
     if (role == UserRole.tutor) {
       updates['linkedPatients'] = {};
       updates['invitationCodes'] = {};
-      updates['kioskModeEnabled'] = false;
     } else {
       updates['linkedTutors'] = {};
       updates['acceptedInvitationCode'] = null;

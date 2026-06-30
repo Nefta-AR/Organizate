@@ -54,8 +54,7 @@ const cronograma = [
   { fase: '', tarea: 'Corrección bugs integración', estado: 'Pendiente', s1: '', s2: '██████', s3: '', s4: '', s5: '', s6: '', s7: '', s8: '' },
   
   // Fase 6 - Pulido
-  { fase: 'FASE 6: Pulido', tarea: 'Kiosk Mode paciente TEA', estado: 'Pendiente', s1: '', s2: '', s3: '██████', s4: '', s5: '', s6: '', s7: '', s8: '' },
-  { fase: '', tarea: 'Dashboard progreso (fl_chart)', estado: 'Pendiente', s1: '', s2: '', s3: '██████', s4: '', s5: '', s6: '', s7: '', s8: '' },
+  { fase: 'FASE 6: Pulido', tarea: 'Dashboard progreso (fl_chart)', estado: 'Pendiente', s1: '', s2: '', s3: '██████', s4: '', s5: '', s6: '', s7: '', s8: '' },
   { fase: '', tarea: 'Notificaciones push FCM', estado: 'Pendiente', s1: '', s2: '', s3: '', s4: '██████', s5: '', s6: '', s7: '', s8: '' },
   { fase: '', tarea: 'Testing y bugs menores', estado: 'Pendiente', s1: '', s2: '', s3: '', s4: '██████', s5: '', s6: '', s7: '', s8: '' },
   
@@ -83,7 +82,6 @@ const hitos = [
 const tareasPendientes = [
   { prioridad: 'Alta', tarea: 'Completar supervisión tutor -> detalle de paciente', fase: 'Fase 5' },
   { prioridad: 'Alta', tarea: 'Sincronización bidireccional tareas tutor <-> paciente', fase: 'Fase 5' },
-  { prioridad: 'Media', tarea: 'Kiosk Mode para paciente TEA (control parental)', fase: 'Fase 6' },
   { prioridad: 'Media', tarea: 'Pulir dashboard de progreso (gráficos fl_chart)', fase: 'Fase 6' },
   { prioridad: 'Baja', tarea: 'Notificaciones push FCM completas', fase: 'Fase 6' },
   { prioridad: 'Baja', tarea: 'Testing y correcciones de bugs menores', fase: 'Fase 6' },
@@ -225,7 +223,6 @@ console.log('');
 console.log('📌 TAREAS CRÍTICAS PENDIENTES:');
 console.log('   🔴 Alta: Completar supervisión tutor -> detalle de paciente');
 console.log('   🔴 Alta: Sincronización bidireccional tareas tutor <-> paciente');
-console.log('   🟡 Media: Kiosk Mode paciente TEA (control parental)');
 console.log('   🟡 Media: Pulir dashboard progreso (fl_chart)');
 console.log('');
 console.log('📅 HITOS:');

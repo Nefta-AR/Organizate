@@ -58,7 +58,7 @@ modulos = [
     ("IA / Super Experto", 8, "Completado"),
     ("Panel Tutor (supervision)", 12, "Completado"),
     ("Infraestructura Firebase", 5, "Completado"),
-    ("Pulido, Dashboard, Kiosk", 10, "En Curso"),
+    ("Pulido y Dashboard", 10, "En Curso"),
 ]
 
 for i, (modulo, pct, estado) in enumerate(modulos, 22):
@@ -143,8 +143,7 @@ tareas = [
     ("", "Sincronizacion bidireccional", "Completado", ["I"]),
     ("", "Correccion bugs integracion", "Completado", ["I"]),
     # Fase 6
-    ("FASE 6: Pulido", "Kiosk Mode paciente TEA", "Completado", ["J"]),
-    ("", "Dashboard progreso (fl_chart)", "Completado", ["J"]),
+    ("FASE 6: Pulido", "Dashboard progreso (fl_chart)", "Completado", ["J"]),
     ("", "Control granular pestañas", "Completado", ["J"]),
     ("", "Fix nav bar feature flags", "Completado", ["J"]),
     ("", "Eliminacion pantalla legacy", "Completado", ["J"]),
@@ -280,7 +279,7 @@ commits = [
     ("26 May 2026", "-", "Dashboard progreso integrado (3 graficos)", "Fase 6"),
     ("26 May 2026", "-", "Fix CustomNavBar featureInicio/featureTareas", "Fase 6"),
     ("26 May 2026", "-", "Eliminada TutorPatientDetailScreen (legacy)", "Fase 6"),
-    ("26 May 2026", "-", "Kiosk Mode implementado (plugin Kotlin + servicio Dart)", "Fase 6"),
+    ("26 May 2026", "-", "Kiosk Mode removido del MVP (escalabilidad futura)", "Fase 6"),
 ]
 
 for i, (fecha, commit, desc, fase) in enumerate(commits, 4):

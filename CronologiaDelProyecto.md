@@ -3,7 +3,7 @@
 Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y el registro de avance real del desarrollo de la aplicación Simple.
 
 **Período:** 27 Abril 2026 - 07 Julio 2026 (10 semanas)  
-**Estado Actual:** 97% Completado | Kiosk Mode implementado  
+**Estado Actual:** 97% Completado | Kiosk Mode removido (escalabilidad futura)  
 **Próximo Hito:** QA en dispositivos reales
 
 ---
@@ -57,7 +57,6 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
 | **FASE 6** | Dashboard progreso + control pestañas | | | | | | | ██████ | | | | | |
 | | Fix flujo auth (registro / login) | | | | | | | ██████ | | | | | |
 | | Limpieza roles legacy + reglas Firebase | | | | | | | ██████ | | | | | |
-| | Kiosk Mode usuario TEA | | | | | | | | ██████ | | | | |
 | | Notificaciones push FCM | | | | | | | | ██████ | | | | |
 | | QA y bugs menores | | | | | | | | | ██████ | | | |
 | **FASE 7** | Comentarios en código crítico | | | | | | | | | ██████ | | | |
@@ -199,10 +198,9 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
 
 **Sprint A — Control y Visualización (24 May - 02 Jun):**
 
-- 🔄 **Kiosk Mode para usuario TEA** *(alta prioridad — en curso)*
-  - Bloqueo de botones físicos (volumen, home, recientes)
-  - PIN para salir de la app (para el tutor/cuidador)
-  - Prevención de cambio de app accidental
+- ❌ **Kiosk Mode para usuario TEA** *(eliminado del MVP — escalabilidad futura)*
+  - No se alcanzó a estabilizar el bloqueo nativo en Android 14+.
+  - Se deja como línea futura post-MVP.
 
 - ✅ **Fix flujo registro/login end-to-end** *(bug crítico)*
   - ✅ Race condition: documento Firestore inexistente tras registro
@@ -314,13 +312,12 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
 
 | Prioridad | Tarea | Estimación | Estado |
 |:---|:---|:---:|:---:|
-| 🔴 **Alta** | Kiosk Mode para usuario TEA | 3 días | 🔄 En Curso |
 | 🔴 **Alta** | Fix flujo auth/registro/login | 4 días | ✅ Completado |
 | 🔴 **Alta** | Limpieza roles legacy + reglas Firebase | 1 día | ✅ Completado |
 | 🟡 **Media** | Notificaciones push FCM | 4 días | ✅ Infraestructura lista |
 | 🟡 **Media** | QA — testing en dispositivos reales | 2 días | 🔲 Pendiente |
 
-**Objetivo del Sprint:** Completar Kiosk Mode y cerrar bugs antes del 16 de junio para entrar a Fase 7.
+**Objetivo del Sprint:** Cerrar bugs restantes y estabilizar la sincronización tutor-paciente antes del 16 de junio para entrar a Fase 7.
 
 ---
 
@@ -363,7 +360,7 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
 | 24 May | Fix "No pudimos guardar tu perfil" + limpieza roles (parte 4) | La regla Firestore `allow create` requiere `role` en lista específica; el write inicial sin `role` fallaba en servidor (solo pasaba por cache offline); solución: escribir `role: 'usuario'` en el write inicial (email y Google); `_UserOnboardingGate._onDoc` usa `hasCompletedOnboarding: false` para detectar usuario sin rol elegido; reglas actualizadas: solo `['tutor', 'usuario']`, `isUsuario()` simplificado, roles legacy eliminados | Fase 6 |
 | 26 May | Fix `CustomNavBar` no leía `featureInicio` ni `featureTareas` | Bug crítico: el tutor podía desactivar Inicio y Tareas desde su panel pero la nav bar siempre los mostraba; se agregaron los 2 flags faltantes al listener y al getter `_entries`; Inicio y Tareas ahora son condicionales igual que Pictogramas y Foco | Fase 6 |
 | 26 May | Eliminada `TutorPatientDetailScreen` (pantalla legacy de 3 tabs) | Pantalla obsoleta con tabs Tareas/Pictogramas/Registros que se abría al tocar un paciente en Vincular; reemplazada por navegación directa a `TutorSupervisarScreen` que ya tiene los 5 tabs completos con cambio de paciente vía `ValueKey(patientId)` | Fase 6 |
-| 26 May | Modo Kiosk implementado con `startLockTask()` nativo Android | Plugin Kotlin (`KioskModePlugin`) + servicio Dart (`KioskModeService`) + toggle en `PantallasConfigScreen` (usuario) y `_TutorConfigTab` (tutor); activación automática al abrir app si `kioskModeEnabled: true` en Firestore; el tutor puede activar/desactivar remotamente desde su panel | Fase 6 |
+| 26 May | Modo Kiosk removido del MVP | El bloqueo nativo con `startLockTask()` no se estabilizó en Android 14+; se eliminan `KioskModePlugin`, `KioskModeService` y todos los toggles/flags asociados para reducir riesgo antes de la entrega | Fase 6 |
 
 ---
 
@@ -391,7 +388,6 @@ El Trello original tenía 5 sprints. Estado actual vs lo planificado:
 | Riesgo | Probabilidad | Impacto | Mitigación |
 |:---|:---:|:---:|:---|
 | Google Sign-In falla (SHA-1 no registrado) | Alta | Alto | Registrar SHA-1 del keystore en Firebase Console manualmente |
-| Kiosk Mode — incompatibilidad Android 14+ | Media | Medio | Usar `DevicePolicyManager` con fallback graceful si no hay permisos |
 | Bugs en integración Firebase en gama baja | Media | Alto | Testing temprano en dispositivos reales, no solo emuladores |
 | Falta de testers con TEA/TDAH | Media | Medio | Contactar organizaciones desde semana 5 |
 | Gemini API key no configurada en producción | Alta | Medio | Fallback local ya implementado — no bloquea el MVP |
@@ -410,7 +406,7 @@ El Trello original tenía 5 sprints. Estado actual vs lo planificado:
 | IA / Súper Experto | 8% | ✅ Completado | ~1,500 |
 | Panel Tutor (supervisión) | 12% | ✅ Completado | ~2,200 |
 | Infraestructura Firebase | 5% | ✅ Completado | ~800 |
-| Pulido, Dashboard, Kiosk | 10% | 🔲 Pendiente | — |
+| Pulido y Dashboard | 10% | 🔲 Pendiente | — |
 
 ### Total Estimado
 - **Líneas de código:** ~17,500+

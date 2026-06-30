@@ -40,7 +40,7 @@ phases = [
     ("Fase 3", "Módulo TEA (Pictogramas)", "30/04/2026", "06/05/2026", "done", 100, "Tablero ARASAAC, TTS, pictos custom, pictogramSettings"),
     ("Fase 4", "Módulo TDAH (Tareas y Foco)", "05/05/2026", "09/05/2026", "done", 100, "CRUD tareas, Pomodoro, respiración, sistema dopamina"),
     ("Fase 5", "Integración y Correcciones", "09/05/2026", "23/05/2026", "done", 100, "Vinculación tutor-usuario, historial, roles unificados"),
-    ("Fase 6", "Pulido y Testing", "24/05/2026", "16/06/2026", "progress", 75, "Dashboard progreso, control pestañas, Kiosk Mode, fix nav bar"),
+    ("Fase 6", "Pulido y Testing", "24/05/2026", "16/06/2026", "progress", 75, "Dashboard progreso, control pestañas, fix nav bar"),
     ("Fase 7", "Documentación y Entrega", "17/06/2026", "07/07/2026", "pending", 0, "Manual usuario, APK firmado, video demo, presentación"),
 ]
 

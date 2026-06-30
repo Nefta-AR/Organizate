@@ -98,8 +98,7 @@ Infraestructura Firebase ██░░░░░░░░░░░░░░░░�
 
 - [ ] Completar supervisión tutor → detalle de paciente
 - [ ] Sincronización bidireccional tareas tutor ↔ paciente
-- [ ] Kiosk Mode para paciente TEA (control parental)
 - [ ] Pulir dashboard de progreso (gráficos fl_chart)
 - [ ] Notificaciones push FCM completas
 - [ ] Testing y correcciones de bugs menores
-- [ ] Preparación para distribución (Play Store / App Store)
+- [ ] Preparación para distribución APK

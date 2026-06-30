@@ -32,6 +32,7 @@ import 'package:simple/features/tda_focus/services/streak_service.dart';
 import 'package:simple/core/utils/date_time_helper.dart';
 import 'package:simple/core/utils/reminder_helper.dart';
 import 'package:simple/core/utils/reminder_options.dart';
+import 'package:simple/core/utils/task_urgency_helper.dart';
 import 'package:simple/core/widgets/custom_nav_bar.dart';
 
 class TareasScreen extends StatefulWidget {
@@ -360,11 +361,15 @@ class _TareasScreenState extends State<TareasScreen> {
                           style: TextStyle(fontSize: 11, color: Colors.blue)),
                       if (dueDate != null) const SizedBox(width: 8),
                     ],
-                    if (dueDate != null)
+                    if (dueDate != null) ...[
+                      buildTaskUrgencyBadge(dueDate.toDate()) ??
+                          const SizedBox.shrink(),
+                      const SizedBox(width: 8),
                       Text(
-                        'Entrega: ${_dateFormatter.format(dueDate.toDate())}',
+                        _dateFormatter.format(dueDate.toDate()),
                         style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
                       ),
+                    ],
                   ],
                 )
               : null,
