@@ -13,6 +13,7 @@ Simple es una aplicación móvil inclusiva diseñada específicamente para apoya
 - ✅ **Badges de urgencia** en tareas (HOY / MAÑANA / DESPUÉS).
 - ✅ **Promo card de Súper Experto** en HomeScreen.
 - ✅ **Sincronización tutor ↔ paciente** completada.
+- ✅ **Botón SOS de pictogramas** reemplazado por ícono de contacto de emergencia (igual que HomeScreen).
 - ✅ **Corrección** de sintaxis en `vinculacion_tutor_screen.dart`.
 
 ---
