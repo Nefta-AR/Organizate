@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<title>Simple – Pantallas, Rutas y Métodos</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;font-size:10.5pt;line-height:1.65;color:#2d2d2d;background:#f9f9f7}
+.cover{background:linear-gradient(135deg,#7BB3D0,#5A9ABF);color:#fff;text-align:center;padding:60px 40px 45px}
+.cover h1{font-size:24pt;font-weight:800}.cover h2{font-size:13pt;opacity:.9;margin-top:8px}
+.cover p{margin-top:16px;font-size:9.5pt;opacity:.8}
+.badge{display:inline-block;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);border-radius:16px;padding:2px 10px;margin:3px;font-size:8pt}
+.wrap{max-width:920px;margin:0 auto;padding:32px 46px 56px;background:#fff}
+.toc{background:#f0f7fb;border-left:4px solid #7BB3D0;padding:16px 24px;border-radius:8px;margin-bottom:32px}
+.toc h2{font-size:11.5pt;color:#5A9ABF;margin-bottom:8px}
+.toc ol{padding-left:17px}.toc li{margin:3px 0}.toc a{color:#5A9ABF;text-decoration:none}
+h1{font-size:17pt;color:#2d4059;margin:32px 0 7px;border-bottom:2px solid #7BB3D0;padding-bottom:4px}
+h2{font-size:12.5pt;color:#3a6186;margin:22px 0 5px}
+h3{font-size:11pt;color:#4a7fa0;margin:14px 0 4px}
+p{margin:5px 0}ul{padding-left:18px;margin:5px 0}li{margin:2px 0}
+.cat{background:linear-gradient(90deg,#7BB3D0,#8FAF8C);color:#fff;padding:8px 20px;border-radius:8px;margin:28px 0 14px;font-size:11.5pt;font-weight:700}
+.card{background:#fff;border:1px solid #dde8ef;border-radius:10px;padding:18px 22px;margin:16px 0;box-shadow:0 2px 6px rgba(90,154,191,.06)}
+.ch{display:flex;align-items:flex-start;gap:11px;margin-bottom:12px;padding-bottom:9px;border-bottom:1px solid #edf2f6}
+.ico{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.tt{flex:1}.tt h2{margin:0;font-size:12.5pt}
+.rb{display:inline-block;background:#e8f4fb;color:#3a6186;border:1px solid #c0dce8;border-radius:4px;padding:1px 8px;font-size:8pt;font-family:'Courier New',monospace;margin-top:3px}
+.fb{display:inline-block;background:#f3f0ff;color:#5a3d8a;border:1px solid #c8bde8;border-radius:4px;padding:1px 8px;font-size:8pt;font-family:'Courier New',monospace;margin-top:3px;margin-left:4px}
+.lbl{font-size:7.5pt;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#7BB3D0;margin:11px 0 4px}
+table{width:100%;border-collapse:collapse;font-size:9pt;margin:7px 0}
+th{background:#e8f2f8;color:#2d4059;padding:5px 9px;text-align:left;font-weight:700;border:1px solid #cde0ea}
+td{padding:4px 9px;border:1px solid #e0e8ee;vertical-align:top}
+tr:nth-child(even) td{background:#f6fafd}
+code{background:#f0f4f8;color:#2a5070;border:1px solid #ccdbe8;border-radius:3px;padding:1px 4px;font-family:'Courier New',monospace;font-size:8.5pt}
+.flow{background:#fffbf0;border-left:4px solid #f0b429;border-radius:7px;padding:10px 14px;margin:9px 0;font-size:9pt}
+.svc{background:#fafdf9;border-left:4px solid #8FAF8C;border-radius:7px;padding:14px 18px;margin:12px 0}
+.svc h3{color:#4a7a46;margin-top:0}
+.footer{margin-top:46px;padding-top:16px;border-top:1px solid #dde8ef;text-align:center;font-size:8.5pt;color:#8c8580}
+</style>
+</head>
+<body>
+<div class="cover">
+  <h1>Simple — Prótesis Cognitiva</h1>
+  <h2>Pantallas · Rutas · Métodos — Documentación Técnica Completa</h2>
+  <p><span class="badge">Flutter 3.3+</span><span class="badge">Firebase Auth</span><span class="badge">Cloud Firestore</span><span class="badge">Firebase Storage</span><span class="badge">Cloud Functions</span><span class="badge">fl_chart</span><span class="badge">Provider</span><span class="badge">Material 3</span></p>
+  <p style="margin-top:18px;opacity:.75">Neftali Arriagada · Proyecto de Título — Analista Programador · Julio 2026</p>
+</div>
+<div class="wrap">
+
+<div class="toc">
+  <h2>Tabla de Contenidos</h2>
+  <ol>
+    <li><a href="#arq">Arquitectura General</a></li>
+    <li><a href="#auth">Módulo Autenticación</a> — AuthGate · Login · RoleSelection · ProfileSetup · VinculacionTutor</li>
+    <li><a href="#onb">Módulo Onboarding</a> — OnboardingScreen · TestInitial · Hogar · Estudios · Meds · WelcomeReward</li>
+    <li><a href="#foco">Módulo Foco (TDAH)</a> — Home · Tareas · Foco/Pomodoro · Progreso · SuperExperto</li>
+    <li><a href="#tea">Módulo TEA</a> — PantallaUsuarioTEA · CrearPictograma · PictogramManager</li>
+    <li><a href="#tutor">Módulo Tutor</a> — TutorSupervise · TutorVinculacion · PantallasConfig · Perfil · Settings</li>
+    <li><a href="#svc">Servicios Transversales</a> — AuthService · ActivityLog · Notification · Push · Reminder · Pictogram · IA · Audio · Drive · Streak · Emergency · Theme</li>
+  </ol>
+</div>
+
+<!-- ══ 1. ARQUITECTURA ══════════════════════════════════════ -->
+<h1 id="arq">1. Arquitectura General</h1>
+
+<table>
+  <tr><th>Carpeta</th><th>Ruta completa</th><th>Contenido</th></tr>
+  <tr><td>Navegación</td><td><code>lib/core/navigation/</code></td><td>AuthGate — decisor de ruta según sesión y rol</td></tr>
+  <tr><td>Router</td><td><code>lib/core/router/</code></td><td>AppRouter — rutas nombradas con onGenerateRoute</td></tr>
+  <tr><td>Servicios</td><td><code>lib/core/services/</code></td><td>Auth, Notification, Push, ActivityLog, Pictogram, Audio, GoogleDrive</td></tr>
+  <tr><td>Tema</td><td><code>lib/core/theme/</code></td><td>AppTheme — ThemeData Material 3 completo</td></tr>
+  <tr><td>Utilidades</td><td><code>lib/core/utils/</code></td><td>Fechas, recordatorios, urgencia, emergencia, opciones</td></tr>
+  <tr><td>Widgets</td><td><code>lib/core/widgets/</code></td><td>CustomNavBar, TestHeader</td></tr>
+  <tr><td>Modelos</td><td><code>lib/core/models/</code></td><td>AvatarOption</td></tr>
+  <tr><td>Auth screens</td><td><code>lib/features/auth/screens/</code></td><td>Login, RoleSelection, ProfileSetup, VinculacionTutor</td></tr>
+  <tr><td>Onboarding</td><td><code>lib/features/onboarding/screens/</code></td><td>Onboarding, TestInitial, Hogar, Estudios, Meds, WelcomeReward, SuperExperto</td></tr>
+  <tr><td>Foco screens</td><td><code>lib/features/tda_focus/screens/</code></td><td>Home, Tareas, Foco, Progreso</td></tr>
+  <tr><td>Foco services</td><td><code>lib/features/tda_focus/services/</code></td><td>PomodoroService, StreakService, IAService</td></tr>
+  <tr><td>TEA screens</td><td><code>lib/features/tea_board/screens/</code></td><td>PantallaUsuarioTEA, CrearPictogramaSheet, PictogramManagerScreen</td></tr>
+  <tr><td>Tutor screens</td><td><code>lib/features/tutor_dashboard/screens/</code></td><td>HomeScreen, TutorSupervise, TutorVinculacion, PantallasConfig, Perfil, Settings</td></tr>
+</table>
+
+<h3>Esquema Firestore</h3>
+<div class="flow">
+  <code>users/{uid}</code> — documento raíz: name, role, avatar, points, streak, hasCompletedOnboarding, screenFlags<br>
+  &nbsp;├─ <code>tasks/{id}</code> — tareas: text, category, done, dueDate, reminderMinutes, parentTaskId, generadoPorIA<br>
+  &nbsp;├─ <code>pictograms/{id}</code> — pictogramas personalizados: imageUrl, etiqueta, textoTts, categoria<br>
+  &nbsp;├─ <code>pictogramSettings/{pictoId}</code> — overrides: categoria?, visible<br>
+  &nbsp;├─ <code>activityLog/{id}</code> — eventos: type, description, timestamp, metadata?<br>
+  &nbsp;├─ <code>notificationQueue/{taskId}</code> — cola push remota: runAt, title, body<br>
+  &nbsp;└─ <code>linkedTutors/{tutorId}</code> — vínculo: tutorId, linkedAt, status<br>
+  <code>invitationCodes/{code}</code> — código tutor: tutorId, tutorName, status, expiresAt, usedBy
+</div>
+
+<!-- ══ 2. AUTH ═══════════════════════════════════════════════ -->
+<div class="cat" id="auth">2. Módulo de Autenticación</div>
+
+<div class="card">
+  <div class="ch"><div class="ico" style="background:#e8f4fb">🔐</div>
+  <div class="tt"><h2>AuthGate — Puerta de entrada</h2>
+  <span class="rb">/</span><span class="fb">lib/core/navigation/auth_gate.dart</span></div></div>
+  <p>Componente raíz. Escucha dos streams anidados: estado de sesión Firebase Auth y documento Firestore del usuario. Decide la pantalla sin que el usuario intervenga.</p>
+  <div class="lbl">Métodos / Lógica</div>
+  <table>
+    <tr><th>Método</th><th>Firma</th><th>Qué hace paso a paso</th><th>Firestore</th></tr>
+    <tr><td><code>build()</code></td><td><code>Widget build(BuildContext)</code></td><td>
+      StreamBuilder exterior sobre <code>AuthService.authStateChanges</code>.<br>
+      Si <code>user==null</code> → retorna <code>LoginScreen()</code>.<br>
+      Si hay usuario → abre StreamBuilder interior sobre <code>users/{uid}</code>.<br>
+      Lee <code>role</code> y <code>hasCompletedOnboarding</code>.<br>
+      <code>hasCompletedOnboarding==false</code> → <code>TestInitialScreen()</code>.<br>
+      <code>role=='tutor'</code> → <code>HomeScreen()</code>.<br>
+      <code>role=='usuario_tea'</code> → <code>PantallaUsuarioTEA()</code>.<br>
+      Cualquier otro rol → <code>HomeScreen()</code>.
+    </td><td><code>users/{uid}</code> (stream)</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <div class="ch"><div class="ico" style="background:#fef3e8">🔑</div>
+  <div class="tt"><h2>LoginScreen — Inicio de sesión</h2>
+  <span class="rb">/login</span><span class="fb">lib/features/auth/screens/login_screen.dart</span></div></div>
+  <p>Pantalla de entrada. Autenticación por email/contraseña o Google. Acceso al registro y recuperación de contraseña.</p>
+  <div class="lbl">Estado</div>
+  <table>
+    <tr><th>Variable</th><th>Tipo</th><th>Función que cumple en el código</th></tr>
+    <tr><td><code>_emailController</code></td><td><code>TextEditingController</code></td><td>Captura el email del campo TextField</td></tr>
+    <tr><td><code>_passwordController</code></td><td><code>TextEditingController</code></td><td>Captura la contraseña del campo TextField</td></tr>
+    <tr><td><code>_formKey</code></td><td><code>GlobalKey&lt;FormState&gt;</code></td><td>Permite llamar <code>.validate()</code> en todos los campos antes de autenticar</td></tr>
+    <tr><td><code>_isLoading</code></td><td><code>bool</code></td><td>Muestra spinner y deshabilita botones durante peticiones async</td></tr>
+    <tr><td><code>_obscurePassword</code></td><td><code>bool</code></td><td>Alterna visibilidad de la contraseña (ícono ojo)</td></tr>
+    <tr><td><code>_error</code></td><td><code>String?</code></td><td>Mensaje de error visible bajo el formulario si la autenticación falla</td></tr>
+  </table>
+  <div class="lbl">Métodos</div>
+  <table>
+    <tr><th>Método</th><th>Firma</th><th>Qué hace paso a paso</th><th>API / Colección</th></tr>
+    <tr><td><code>_loginWithEmail()</code></td><td><code>Future&lt;void&gt;</code></td><td>1) <code>_formKey.currentState!.validate()</code>. 2) <code>AuthService.loginWithEmail(email, password)</code>. 3) Captura <code>FirebaseAuthException</code> y asigna mensaje legible a <code>_error</code>. 4) Si éxito: AuthGate redirige automáticamente vía stream.</td><td>Firebase Auth</td></tr>
+    <tr><td><code>_loginWithGoogle()</code></td><td><code>Future&lt;void&gt;</code></td><td>1) <code>AuthService.loginWithGoogle()</code> abre selector de cuenta Google. 2) Si <code>isNewUser==true</code> → navega a <code>RoleSelectionScreen</code>. 3) Si existe → AuthGate redirige por rol.</td><td>Firebase Auth + <code>users/{uid}</code></td></tr>
+    <tr><td><code>_resetPassword()</code></td><td><code>Future&lt;void&gt;</code></td><td>Abre AlertDialog con TextField de email. Al confirmar llama <code>AuthService.sendPasswordResetEmail(email)</code>. Muestra SnackBar de éxito o error.</td><td>Firebase Auth</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <div class="ch"><div class="ico" style="background:#f0f9e8">👥</div>
+  <div class="tt"><h2>RoleSelectionScreen — Selección de rol</h2>
+  <span class="rb">/role-selection</span><span class="fb">lib/features/auth/screens/role_selection_screen.dart</span></div></div>
+  <p>Se muestra una sola vez al registrar cuenta nueva. El usuario elige: <strong>Usuario</strong> (TEA/TDAH) o <strong>Tutor/Cuidador</strong>. Define toda la experiencia posterior.</p>
+  <div class="lbl">Estado</div>
+  <table>
+    <tr><th>Variable</th><th>Tipo</th><th>Función</th></tr>
+    <tr><td><code>_selectedRole</code></td><td><code>String?</code></td><td>Rol seleccionado (<code>'usuario'</code> o <code>'tutor'</code>). Controla borde azul en las tarjetas.</td></tr>
+    <tr><td><code>_isLoading</code></td><td><code>bool</code></td><td>Bloquea UI durante escritura en Firestore</td></tr>
+  </table>
+  <div class="lbl">Métodos</div>
+  <table>
+    <tr><th>Método</th><th>Firma</th><th>Qué hace paso a paso</th><th>Colección</th></tr>
+    <tr><td><code>_selectRole()</code></td><td><code>Future&lt;void&gt; _selectRole(String role)</code></td><td>1) setState(<code>_selectedRole=role</code>). 2) <code>AuthService.setRole(UserRole.tutor|usuario)</code>: escribe <code>{role, linkedPatients:{}, invitationCodes:{}}</code> (tutor) o <code>{role, linkedTutors:{}, acceptedInvitationCode:null}</code> (usuario) con <code>merge:true</code>. 3) Navega a <code>ProfileSetupScreen</code>.</td><td><code>users/{uid}</code></td></tr>
+    <tr><td><code>_buildRoleCard()</code></td><td><code>Widget _buildRoleCard({role, label, icon, desc})</code></td><td>GestureDetector → AnimatedContainer. Si <code>_selectedRole==role</code>: borde azul 2px. Al tocar llama <code>_selectRole(role)</code>.</td><td>—</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <div class="ch"><div class="ico" style="background:#f3f0ff">👤</div>
+  <div class="tt"><h2>ProfileSetupScreen — Perfil inicial</h2>
+  <span class="rb">/profile-setup</span><span class="fb">lib/features/auth/screens/profile_setup_screen.dart</span></div></div>
+  <p>Formulario de datos básicos: nombre, subtipo de usuario (tea/tdah/general) y avatar. Se muestra una sola vez en el registro.</p>
+  <div class="lbl">Estado</div>
+  <table>
+    <tr><th>Variable</th><th>Tipo</th><th>Función</th></tr>
+    <tr><td><code>_nameController</code></td><td><code>TextEditingController</code></td><td>Captura el nombre display del usuario</td></tr>
+    <tr><td><code>_selectedUserType</code></td><td><code>String</code></td><td>Subtipo: <code>'usuario_tea'</code>, <code>'usuario_tdah'</code>, <code>'usuario_general'</code></td></tr>
+    <tr><td><code>_selectedAvatar</code></td><td><code>String</code></td><td>ID del avatar seleccionado (e.g. <code>'emoticon'</code>)</td></tr>
+    <tr><td><code>_isLoading</code></td><td><code>bool</code></td><td>Spinner durante la escritura en Firestore</td></tr>
+  </table>
+  <div class="lbl">Métodos</div>
+  <table>
+    <tr><th>Método</th><th>Firma</th><th>Qué hace paso a paso</th><th>API / Colección</th></tr>
+    <tr><td><code>_saveProfile()</code></td><td><code>Future&lt;void&gt;</code></td><td>1) Valida nombre no vacío. 2) <code>FirebaseAuth.currentUser.updateDisplayName(name)</code>. 3) Firestore <code>update({name, userType, avatar})</code> con <code>merge:true</code>. 4) Navega a <code>VinculacionTutorScreen</code> (usuario) o <code>TutorVinculacionScreen</code> (tutor).</td><td>Firebase Auth + <code>users/{uid}</code></td></tr>
+    <tr><td><code>_selectAvatar()</code></td><td><code>void _selectAvatar(String id)</code></td><td>setState(<code>_selectedAvatar=id</code>). La cuadrícula refleja la selección con borde azul y escala 1.1×.</td><td>—</td></tr>
+    <tr><td><code>_buildAvatarGrid()</code></td><td><code>Widget</code></td><td>GridView.builder crossAxisCount:4. Cada celda: GestureDetector sobre AnimatedScale con imagen PNG. Al tocar llama <code>_selectAvatar(id)</code>.</td><td>—</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <div class="ch"><div class="ico" style="background:#fde8f5">🔗</div>
+  <div class="tt"><h2>VinculacionTutorScreen — Vincular con tutor</h2>
+  <span class="rb">/vinculacion-tutor</span><span class="fb">lib/features/auth/screens/vinculacion_tutor_screen.dart</span></div></div>
+  <p>El usuario ingresa el código de 6 caracteres del tutor. Crea el vínculo bidireccional en Firestore. Puede omitirse y hacerse después desde Ajustes.</p>
+  <div class="lbl">Estado</div>
+  <table>
+    <tr><th>Variable</th><th>Tipo</th><th>Función</th></tr>
+    <tr><td><code>_codeController</code></td><td><code>TextEditingController</code></td><td>Captura el código de 6 caracteres</td></tr>
+    <tr><td><code>_isLoading</code></td><td><code>bool</code></td><td>Bloquea UI durante validación y batch write</td></tr>
+    <tr><td><code>_error</code></td><td><code>String?</code></td><td>Mensaje si el código es inválido, expirado o ya usado</td></tr>
+  </table>
+  <div class="lbl">Métodos</div>
+  <table>
+    <tr><th>Método</th><th>Firma</th><th>Qué hace paso a paso</th><th>Colecciones</th></tr>
+    <tr><td><code>_vincular()</code></td><td><code>Future&lt;void&gt;</code></td><td>1) Valida campo no vacío. 2) <code>AuthService.validateInvitationCode(code)</code>: verifica existencia, status=='active' y expiresAt. 3) <code>AuthService.acceptInvitationCode(code)</code>: batch write atómico: marca código 'used', escribe <code>users/{uid}/linkedTutors/{tutorId}</code>, actualiza <code>acceptedInvitationCode</code>. 4) Navega a <code>TestInitialScreen</code>.</td><td><code>invitationCodes/{code}</code> · <code>users/{uid}/linkedTutors/{tutorId}</code> · <code>users/{uid}</code></td></tr>
+    <tr><td><code>_skip()</code></td><td><code>void</code></td><td>Navega a <code>TestInitialScreen</code> sin crear vínculo. El usuario puede vincularse desde SettingsScreen más tarde.</td><td>—</td></tr>
+  </table>
+  <div class="flow">
+    <strong>Batch write de acceptInvitationCode (AuthService):</strong><br>
+    <code>batch.update(invitationCodes/{code}, {status:'used', usedBy:uid, usedAt:serverTimestamp()})</code><br>
+    <code>batch.set(users/{uid}/linkedTutors/{tutorId}, {tutorId, linkedAt, status:'active'}, merge)</code><br>
+    <code>batch.set(users/{uid}, {acceptedInvitationCode:code}, merge)</code><br>
+    <code>batch.commit()</code> — atómico: si falla alguna escritura, ninguna se aplica
+  </div>
+</div>
+
+<!-- ══ 3. ONBOARDING ════════════════════════════════════════ -->
+<div class="cat" id="onb">3. Módulo de Onboarding</div>
+
+<div class="card">
+  <div class="ch"><div class="ico" style="background:#fef3e8">👋</div>
+  <div class="tt"><h2>OnboardingScreen — Bienvenida</h2>
+  <span class="rb">/onboarding</span><span class="fb">lib/features/onboarding/screens/onboarding_screen.dart</span></div></div>
+  <p>Splash de primer uso. StatelessWidget sin estado propio. Muestra logo, nombre y tagline. Botón único que navega al wizard.</p>
+  <div class="lbl">Métodos</div>
+  <table>
+    <tr><th>Método / Widget</th><th>Firma</th><th>Qué hace</th><th>Nota técnica</th></tr>
+    <tr><td><code>build()</code></td><td><code>Widget build(BuildContext)</code></td><td>Scaffold sin AppBar. Center → Padding(horizontal:40) → Column(mainAxisSize:min): logo PNG 150×150, texto "Simple" 32pt bold, tagline 16pt height:1.5, botón azul full-width, texto apoyo inferior.</td><td><code>mainAxisSize:min</code> permite que Center centre verticalmente la columna</td></tr>
+    <tr><td>Botón "Comenzar"</td><td>onPressed callback</td><td><code>Navigator.pushReplacement(context, MaterialPageRoute(builder:(_)=>TestInitialScreen()))</code>. <code>pushReplacement</code> elimina esta pantalla del stack para impedir volver con "Atrás".</td><td>—</td></tr>
+    <tr><td><code>ElevatedButton.styleFrom</code></td><td>parámetros de estilo</td><td><code>minimumSize:Size(double.infinity,56)</code> → ancho completo, 56px alto (área táctil accesible). <code>backgroundColor:Color(0xFF0099FF)</code>. <code>borderRadius:12px</code> → estética amigable TEA. <code>elevation:0</code> → look plano Material 3.</td><td>—</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <div class="ch"><div class="ico" style="background:#e8f4fb">📋</div>
+  <div class="tt"><h2>TestInitialScreen — Wizard de configuración (4 pasos)</h2>
+  <span class="rb">/test-initial</span><span class="fb">lib/features/onboarding/screens/test_initial_screen.dart</span></div></div>
+  <p>Wizard de 4 pasos que recopila preferencias del usuario la primera vez. Al finalizar escribe datos en Firestore y otorga 1200 puntos.</p>
+  <div class="lbl">Los 4 pasos</div>
+  <table>
+    <tr><th>Paso</th><th>Pregunta</th><th>Widget</th><th>Campo guardado</th></tr>
+    <tr><td>1</td><td>¿Te distraes fácilmente?</td><td>Slider(min:1, max:4, divisions:3) con 4 emojis</td><td><code>distractionLevel: int</code></td></tr>
+    <tr><td>2</td><td>¿Qué recordatorios prefieres?</td><td>Wrap multi-select de tarjetas (4 opciones)</td><td><code>preferredReminders: List&lt;String&gt;</code></td></tr>
+    <tr><td>3</td><td>¿Metas cortas o largas?</td><td>Column de 2 tarjetas radio-style</td><td><code>goalLength: String</code></td></tr>
+    <tr><td>4</td><td>Elige tu avatar</td><td>GridView.builder crossAxisCount:4</td><td><code>avatar: String</code></td></tr>
+  </table>
+  <div class="lbl">Estado</div>
+  <table>
+    <tr><th>Variable</th><th>Tipo</th><th>Función</th></tr>
+    <tr><td><code>_currentStep</code></td><td><code>int</code> (1–4)</td><td>Controla el paso activo. <code>switch(_currentStep)</code> selecciona título y widget del paso.</td></tr>
+    <tr><td><code>_distractionLevel</code></td><td><code>double</code></td><td>Valor del Slider paso 1. Se convierte a int con <code>.round()</code> al guardar.</td></tr>
+    <tr><td><code>_selectedReminders</code></td><td><code>List&lt;bool&gt;</code></td><td>Multi-select paso 2. Índice por opción de recordatorio.</td></tr>
+    <tr><td><code>_selectedGoalLength</code></td><td><code>String?</code></td><td>Paso 3: <code>'corto'</code> o <code>'largo'</code></td></tr>
+    <tr><td><code>_selectedAvatar</code></td><td><code>String?</code></td><td>ID del avatar seleccionado en el grid del paso 4</td></tr>
+  </table>
+  <div class="lbl">Métodos</div>
+  <table>
+    <tr><th>Método</th><th>Firma</th><th>Qué hace paso a paso</th><th>Colección</th></tr>
+    <tr><td><code>_goToNextStep()</code></td><td><code>Future&lt;void&gt;</code></td><td>Si paso &lt;4: setState incrementa <code>_currentStep</code>. Si paso==4: 1) showDialog spinner no-dismissible. 2) Firestore set merge:true: <code>{hasCompletedOnboarding:true, avatar, distractionLevel, preferredReminders, goalLength, points:1200}</code>. 3) Cierra diálogo. 4) Navigator.pushReplacement a <code>WelcomeRewardScreen</code>.</td><td><code>users/{uid}</code></td></tr>
+    <tr><td><code>_goToPrevStep()</code></td><td><code>void</code></td><td>Si <code>_currentStep&gt;1</code>: setState decrementa. Botón "Atrás" oculto en paso 1.</td><td>—</td></tr>
+    <tr><td><code>_buildDistractionSlider()</code></td><td><code>Widget</code></td><td>Column con Row de 4 emojis (😊🙂😕😵) y <code>Slider(min:1,max:4,divisions:3)</code>. <code>onChanged</code> → setState actualiza <code>_distractionLevel</code>.</td><td>—</td></tr>
+    <tr><td><code>_buildReminderOptions()</code></td><td><code>Widget</code></td><td>LayoutBuilder → Wrap de tarjetas 2-columnas. Cada tarjeta: GestureDetector que alterna <code>_selectedReminders[i]</code>. Fondo azul claro si seleccionada.</td><td>—</td></tr>
+    <tr><td><code>_buildGoalOptions()</code></td><td><code>Widget</code></td><td>Column de 2 tarjetas radio. Al tocar: setState actualiza <code>_selectedGoalLength</code>. Activa: borde azul + checkmark.</td><td>—</td></tr>
+    <tr><td><code>_buildAvatarOptions()</code></td><td><code>Widget</code></td><td>GridView.builder crossAxisCount:4, NeverScrollableScrollPhysics. Cada celda: GestureDetector sobre imagen PNG. Seleccionado: borde azul 2px + fondo azul claro.</td><td>—</td></tr>
+    <tr><td><code>_buildProgressCard()</code></td><td><code>Widget</code></td><td>Card con <code>LinearProgressIndicator(value:_currentStep/_totalSteps)</code> y texto "Paso X de 4".</td><td>—</td></tr>
+    <tr><td><code>_buildBackNextRow()</code></td><td><code>Widget</code></td><td>Row: OutlinedButton "Atrás" (visible si paso&gt;1, llama <code>_goToPrevStep</code>) + ElevatedButton "Siguiente"/"Listo" (llama <code>_goToNextStep</code>).</td><td>—</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <div class="ch"><div class="ico" style="background:#f0f9e8">🏡</div>
+  <div class="tt"><h2>HogarScreen — Onboarding Hogar</h2>
+  <span class="fb">lib/features/onboarding/screens/hogar_screen.dart</span></div></div>
+  <p>Configura rutinas del hogar. El usuario marca tareas predefinidas que se crean en Firestore con <code>category:'Hogar'</code>.</p>
+  <div class="lbl">Estado y Métodos</div>
+  <table>
+    <tr><th>Elemento</th><th>Tipo/Firma</th><th>Función</th><th>Colección</th></tr>
+    <tr><td><code>_tareasDisponibles</code></td><td><code>List&lt;Map&gt;</code></td><td>Lista fija de tareas predefinidas por categoría (limpieza, cocina, compras). Cada mapa: text, iconName, colorName.</td><td>—</td></tr>
+    <tr><td><code>_seleccionadas</code></td><td><code>Set&lt;int&gt;</code></td><td>Índices de tareas marcadas. Set garantiza unicidad.</td><td>—</td></tr>
+    <tr><td><code>_toggleTarea()</code></td><td><code>void _toggleTarea(int i)</code></td><td>Agrega o elimina el índice de <code>_seleccionadas</code> con setState.</td><td>—</td></tr>
+    <tr><td><code>_crearTareasSeleccionadas()</code></td><td><code>Future&lt;void&gt;</code></td><td>1) WriteBatch. 2) Por cada índice en <code>_seleccionadas</code>: <code>batch.set(tasks/newDoc, {text, category:'Hogar', done:false, createdAt:serverTimestamp()})</code>. 3) <code>batch.commit()</code>. 4) Escribe <code>onboardingHogar:true</code> en <code>users/{uid}</code>. 5) Navigator.pop().</td><td><code>users/{uid}/tasks/</code> · <code>users/{uid}</code></td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <div class="ch"><div class="ico" style="background:#e8f4fb">📚</div>
+  <div class="tt"><h2>EstudiosScreen — Onboarding Estudios</h2>
+  <span class="fb">lib/features/onboarding/screens/estudios_screen.dart</span></div></div>
+  <p>Configura tareas académicas con <code>category:'Estudios'</code>. Permite seleccionar materias y días de la semana para recurrencia.</p>
+  <div class="lbl">Método principal</div>
+  <table>
+    <tr><th>Método</th><th>Firma</th><th>Qué hace</th><th>Colección</th></tr>
+    <tr><td><code>_crearTareasEstudios()</code></td><td><code>Future&lt;void&gt;</code></td><td>WriteBatch idéntico a HogarScreen pero con <code>category:'Estudios'</code> y campo adicional <code>diasSemana:List&lt;int&gt;</code>. Marca <code>onboardingEstudios:true</code> al finalizar.</td><td><code>users/{uid}/tasks/</code> · <code>users/{uid}</code></td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <div class="ch"><div class="ico" style="background:#fde8f5">💊</div>
+  <div class="tt"><h2>MedsScreen — Onboarding Medicación</h2>
+  <span class="fb">lib/features/onboarding/screens/meds_screen.dart</span></div></div>
+  <p>Registro de medicamentos con horario. Tareas <code>category:'Meds'</code>. Programa recordatorios automáticos via ReminderDispatcher.</p>
+  <div class="lbl">Método principal</div>
+  <table>
+    <tr><th>Método</th><th>Firma</th><th>Qué hace</th><th>Servicios</th></tr>
+    <tr><td><code>_guardarMedicamentos()</code></td><td><code>Future&lt;void&gt;</code></td><td>1) WriteBatch: crea tareas con <code>{text, category:'Meds', dueDate, reminderMinutes, done:false}</code>. 2) Por cada medicamento con hora: <code>ReminderDispatcher.scheduleTaskReminder(taskId, dueDate, reminderMinutes)</code>. 3) Marca <code>onboardingMeds:true</code>.</td><td><code>users/{uid}/tasks/</code> · NotificationService · PushNotificationService</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <div class="ch"><div class="ico" style="background:#fffbf0">🎉</div>
+  <div class="tt"><h2>WelcomeRewardScreen — Recompensa inicial</h2>
+  <span class="rb">/welcome-reward</span><span class="fb">lib/features/tda_focus/screens/welcome_reward_screen.dart</span></div></div>
+  <p>Pantalla celebratoria estática. Los 1200 puntos ya están en Firestore (escritos por TestInitialScreen). Solo los muestra y navega al flujo principal.</p>
+  <div class="lbl">Métodos</div>
+  <table>
+    <tr><th>Método / Widget</th><th>Firma</th><th>Qué hace</th><th>Nota</th></tr>
+    <tr><td><code>build()</code></td><td><code>Widget build(BuildContext)</code></td><td>Scaffold con fondo degradado festivo, ícono estrella (ScaleTransition), texto "¡Bienvenido!" con puntos ganados, botón "Comenzar el día".</td><td>—</td></tr>
+    <tr><td>Botón "Comenzar el día"</td><td>onPressed</td><td><code>Navigator.pushReplacementNamed(context, '/home')</code>. pushReplacement limpia todo el stack del flujo de onboarding.</td><td>—</td></tr>
+  </table>
+</div>
+
+<!-- ══ 4. FOCO ═══════════════════════════════════════════════ -->
+<div class="cat" id="foco">4. Módulo de Foco (TDAH)</div>
+
+<div class="card">
+  <div class="ch"><div class="ico" style="background:#e8f4fb">🏠</div>
+  <div class="tt"><h2>HomeScreen — Pantalla principal</h2>
+  <span class="rb">/home</span><span class="fb">lib/features/tutor_dashboard/screens/home_screen.dart</span></div></div>
+  <p>Pantalla de inicio para usuarios TDAH/General y para tutores. Muestra saludo, resumen de tareas del día, racha y puntos. El tutor ve panel de usuarios vinculados.</p>
+  <div class="lbl">Fuentes de datos (streams)</div>
+  <table>
+    <tr><th>Stream</th><th>Colección</th><th>Datos leídos</th></tr>
+    <tr><td>Perfil</td><td><code>users/{uid}</code></td><td>name, points, streak, avatar, role</td></tr>
+    <tr><td>Tareas del día</td><td><code>users/{uid}/tasks</code></td><td>where done==false, where dueDate == hoy</td></tr>
+    <tr><td>Usuarios vinculados (tutor)</td><td><code>invitationCodes</code></td><td>where tutorId==uid, where status=='used'</td></tr>
+  </table>
+  <div class="lbl">Métodos</div>
+  <table>
+    <tr><th>Método</th><th>Firma</th><th>Qué hace</th><th>Colección</th></tr>
+    <tr><td><code>_buildGreeting()</code></td><td><code>String _buildGreeting()</code></td><td>Lee <code>DateTime.now().hour</code>. Retorna "Buenos días" (0–11), "Buenas tardes" (12–17), "Buenas noches" (18–23).</td><td>—</td></tr>
+    <tr><td><code>_buildTaskSummary()</code></td><td><code>Widget _buildTaskSummary(AsyncSnapshot)</code></td><td>Construye tarjeta con contador de tareas pendientes del día. Botón navega a TareasScreen.</td><td><code>users/{uid}/tasks</code></td></tr>
+    <tr><td><code>_buildTutorPanel()</code></td><td><code>Widget _buildTutorPanel()</code></td><td>StreamBuilder sobre <code>AuthService.getLinkedPatientsStream()</code>. Lista usuarios vinculados con avatar y nombre. Cada ítem navega a <code>TutorSupervisarScreen(userId:id)</code>.</td><td><code>invitationCodes</code> + <code>users/{patientId}</code></td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <div class="ch"><div class="ico" style="background:#f0f9e8">✅</div>
+  <div class="tt"><h2>TareasScreen — Gestión de tareas</h2>
+  <span class="rb">/tareas</span><span class="fb">lib/features/tda_focus/screens/tareas_screen.dart</span></div></div>
+  <p>Lista principal de tareas con filtros por categoría y estado. Permite crear, editar, completar y eliminar tareas. Las completadas actualizan racha y puntos.</p>
+  <div class="lbl">Estado</div>
+  <table>
+    <tr><th>Variable</th><th>Tipo</th><th>Función</th></tr>
+    <tr><td><code>_filterCat</code></td><td><code>String?</code></td><td>Categoría activa en el filtro (null = Todos). Controla qué tareas muestra el StreamBuilder.</td></tr>
+    <tr><td><code>_showCompleted</code></td><td><code>bool</code></td><td>Alterna entre vista de pendientes (false) y completadas (true).</td></tr>
+  </table>
+  <div class="lbl">Métodos</div>
+  <table>
+    <tr><th>Método</th><th>Firma</th><th>Qué hace paso a paso</th><th>Colecciones / Servicios</th></tr>
+    <tr><td><code>_mostrarDialogoCrearTarea()</code></td><td><code>void</code></td><td>AlertDialog con StatefulBuilder (estado local). Campos: texto, categoría (DropdownButton de 5 opciones), fecha (DatePicker→TimePicker encadenados), recordatorio (kReminderOptions). Al "Guardar" llama <code>_crearTarea()</code>.</td><td>—</td></tr>
+    <tr><td><code>_crearTarea()</code></td><td><code>Future&lt;void&gt; _crearTarea(text, cat, dueDate?, reminder?)</code></td><td>1) Firestore <code>add({text, category, done:false, createdAt, dueDate?, reminderMinutes?})</code>. 2) Si hay dueDate y reminderMinutes: <code>ReminderDispatcher.scheduleTaskReminder(taskId, dueDate, reminderMinutes)</code>.</td><td><code>users/{uid}/tasks</code> · ReminderDispatcher</td></tr>
+    <tr><td><code>_completarTarea()</code></td><td><code>Future&lt;void&gt; _completarTarea(taskId, taskData)</code></td><td>1) Firestore <code>update({done:true, completedAt:serverTimestamp()})</code>. 2) <code>StreakService.onTaskCompleted()</code> → actualiza streak y suma puntos. 3) <code>ActivityLogService.log(type:'task_completed')</code>.</td><td><code>users/{uid}/tasks/{taskId}</code> · <code>users/{uid}</code> · <code>activityLog</code></td></tr>
+    <tr><td><code>_eliminarTarea()</code></td><td><code>Future&lt;void&gt; _eliminarTarea(taskId, hasReminder)</code></td><td>1) Si <code>hasReminder==true</code>: <code>ReminderDispatcher.cancelTaskReminder(taskId)</code> (cancela canal local + push remota). 2) Firestore <code>delete(tasks/{taskId})</code>.</td><td><code>users/{uid}/tasks/{taskId}</code> · ReminderDispatcher</td></tr>
+    <tr><td><code>_mostrarSubtareas()</code></td><td><code>void _mostrarSubtareas(taskId)</code></td><td>Abre DraggableScrollableSheet con StreamBuilder sobre <code>tasks</code> where <code>parentTaskId==taskId</code>. Permite crear subtareas manuales o via IA (<code>SuperExpertoSheet.show()</code>).</td><td><code>users/{uid}/tasks</code></td></tr>
+    <tr><td><code>_buildTaskUrgencyBadge()</code></td><td><code>Widget _buildTaskUrgencyBadge(task)</code></td><td>Llama a <code>buildTaskUrgencyBadge(dueDate)</code> de <code>task_urgency_helper.dart</code>. Retorna badge: ATRASADA (rojo) / HOY (naranja) / MAÑANA (amarillo) / DESPUÉS (gris).</td><td>—</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <div class="ch"><div class="ico" style="background:#fef3e8">⏱️</div>
+  <div class="tt"><h2>FocoScreen — Temporizador Pomodoro</h2>
+  <span class="rb">/foco</span><span class="fb">lib/features/tda_focus/screens/foco_screen.dart</span></div></div>
+  <p>Implementa la técnica Pomodoro con ciclos trabajo/descanso. El estado vive en <code>PomodoroService</code> (Provider/ChangeNotifier). Muestra arco de progreso animado.</p>
+  <div class="lbl">PomodoroService — <code>lib/features/tda_focus/services/pomodoro_service.dart</code></div>
+  <table>
+    <tr><th>Elemento</th><th>Tipo/Firma</th><th>Función</th></tr>
+    <tr><td><code>_timer</code></td><td><code>Timer?</code></td><td>Timer.periodic 1 segundo que decrementa <code>_remaining</code> y llama notifyListeners()</td></tr>
+    <tr><td><code>_remaining</code></td><td><code>Duration</code></td><td>Tiempo restante en el ciclo actual. Inicia en 25 min (trabajo) o 5 min (descanso)</td></tr>
+    <tr><td><code>_isWorking</code></td><td><code>bool</code></td><td>true = ciclo trabajo, false = ciclo descanso</td></tr>
+    <tr><td><code>sessionsCompleted</code></td><td><code>int</code></td><td>Contador de ciclos de trabajo completados en la sesión actual</td></tr>
+    <tr><td><code>start()</code></td><td><code>void start()</code></td><td>Crea Timer.periodic(1s). Cada tick: decrementa <code>_remaining</code>, notifyListeners(). Si <code>_remaining==0</code> llama <code>_onCycleComplete()</code>.</td></tr>
+    <tr><td><code>pause()</code></td><td><code>void pause()</code></td><td>Cancela <code>_timer</code> sin resetear <code>_remaining</code>. La UI refleja el estado pausado.</td></tr>
+    <tr><td><code>reset()</code></td><td><code>void reset()</code></td><td>Cancela timer, resetea <code>_remaining</code> a 25 min, <code>_isWorking=true</code>, notifyListeners().</td></tr>
+    <tr><td><code>_onCycleComplete()</code></td><td><code>Future&lt;void&gt;</code></td><td>Si era ciclo trabajo: 1) incrementa <code>sessionsCompleted</code>. 2) <code>StreakService.onPomodoroCompleted(minutes:25)</code>. 3) Notificación local "¡Tiempo de descanso!". 4) Cambia a ciclo descanso 5 min. Si era descanso: vuelve a ciclo trabajo 25 min.</td></tr>
+  </table>
+  <div class="lbl">Métodos en FocoScreen</div>
+  <table>
+    <tr><th>Método</th><th>Firma</th><th>Qué hace</th><th>Nota</th></tr>
+    <tr><td><code>_buildArc()</code></td><td><code>Widget _buildArc(PomodoroService pomo)</code></td><td>CustomPaint con <code>_ArcPainter</code> que dibuja arco de 0 a 2π según porcentaje restante. Azul en trabajo, verde en descanso.</td><td>—</td></tr>
+    <tr><td><code>_buildControls()</code></td><td><code>Widget _buildControls(PomodoroService pomo)</code></td><td>Row con botones Play/Pause y Stop. Al tocar Play: <code>pomo.start()</code>. Pause: <code>pomo.pause()</code>. Stop: <code>pomo.reset()</code>.</td><td>—</td></tr>
+    <tr><td><code>_buildSoundSettings()</code></td><td><code>Widget</code></td><td>Panel de ajustes: toggle sonido, dropdown opciones de sonido, toggle vibración. Los cambios se guardan en <code>users/{uid}</code>.</td><td><code>users/{uid}</code></td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <div class="ch"><div class="ico" style="background:#f3f0ff">📊</div>
+  <div class="tt"><h2>ProgresoScreen — Dashboard de progreso</h2>
+  <span class="rb">/progreso</span><span class="fb">lib/features/tda_focus/screens/progreso_screen.dart</span></div></div>
+  <p>Dashboard con 3 gráficos en tiempo real (fl_chart). Soporta modo propio y modo supervisión del tutor (parámetro <code>userId</code> opcional).</p>
+  <div class="lbl">Los 3 gráficos</div>
+  <table>
+    <tr><th>Widget</th><th>Tipo gráfico</th><th>Colección / Filtro</th><th>Lógica de agrupación</th></tr>
+    <tr><td><code>_TaskCategoryChart</code></td><td>BarChart (fl_chart)</td><td><code>tasks</code> where <code>done==true</code></td><td>Agrupa por <code>category</code> en 5 buckets: Estudios, Hogar, Meds, Foco, General. Cada bucket = una barra con tooltip al tocar.</td></tr>
+    <tr><td><code>_PictogramUsageChart</code></td><td>PieChart anillo</td><td><code>activityLog</code> where <code>type=='pictogram_used'</code></td><td>Extrae categoría de <code>description</code> con regex <code>RegExp(r'\(([^)]+)\)$')</code>. Top 5 categorías. Legend column lateral.</td></tr>
+    <tr><td><code>_PomodoroWeeklyChart</code></td><td>LineChart curva</td><td><code>activityLog</code> where <code>type=='pomodoro_completed'</code></td><td>Filtra semana actual. Agrupa minutos por <code>date.weekday-1</code> (índice 0=Lun … 6=Dom). LineChart isCurved:true, belowBarData relleno.</td></tr>
+  </table>
+  <div class="lbl">_SummaryCard</div>
+  <table>
+    <tr><th>Dato mostrado</th><th>Campo Firestore</th><th>Ícono</th></tr>
+    <tr><td>Puntos acumulados</td><td><code>users/{uid}.points</code></td><td>⭐</td></tr>
+    <tr><td>Racha de días</td><td><code>users/{uid}.streak</code></td><td>🔥</td></tr>
+    <tr><td>Sesiones Pomodoro</td><td><code>users/{uid}.focusSessionsCompleted</code></td><td>⏱️</td></tr>
+    <tr><td>Minutos totales de foco</td><td><code>users/{uid}.totalFocusMinutes</code></td><td>🎯</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <div class="ch"><div class="ico" style="background:#fde8f5">🤖</div>
+  <div class="tt"><h2>SuperExpertoSheet — IA para subtareas</h2>
+  <span class="fb">lib/features/onboarding/screens/super_experto_sheet.dart</span></div></div>
+  <p>Modal bottom sheet que usa Gemini (via Cloud Function) para descomponer una tarea en subtareas. El resultado se puede guardar directamente en Firestore.</p>
+  <div class="lbl">Métodos</div>
+  <table>
+    <tr><th>Método</th><th>Firma</th><th>Qué hace paso a paso</th><th>Servicios</th></tr>
+    <tr><td><code>show()</code></td><td><code>static Future&lt;void&gt; show(context, taskId, taskText)</code></td><td>Invoca <code>showModalBottomSheet(isScrollControlled:true)</code>. Retorna void (el resultado se guarda internamente).</td><td>—</td></tr>
+    <tr><td><code>_generarPlan()</code></td><td><code>Future&lt;void&gt;</code></td><td>1) setState cargando. 2) <code>IAService.desglosarEnPasos(taskText, tiempoSeleccionado)</code> → llama Cloud Function con texto+tiempo → retorna <code>List&lt;Map&lt;String,String&gt;&gt;</code> con campos texto/categoria/iconName. 3) setState con resultado o error.</td><td>IAService → Cloud Function → Gemini 1.5 Flash</td></tr>
+    <tr><td><code>_guardarSubtareas()</code></td><td><code>Future&lt;void&gt;</code></td><td>WriteBatch: por cada paso generado crea documento en <code>tasks/</code> con <code>{parentTaskId, text, category, iconName, generadoPorIA:true, done:false}</code>. Espera 1400ms para feedback visual. Cierra el sheet.</td><td><code>users/{uid}/tasks/</code></td></tr>
+    <tr><td><code>_DashedRingPainter</code></td><td>CustomPainter</td><td>Anillo punteado animado durante la generación. Parámetros dashAngle:0.12, gapAngle:0.08. Rota con AnimationController.</td><td>—</td></tr>
+  </table>
+</div>
+
+<!-- ══ 5. TEA ═══════════════════════════════════════════════ -->
+<div class="cat" id="tea">5. Módulo TEA (Tablero de Pictogramas)</div>
+
+<div class="card">
+  <div class="ch"><div class="ico" style="background:#fde8f5">🖼️</div>
+  <div class="tt"><h2>PantallaUsuarioTEA — Tablero de comunicación</h2>
+  <span class="rb">/pantalla-tea</span><span class="fb">lib/features/tea_board/screens/pantalla_paciente_tea.dart</span></div></div>
+  <p>Tablero de comunicación aumentativa (CAA). Muestra pictogramas por franja horaria. Al tocar un pictograma: reproduce TTS y registra el uso en activityLog.</p>
+  <div class="lbl">Fuentes de datos (streams)</div>
+  <table>
+    <tr><th>Stream</th><th>Colección</th><th>Qué provee</th></tr>
+    <tr><td>Banco SVG fijo</td><td>assets (kBancoBuiltins)</td><td>28 pictogramas SVG predefinidos (IDs: m1–m4, t1–t4, n1–n4, c1–c3, e1–e5, a1–a9)</td></tr>
+    <tr><td>Personalizados</td><td><code>users/{uid}/pictograms</code></td><td>Pictogramas subidos por el usuario o tutor</td></tr>
+    <tr><td>Configuración</td><td><code>users/{uid}/pictogramSettings</code></td><td>Overrides de categoría y visibilidad del banco SVG</td></tr>
+    <tr><td>Feature flags</td><td><code>users/{uid}.screenFlags</code></td><td>showEmociones, showAcciones, showSOS, showPersonalizados — controlados por el tutor</td></tr>
+  </table>
+  <div class="lbl">Métodos</div>
+  <table>
+    <tr><th>Método</th><th>Firma</th><th>Qué hace</th><th>Servicios</th></tr>
+    <tr><td><code>_usarPictograma()</code></td><td><code>void _usarPictograma(PictoEntry p)</code></td><td>1) <code>_hablar(p.textoTts)</code>. 2) <code>ActivityLogService.log(type:'pictogram_used', description:'${p.etiqueta} (${p.categoria})')</code>.</td><td>AudioService · ActivityLogService</td></tr>
+    <tr><td><code>_hablar()</code></td><td><code>Future&lt;void&gt; _hablar(String texto)</code></td><td>Llama <code>AudioService.instance.playText(texto)</code>. El servicio: 1) Calcula hash SHA256 del texto. 2) Si existe MP3 en caché local → reproduce. 3) Si no → llama Cloud Function <code>sintetizarVoz</code> → decodifica Base64 → guarda MP3 → reproduce.</td><td>AudioService → Cloud Function → Google TTS Neural2</td></tr>
+    <tr><td><code>_buildFranja()</code></td><td><code>Widget _buildFranja(String franja)</code></td><td>Filtra <code>_allEntries</code> por franja horaria efectiva (usando overrides de pictogramSettings). Retorna GridView con <code>_PictoCard</code> para cada entrada visible.</td><td>—</td></tr>
+    <tr><td><code>_handleSOS()</code></td><td><code>void _handleSOS()</code></td><td>Llama <code>handleEmergencyContactAction(context, userData)</code>. Intenta llamada directa (Android) o abre marcador (iOS/fallback).</td><td>EmergencyContactHelper</td></tr>
+    <tr><td>StreamBuilder doble</td><td>—</td><td>Stream exterior: <code>AuthService.getLinkedTutorStream()</code> → detecta tutor. Stream interior: <code>users/{uid}</code> → lee screenFlags. Permite al tutor deshabilitar secciones en tiempo real.</td><td>—</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <div class="ch"><div class="ico" style="background:#f0f9e8">📷</div>
+  <div class="tt"><h2>CrearPictogramaSheet — Crear pictograma personalizado</h2>
+  <span class="fb">lib/features/tea_board/screens/crear_pictograma_sheet.dart</span></div></div>
+  <p>Modal bottom sheet. Guía en la creación: selecciona imagen → recorta 1:1 → escribe etiqueta y TTS → elige categoría → guarda en Storage y Firestore.</p>
+  <div class="lbl">Métodos</div>
+  <table>
+    <tr><th>Método</th><th>Firma</th><th>Qué hace paso a paso</th><th>Servicios</th></tr>
+    <tr><td><code>show()</code></td><td><code>static Future&lt;PictogramaPersonalizado?&gt; show(context, userId)</code></td><td>Invoca showModalBottomSheet isScrollControlled:true. Retorna el pictograma creado o null si el usuario cancela.</td><td>—</td></tr>
+    <tr><td><code>_seleccionarImagen()</code></td><td><code>Future&lt;void&gt; _seleccionarImagen(bool usarCamara)</code></td><td>1) ImagePicker.pickImage(source: cámara o galería, imageQuality:85, maxWidth:1024). 2) <code>PictogramService.cropImage(path)</code> → ImageCropper forzado 1:1, compressQuality:80. 3) setState con imagen recortada.</td><td>PictogramService</td></tr>
+    <tr><td><code>_guardarPictograma()</code></td><td><code>Future&lt;void&gt;</code></td><td>1) Valida imagen y etiqueta no vacíos. 2) <code>PictogramService.uploadImage(path)</code> → sube a Storage <code>users/{uid}/pictograms/{filename}</code> → retorna URL. 3) <code>PictogramService.createPictogram(imageUrl, etiqueta, textoTts, categoria)</code> → Firestore add. 4) HapticFeedback.mediumImpact(). 5) Navigator.pop(pictograma creado).</td><td>PictogramService → Firebase Storage → Firestore</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <div class="ch"><div class="ico" style="background:#e8f4fb">⚙️</div>
+  <div class="tt"><h2>PictogramManagerScreen — Gestor de pictogramas (Tutor)</h2>
+  <span class="fb">lib/features/tea_board/screens/pictogram_manager_screen.dart</span></div></div>
+  <p>Exclusiva del tutor. Reorganiza el banco completo de pictogramas del usuario TEA: cambia categorías, muestra/oculta pictogramas. Patrón optimistic UI: actualiza local primero, Firestore después.</p>
+  <div class="lbl">Constantes de datos</div>
+  <table>
+    <tr><th>Constante</th><th>Descripción</th></tr>
+    <tr><td><code>kBancoBuiltins</code></td><td>28 PictoEntry con SVG de assets. IDs por prefijo: m1–m4 (Mañana), t1–t4 (Tarde), n1–n4 (Noche), c1–c3 (Comida), e1–e5 (Emociones), a1–a9 (Acciones).</td></tr>
+    <tr><td><code>kCategoriasAsignables</code></td><td>6 _CatOption: Mañana, Tarde, Noche, Comida, Emociones, Acciones. Cada una con label, icon, color.</td></tr>
+  </table>
+  <div class="lbl">Estado</div>
+  <table>
+    <tr><th>Variable</th><th>Tipo</th><th>Función</th></tr>
+    <tr><td><code>_settings</code></td><td><code>Map&lt;String, Map&lt;String,dynamic&gt;&gt;</code></td><td>Cache local de overrides: pictoId → {categoria?, visible}. Se carga del stream de pictogramSettings.</td></tr>
+    <tr><td><code>_filterCat</code></td><td><code>String?</code></td><td>Categoría activa en el filtro (null = Todos). Controla qué pictogramas muestra la cuadrícula.</td></tr>
+    <tr><td><code>_customs</code></td><td><code>List&lt;PictogramaPersonalizado&gt;</code></td><td>Pictogramas personalizados del usuario cargados del stream.</td></tr>
+  </table>
+  <div class="lbl">Métodos</div>
+  <table>
+    <tr><th>Método</th><th>Firma</th><th>Qué hace</th><th>Colección</th></tr>
+    <tr><td><code>_efectiva()</code></td><td><code>String _efectiva(String id, String defaultCat)</code></td><td>Retorna <code>_settings[id]?['categoria'] ?? defaultCat</code>. Override de Firestore tiene precedencia sobre la categoría predeterminada del banco.</td><td>—</td></tr>
+    <tr><td><code>_visible()</code></td><td><code>bool _visible(String id)</code></td><td>Retorna <code>_settings[id]?['visible'] != false</code>. Default true si no hay override.</td><td>—</td></tr>
+    <tr><td><code>_setCategoria()</code></td><td><code>void _setCategoria(String id, String newCat)</code></td><td>1) setState actualiza <code>_settings[id]['categoria']=newCat</code> (optimistic). 2) <code>PictogramService.updatePictogramSettingFor(userId, pictoId:id, categoria:newCat)</code>. Si Firestore falla, el stream revierte el estado.</td><td><code>users/{uid}/pictogramSettings/{id}</code></td></tr>
+    <tr><td><code>_toggleVisible()</code></td><td><code>void _toggleVisible(String id)</code></td><td>1) setState alterna <code>_settings[id]['visible']</code> (optimistic). 2) <code>PictogramService.updatePictogramSettingFor(userId, pictoId:id, visible:!current)</code>.</td><td><code>users/{uid}/pictogramSettings/{id}</code></td></tr>
+    <tr><td><code>_resetAll()</code></td><td><code>Future&lt;void&gt;</code></td><td>Diálogo de confirmación. Si acepta: itera <code>_settings.keys</code> llamando <code>updatePictogramSettingFor(categoria:null, visible:true)</code> para cada uno. setState limpia <code>_settings={}</code>.</td><td><code>users/{uid}/pictogramSettings/</code></td></tr>
+    <tr><td><code>_showCategoryPicker()</code></td><td><code>void _showCategoryPicker(PictoEntry e)</code></td><td>showModalBottomSheet con ListView de 6 ListTile (una por categoría). Ícono check en la categoría actual. Al tocar: llama <code>_setCategoria(e.id, nuevaCat)</code>.</td><td>—</td></tr>
+    <tr><td><code>_buildFilterBar()</code></td><td><code>Widget</code></td><td>ListView horizontal con chips AnimatedContainer: "Todos" (null) + 6 categorías. Al tocar actualiza <code>_filterCat</code> con setState.</td><td>—</td></tr>
+  </table>
+</div>
+
+<!-- ══ 6. TUTOR ══════════════════════════════════════════════ -->
+<div class="cat" id="tutor">6. Módulo Tutor (Dashboard)</div>
+
+<div class="card">
+  <div class="ch"><div class="ico" style="background:#f0f9e8">👀</div>
+  <div class="tt"><h2>TutorSupervisarScreen — Supervisar usuario</h2>
+  <span class="rb">/tutor-supervise</span><span class="fb">lib/features/tutor_dashboard/screens/tutor_supervise_screen.dart</span></div></div>
+  <p>Panel de supervisión de un usuario vinculado. Recibe <code>userId</code> como parámetro. Muestra tareas (solo lectura), progreso y acceso a gestión de pictogramas.</p>
+  <div class="lbl">Secciones y sus streams</div>
+  <table>
+    <tr><th>Sección</th><th>Colección</th><th>Acción disponible</th></tr>
+    <tr><td>Tareas del usuario</td><td><code>users/{userId}/tasks</code></td><td>Solo lectura. No puede crear/editar/borrar tareas del usuario.</td></tr>
+    <tr><td>Progreso</td><td><code>activityLog</code> + <code>tasks</code></td><td>Embeds <code>ProgresoScreen(userId:userId)</code> en modo supervisión.</td></tr>
+    <tr><td>Pictogramas</td><td>Navegación</td><td>Botón que navega a <code>PictogramManagerScreen(userId:userId)</code>.</td></tr>
+    <tr><td>Actividad reciente</td><td><code>users/{userId}/activityLog</code></td><td>StreamBuilder últimas 20 entradas (tipo + descripción + timestamp).</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <div class="ch"><div class="ico" style="background:#fffbf0">🔑</div>
+  <div class="tt"><h2>TutorVinculacionScreen — Vincular usuario</h2>
+  <span class="rb">/tutor-vinculacion</span><span class="fb">lib/features/tutor_dashboard/screens/tutor_vinculacion_screen.dart</span></div></div>
+  <p>El tutor genera un código de 6 caracteres (TTL 7 días) para compartir con el usuario TEA/TDAH.</p>
+  <div class="lbl">Métodos</div>
+  <table>
+    <tr><th>Método</th><th>Firma</th><th>Qué hace</th><th>Colección</th></tr>
+    <tr><td><code>_generarCodigo()</code></td><td><code>Future&lt;void&gt;</code></td><td>1) <code>AuthService.generateInvitationCode()</code>: genera 6 chars alfanuméricos (sin 0/O/1/I/l), crea <code>invitationCodes/{code}</code> con tutorId, tutorName, status:'active', expiresAt:+7días. 2) setState muestra el código en grande.</td><td><code>invitationCodes/{code}</code></td></tr>
+    <tr><td><code>_listarVinculados()</code></td><td><code>Widget</code></td><td>StreamBuilder sobre <code>AuthService.getLinkedPatientsStream()</code>: consulta invitationCodes where tutorId==uid, status=='used', luego lee cada <code>users/{patientId}</code>. Lista resultante con avatar y nombre.</td><td><code>invitationCodes</code> + <code>users/{patientId}</code></td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <div class="ch"><div class="ico" style="background:#f3f0ff">🎛️</div>
+  <div class="tt"><h2>PantallasConfigScreen — Control de pantallas</h2>
+  <span class="rb">/pantallas-config</span><span class="fb">lib/features/tutor_dashboard/screens/pantallas_config_screen.dart</span></div></div>
+  <p>Activa/desactiva secciones del tablero TEA del usuario vinculado en tiempo real (feature flags). Los cambios se reflejan inmediatamente en el dispositivo del usuario.</p>
+  <div class="lbl">Feature flags y su efecto</div>
+  <table>
+    <tr><th>Flag (users/{uid}.screenFlags)</th><th>Sección que controla en PantallaUsuarioTEA</th></tr>
+    <tr><td><code>showEmociones</code></td><td>Sección de pictogramas de emociones</td></tr>
+    <tr><td><code>showAcciones</code></td><td>Sección de pictogramas de acciones</td></tr>
+    <tr><td><code>showSOS</code></td><td>Botón de contacto de emergencia</td></tr>
+    <tr><td><code>showPersonalizados</code></td><td>Pictogramas personalizados del usuario</td></tr>
+  </table>
+  <div class="lbl">Método principal</div>
+  <table>
+    <tr><th>Método</th><th>Firma</th><th>Qué hace</th><th>Colección</th></tr>
+    <tr><td><code>_toggleFlag()</code></td><td><code>Future&lt;void&gt; _toggleFlag(String flag, bool value)</code></td><td>Firestore <code>update({'screenFlags.$flag': value})</code> en <code>users/{userId}</code>. La pantalla del usuario detecta el cambio vía StreamBuilder y se actualiza instantáneamente.</td><td><code>users/{userId}</code></td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <div class="ch"><div class="ico" style="background:#fde8f5">👤</div>
+  <div class="tt"><h2>PerfilScreen — Perfil del usuario</h2>
+  <span class="rb">/perfil</span><span class="fb">lib/features/tutor_dashboard/screens/perfil_screen.dart</span></div></div>
+  <p>Muestra avatar, nombre, rol y estadísticas (puntos/racha). Permite editar nombre y cambiar avatar.</p>
+  <div class="lbl">Métodos</div>
+  <table>
+    <tr><th>Método</th><th>Firma</th><th>Qué hace</th><th>API / Colección</th></tr>
+    <tr><td><code>_editDisplayName()</code></td><td><code>Future&lt;void&gt;</code></td><td>AlertDialog con TextField pre-rellenado. Al guardar: 1) <code>FirebaseAuth.currentUser.updateDisplayName(name)</code>. 2) Firestore <code>update({name:name})</code>.</td><td>Firebase Auth + <code>users/{uid}</code></td></tr>
+    <tr><td><code>_handleLogout()</code></td><td><code>Future&lt;void&gt;</code></td><td>1) Navigator.pushReplacementNamed('/login') primero. 2) Luego <code>AuthService.logout()</code>: primero googleSignIn.signOut(), luego FirebaseAuth.signOut(). El orden evita el error "deactivated widget tree".</td><td>Firebase Auth</td></tr>
+    <tr><td><code>_buildAvatarSection()</code></td><td><code>Widget</code></td><td>StreamBuilder sobre <code>users/{uid}</code>. Muestra imagen PNG del avatar. Botón editar abre cuadrícula de selección de nuevo avatar con AnimatedContainer.</td><td><code>users/{uid}</code></td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <div class="ch"><div class="ico" style="background:#e8f4fb">⚙️</div>
+  <div class="tt"><h2>SettingsScreen — Ajustes</h2>
+  <span class="rb">/settings</span><span class="fb">lib/features/tutor_dashboard/screens/settings_screen.dart</span></div></div>
+  <p>Pantalla de ajustes con 6 secciones. StreamBuilder sobre <code>users/{uid}</code> sincroniza controles con valores actuales de Firestore.</p>
+  <div class="lbl">Las 6 secciones y sus métodos</div>
+  <table>
+    <tr><th>Sección</th><th>Método principal</th><th>Qué hace</th><th>Colección / Servicio</th></tr>
+    <tr><td>Perfil y Rol</td><td><code>_uploadProfilePhoto()</code></td><td>ImagePicker → cropImage(1:1, quality:70) → PictogramService.uploadImage → Firestore update({photoUrl}).</td><td><code>users/{uid}</code> · Firebase Storage</td></tr>
+    <tr><td>Contacto emergencia</td><td><code>_saveEmergencyContact()</code></td><td>Si nombre/teléfono vacíos usa <code>FieldValue.delete()</code> para borrar el campo (no cadena vacía). Si tiene valor: update({emergencyContactName, emergencyPhone}).</td><td><code>users/{uid}</code></td></tr>
+    <tr><td>Vinculación tutor</td><td>StreamBuilder</td><td><code>AuthService.getLinkedTutorStream()</code> → 3 estados: cargando, vinculado (nombre del tutor), no vinculado (campo de código). Si ingresa código: llama <code>AuthService.acceptInvitationCode(code)</code>.</td><td><code>users/{uid}/linkedTutors</code></td></tr>
+    <tr><td>Notificaciones</td><td><code>_testNotification()</code></td><td>Toggle global notificaciones. Dropdown offset de recordatorio (kReminderOptions). <code>ensureDeviceCanDeliverNotifications()</code> solicita permisos Android 12+. "Probar": programa notificación local en 5 segundos.</td><td>NotificationService</td></tr>
+    <tr><td>Sesiones Foco</td><td>Toggles</td><td>Toggle sonido, dropdown tipo sonido, toggle vibración. Cambios: Firestore update({focusSound, focusVibration}).</td><td><code>users/{uid}</code></td></tr>
+    <tr><td>Respaldo Drive</td><td><code>_handleBackup()</code> / <code>_handleRestore()</code></td><td>Backup: GoogleDriveService.backupToDrive(). Restore: verifica cloudModified vs lastSync local (SharedPreferences). Si nube es más nueva restaura; si no, muestra advertencia.</td><td>GoogleDriveService · SharedPreferences</td></tr>
+  </table>
+</div>
+
+<!-- ══ 7. SERVICIOS ══════════════════════════════════════════ -->
+<div class="cat" id="svc">7. Servicios Transversales</div>
+
+<div class="svc">
+  <h3>AuthService — <code>lib/core/services/auth_service.dart</code></h3>
+  <table>
+    <tr><th>Método</th><th>Firma</th><th>Qué hace</th><th>Colecciones</th></tr>
+    <tr><td><code>authStateChanges</code></td><td><code>Stream&lt;User?&gt;</code></td><td>Stream de Firebase Auth. Emite en login, logout, refresh de token. Usado por AuthGate.</td><td>Firebase Auth</td></tr>
+    <tr><td><code>registerWithEmail()</code></td><td><code>Future&lt;UserCredential&gt; ({name,email,password,role})</code></td><td>createUserWithEmailAndPassword → updateDisplayName → Firestore set con campos según rol (linkedPatients/linkedTutors, invitationCodes, acceptedInvitationCode).</td><td>Firebase Auth + <code>users/{uid}</code></td></tr>
+    <tr><td><code>loginWithEmail()</code></td><td><code>Future&lt;UserCredential&gt; ({email,password})</code></td><td>signInWithEmailAndPassword. Errores Firebase se propagan al caller.</td><td>Firebase Auth</td></tr>
+    <tr><td><code>loginWithGoogle()</code></td><td><code>Future&lt;UserCredential?&gt;</code></td><td>Web: signInWithPopup. Móvil: GoogleSignIn.signIn() → GoogleAuthProvider.credential → signInWithCredential. Si isNewUser: crea documento Firestore.</td><td>Firebase Auth + <code>users/{uid}</code></td></tr>
+    <tr><td><code>getUserRole()</code></td><td><code>Future&lt;UserRole?&gt;</code></td><td>3 capas: 1) Lee campo role. 2) Si vacío infiere por campos estructurales. 3) Migra roles legacy ('usuario_tea' etc → 'usuario'). Escribe la migración con merge:true.</td><td><code>users/{uid}</code></td></tr>
+    <tr><td><code>getUserRoleStream()</code></td><td><code>Stream&lt;UserRole?&gt;</code></td><td>asyncMap sobre el stream del documento. Misma lógica de inferencia/migración que getUserRole(), pero reactiva.</td><td><code>users/{uid}</code></td></tr>
+    <tr><td><code>setRole()</code></td><td><code>Future&lt;void&gt; setRole(UserRole)</code></td><td>Escribe {role, campos estructurales del rol} en Firestore con merge:true.</td><td><code>users/{uid}</code></td></tr>
+    <tr><td><code>generateInvitationCode()</code></td><td><code>Future&lt;String&gt;</code></td><td>Verifica que sea tutor. Genera 6 chars (alfabeto sin 0/O/1/I/l usando timestamp como semilla). Crea <code>invitationCodes/{code}</code> con TTL 7 días.</td><td><code>invitationCodes/{code}</code></td></tr>
+    <tr><td><code>validateInvitationCode()</code></td><td><code>Future&lt;Map?&gt; (String code)</code></td><td>Lee el documento. Retorna null si no existe. Retorna {valid:false, reason} si status!='active' o expirado. Retorna {valid:true, tutorId, tutorName} si válido.</td><td><code>invitationCodes/{code}</code></td></tr>
+    <tr><td><code>acceptInvitationCode()</code></td><td><code>Future&lt;void&gt; (String code)</code></td><td>Verifica usuario, valida código. Segunda verificación anti-race-condition. Batch write: marca código 'used', crea linkedTutors doc, actualiza acceptedInvitationCode.</td><td><code>invitationCodes/{code}</code> · <code>users/{uid}/linkedTutors/{tutorId}</code> · <code>users/{uid}</code></td></tr>
+    <tr><td><code>getLinkedPatientsStream()</code></td><td><code>Stream&lt;List&lt;Map&gt;&gt;</code></td><td>asyncMap: consulta invitationCodes where tutorId==uid, status=='used'. Por cada doc lee users/{patientId}. Retorna lista de datos de usuarios.</td><td><code>invitationCodes</code> + <code>users/{patientId}</code></td></tr>
+    <tr><td><code>getLinkedTutorStream()</code></td><td><code>Stream&lt;Map?&gt;</code></td><td>asyncMap: consulta linkedTutors where status=='active'. Lee users/{tutorId}. Retorna datos del tutor o null.</td><td><code>users/{uid}/linkedTutors</code> + <code>users/{tutorId}</code></td></tr>
+    <tr><td><code>logout()</code></td><td><code>Future&lt;void&gt;</code></td><td>googleSignIn.signOut() primero (limpia token OAuth), luego FirebaseAuth.signOut() (dispara authStateChanges).</td><td>Firebase Auth</td></tr>
+    <tr><td><code>_generateRandomCode()</code></td><td><code>String</code> (privado)</td><td>6 chars del alfabeto sin ambiguos (0/O/1/I/l). Usa timestamp + índice×7919 como semilla determinista.</td><td>—</td></tr>
+  </table>
+</div>
+
+<div class="svc">
+  <h3>ActivityLogService — <code>lib/core/services/activity_log_service.dart</code></h3>
+  <table>
+    <tr><th>Método</th><th>Firma</th><th>Qué hace</th><th>Colección</th></tr>
+    <tr><td><code>log()</code></td><td><code>static Future&lt;void&gt; log({userId?, type, description, metadata?})</code></td><td>Resuelve uid (userId param o currentUser). Hace <code>activityLog.add({type, description, timestamp:serverTimestamp(), metadata?})</code>. Captura todas las excepciones silenciosamente — el log es observacional, un fallo no debe interrumpir al usuario.</td><td><code>users/{uid}/activityLog</code></td></tr>
+    <tr><td><code>getStream()</code></td><td><code>static Stream&lt;List&lt;Map&gt;&gt; getStream(String userId)</code></td><td>Query: orderBy('timestamp', desc) limit(100). .snapshots().map(docs → List con {id, ...data}). Límite de 100 evita leer el historial completo en crecimiento prolongado.</td><td><code>users/{userId}/activityLog</code></td></tr>
+  </table>
+  <p><strong>Tipos de actividad (clase ActivityType):</strong> <code>task_completed</code> · <code>task_created</code> · <code>task_deleted</code> · <code>pictogram_created</code> · <code>pictogram_deleted</code> · <code>pictogram_used</code> · <code>pomodoro_completed</code></p>
+</div>
+
+<div class="svc">
+  <h3>NotificationService — <code>lib/core/services/notification_service.dart</code></h3>
+  <table>
+    <tr><th>Método</th><th>Firma</th><th>Qué hace</th></tr>
+    <tr><td><code>init()</code></td><td><code>Future&lt;void&gt;</code></td><td>Inicializa flutter_local_notifications. Crea canal Android con Importance.max y fullScreenIntent. Configura acción de tap para routing.</td></tr>
+    <tr><td><code>scheduleReminderIfNeeded()</code></td><td><code>Future&lt;void&gt; (taskId, dueDate, reminderMinutes)</code></td><td>Calcula momento: dueDate - reminderMinutes. ID = taskId.hashCode &amp; 0x7FFFFFFF (fuerza int32 positivo). Usa zonedSchedule con TZDateTime (flutter_native_timezone) para exactitud de zona horaria. AndroidScheduleMode.exactAllowWhileIdle.</td></tr>
+    <tr><td><code>cancelTaskNotification()</code></td><td><code>Future&lt;void&gt; (taskId)</code></td><td>flutterLocalNotificationsPlugin.cancel(taskId.hashCode &amp; 0x7FFFFFFF). Mismo ID que en scheduleReminderIfNeeded.</td></tr>
+    <tr><td><code>ensureDeviceCanDeliverNotifications()</code></td><td><code>Future&lt;void&gt;</code></td><td>Solicita permiso de notificaciones (Android 13+), permiso de alarmas exactas (Android 12+), y optimización de batería. Abre ajustes del sistema si es necesario.</td></tr>
+    <tr><td><code>showInstantNotification()</code></td><td><code>Future&lt;void&gt; (title, body)</code></td><td>Notificación inmediata para mensajes FCM recibidos en foreground.</td></tr>
+  </table>
+</div>
+
+<div class="svc">
+  <h3>PushNotificationService — <code>lib/core/services/push_notification_service.dart</code></h3>
+  <table>
+    <tr><th>Método</th><th>Firma</th><th>Qué hace</th><th>Colección</th></tr>
+    <tr><td><code>initialize()</code></td><td><code>Future&lt;void&gt;</code></td><td>Solicita permisos FCM. Configura presentación en foreground. Registra onMessage (foreground), onMessageOpenedApp (background tap), getInitialMessage (terminated tap).</td><td>—</td></tr>
+    <tr><td><code>syncUserToken()</code></td><td><code>Future&lt;void&gt; (User user)</code></td><td>Obtiene FCM token. Escribe en <code>users/{uid}.fcmTokens</code> con FieldValue.arrayUnion. Suscribe al onTokenRefresh para mantener el token actualizado.</td><td><code>users/{uid}</code></td></tr>
+    <tr><td><code>queueRemoteReminder()</code></td><td><code>Future&lt;void&gt; (taskId, runAt, title, body)</code></td><td>Crea/sobreescribe <code>notificationQueue/{taskId}</code> con {runAt, title, body, userId}. Cloud Function lee esta cola y envía el push en el momento indicado.</td><td><code>users/{uid}/notificationQueue/{taskId}</code></td></tr>
+    <tr><td><code>cancelRemoteReminder()</code></td><td><code>Future&lt;void&gt; (taskId)</code></td><td>Elimina <code>notificationQueue/{taskId}</code>. Cloud Function deja de procesar la entrada.</td><td><code>users/{uid}/notificationQueue/{taskId}</code></td></tr>
+  </table>
+</div>
+
+<div class="svc">
+  <h3>ReminderDispatcher — <code>lib/core/services/reminder_dispatcher.dart</code></h3>
+  <p>Orquesta <strong>dos canales en paralelo</strong> para máxima fiabilidad de recordatorios.</p>
+  <table>
+    <tr><th>Método</th><th>Firma</th><th>Qué hace</th></tr>
+    <tr><td><code>scheduleTaskReminder()</code></td><td><code>static Future&lt;void&gt; (taskId, dueDate, reminderMinutes)</code></td><td>Llama en paralelo: 1) <code>NotificationService.scheduleReminderIfNeeded()</code> — canal local (sin red). 2) <code>PushNotificationService.queueRemoteReminder()</code> — cola Firestore para Cloud Functions (funciona si el dispositivo reinicia).</td></tr>
+    <tr><td><code>cancelTaskReminder()</code></td><td><code>static Future&lt;void&gt; (taskId)</code></td><td>Cancela ambos canales: <code>NotificationService.cancelTaskNotification(taskId)</code> y <code>PushNotificationService.cancelRemoteReminder(taskId)</code>.</td></tr>
+  </table>
+</div>
+
+<div class="svc">
+  <h3>PictogramService — <code>lib/core/services/pictogram_service.dart</code></h3>
+  <table>
+    <tr><th>Método</th><th>Firma</th><th>Qué hace</th><th>Storage / Firestore</th></tr>
+    <tr><td><code>getCustomPictogramsStreamFor()</code></td><td><code>Stream&lt;List&lt;PictogramaPersonalizado&gt;&gt; (userId)</code></td><td>Stream de <code>users/{userId}/pictograms</code> ordenado por createdAt desc. Mapea docs a <code>PictogramaPersonalizado.fromFirestore()</code>.</td><td><code>users/{userId}/pictograms</code></td></tr>
+    <tr><td><code>getPictogramSettingsStreamFor()</code></td><td><code>Stream&lt;Map&lt;String,Map&gt;&gt; (userId)</code></td><td>Stream de <code>pictogramSettings</code>. Mapea snapshot a {doc.id: doc.data()} para lookup O(1).</td><td><code>users/{userId}/pictogramSettings</code></td></tr>
+    <tr><td><code>updatePictogramSettingFor()</code></td><td><code>Future&lt;void&gt; ({userId, pictoId, categoria?, visible?})</code></td><td>Construye mapa con solo los campos no-null. Si el mapa está vacío no escribe. Usa SetOptions(merge:true) para no sobreescribir campos no enviados.</td><td><code>users/{userId}/pictogramSettings/{pictoId}</code></td></tr>
+    <tr><td><code>pickImageFromCamera()</code></td><td><code>Future&lt;XFile?&gt;</code></td><td>ImagePicker.pickImage(source:camera, imageQuality:85, maxWidth:1024, maxHeight:1024).</td><td>—</td></tr>
+    <tr><td><code>cropImage()</code></td><td><code>Future&lt;CroppedFile?&gt; ({imagePath})</code></td><td>ImageCropper con CropAspectRatio(1:1), lockAspectRatio:true, compressQuality:80, crop grid 3×3. AndroidUiSettings y IOSUiSettings configurados.</td><td>—</td></tr>
+    <tr><td><code>uploadImage()</code></td><td><code>Future&lt;String&gt; ({filePath, customFileName?})</code></td><td>Ruta Storage: <code>users/{uid}/pictograms/{filename}.jpg</code>. SettableMetadata(contentType:'image/jpeg'). putData → getDownloadURL(). Retorna URL de descarga.</td><td>Firebase Storage</td></tr>
+    <tr><td><code>createPictogram()</code></td><td><code>Future&lt;PictogramaPersonalizado&gt; ({imageUrl, etiqueta, textoTts, categoria})</code></td><td>etiqueta.trim().toUpperCase(). Firestore add con {imageUrl, etiqueta, textoTts, categoria, createdAt:serverTimestamp()}. Lee el doc recién creado y retorna el modelo con ID.</td><td><code>users/{uid}/pictograms</code></td></tr>
+    <tr><td><code>deletePictogramFor()</code></td><td><code>Future&lt;void&gt; (userId, pictogramId)</code></td><td>Lee el doc para obtener imageUrl. Intenta <code>storage.refFromURL(imageUrl).delete()</code> silenciosamente. Luego elimina el doc de Firestore.</td><td><code>users/{userId}/pictograms/{id}</code> · Firebase Storage</td></tr>
+    <tr><td><code>captureAndCreate()</code></td><td><code>Future&lt;PictogramaPersonalizado?&gt; ({etiqueta, textoTts, categoria, useCamera})</code></td><td>Orquesta el flujo completo: pick → crop → uploadImage → createPictogram. Retorna null si el usuario cancela cualquier paso.</td><td>Firebase Storage · <code>users/{uid}/pictograms</code></td></tr>
+  </table>
+</div>
+
+<div class="svc">
+  <h3>IAService — <code>lib/features/tda_focus/services/ia_service.dart</code></h3>
+  <table>
+    <tr><th>Método</th><th>Firma</th><th>Qué hace</th></tr>
+    <tr><td><code>desglosarEnPasos()</code></td><td><code>static Future&lt;List&lt;Map&lt;String,String&gt;&gt;&gt; desglosarEnPasos(String tarea, String tiempo)</code></td><td>Llama a Cloud Function <code>desglosarTarea</code> via HTTP POST con {tarea, tiempo}. La Function usa Gemini 1.5 Flash para generar los pasos. Parsea la respuesta JSON y retorna List de Maps con campos texto, categoria, iconName.</td></tr>
+  </table>
+</div>
+
+<div class="svc">
+  <h3>AudioService — <code>lib/core/services/audio_service.dart</code></h3>
+  <table>
+    <tr><th>Método</th><th>Firma</th><th>Qué hace</th></tr>
+    <tr><td><code>playText()</code></td><td><code>Future&lt;void&gt; playText(String texto)</code></td><td>1) Calcula SHA256 del texto → nombre archivo <code>voices_cache/{hash}.mp3</code>. 2) Si existe en disco → AudioPlayer.play(DeviceFileSource). 3) Si no → HTTP POST a Cloud Function <code>sintetizarVoz</code> (Google TTS Neural2) → decodifica Base64 → guarda MP3 en disco → reproduce. La caché persiste entre sesiones.</td></tr>
+    <tr><td><code>clearCache()</code></td><td><code>Future&lt;void&gt;</code></td><td>Lista y elimina todos los archivos .mp3 del directorio voices_cache.</td></tr>
+  </table>
+</div>
+
+<div class="svc">
+  <h3>GoogleDriveService — <code>lib/core/services/google_drive_service.dart</code></h3>
+  <table>
+    <tr><th>Método</th><th>Firma</th><th>Qué hace</th></tr>
+    <tr><td><code>backupToDrive()</code></td><td><code>Future&lt;void&gt;</code></td><td>Exporta ajustes de Firestore a JSON. Sube a Drive en carpeta <code>Simple_Backup/settings.json</code> usando GoogleAuthHttpClient (inyecta headers OAuth2). Actualiza lastSync en SharedPreferences.</td></tr>
+    <tr><td><code>restoreFromDrive()</code></td><td><code>Future&lt;void&gt;</code></td><td>Descarga settings.json de Drive. Compara cloudModified vs lastSync local (SharedPreferences). Si nube es más nueva: aplica datos a Firestore. Si no: muestra advertencia "tus datos locales son más recientes".</td></tr>
+  </table>
+</div>
+
+<div class="svc">
+  <h3>StreakService — <code>lib/features/tda_focus/services/streak_service.dart</code></h3>
+  <table>
+    <tr><th>Método</th><th>Firma</th><th>Qué hace</th><th>Colección</th></tr>
+    <tr><td><code>onTaskCompleted()</code></td><td><code>static Future&lt;void&gt; onTaskCompleted({userId?, taskCategory})</code></td><td>1) Lee lastActivityDate. 2) Si fue ayer: streak++. Si fue hoy: sin cambio. Si fue antes: streak=1. 3) Suma puntos según categoría (Meds=15, Estudios=12, Hogar=10, resto=8). 4) Actualiza lastActivityDate=hoy.</td><td><code>users/{uid}</code></td></tr>
+    <tr><td><code>onPomodoroCompleted()</code></td><td><code>static Future&lt;void&gt; onPomodoroCompleted({userId?, minutes})</code></td><td>FieldValue.increment en focusSessionsCompleted (+1) y totalFocusMinutes (+minutes). Suma 10 puntos por sesión completada.</td><td><code>users/{uid}</code></td></tr>
+  </table>
+</div>
+
+<div class="svc">
+  <h3>EmergencyContactHelper — <code>lib/core/utils/emergency_contact_helper.dart</code></h3>
+  <table>
+    <tr><th>Método</th><th>Firma</th><th>Qué hace</th></tr>
+    <tr><td><code>handleEmergencyContactAction()</code></td><td><code>Future&lt;void&gt; (context, userData)</code></td><td>1) Verifica campo emergencyPhone en userData. 2) AlertDialog de confirmación. 3) Android: FlutterPhoneDirectCaller.callNumber(phone) — llamada directa sin abrir marcador. Si permiso denegado: muestra mensaje. 4) Fallback: launchUrl('tel:$phone') — abre marcador del sistema (iOS y Android sin permiso).</td></tr>
+  </table>
+</div>
+
+<div class="svc">
+  <h3>AppTheme — <code>lib/core/theme/app_theme.dart</code></h3>
+  <table>
+    <tr><th>Elemento</th><th>Valor / Descripción</th></tr>
+    <tr><td><code>getTheme()</code></td><td>Retorna ThemeData completo Material 3 (useMaterial3:true). Incluye 15 sub-temas de componentes.</td></tr>
+    <tr><td><code>warmCream</code></td><td>#F7F4F0 — background, evita blanco puro que causa fatiga visual en TEA</td></tr>
+    <tr><td><code>softBlue</code></td><td>#7BB3D0 — color primario. Azul cromoterapia: efecto calmante</td></tr>
+    <tr><td><code>warmCharcoal</code></td><td>#3D3835 — texto principal. No negro puro para reducir contraste agresivo</td></tr>
+    <tr><td><code>errorMuted</code></td><td>#D97070 — error. Rojo apagado para no resultar alarmante en TEA</td></tr>
+    <tr><td>Radios de borde</td><td>12 / 16 / 24 / 32 px — escala progresiva por nivel de prominencia del componente</td></tr>
+    <tr><td>Sombras</td><td>softShadow (6% opacidad) / mediumShadow (3%) — "efecto etéreo" sin dureza</td></tr>
+    <tr><td>Fuente</td><td>Nunito (Google Fonts): formas redondeadas, alta legibilidad, elegida para accesibilidad TEA/TDAH</td></tr>
+    <tr><td>Interlineado TextTheme</td><td>height: 1.65–1.75 en estilos Body — facilita lectura para TDAH</td></tr>
+  </table>
+</div>
+
+<div class="footer">
+  <p><strong>Simple — Prótesis Cognitiva</strong> · Documentación técnica de pantallas, rutas y métodos</p>
+  <p>Neftali Arriagada · Proyecto de Título — Analista Programador · Julio 2026</p>
+</div>
+
+</div>
+</body>
+</html>
