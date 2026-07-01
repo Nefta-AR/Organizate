@@ -1,5 +1,6 @@
+// ============================================================
 // lib/features/tda_focus/screens/tareas_screen.dart
-//
+// ============================================================
 // Pantalla de gestión de tareas del usuario TDAH.
 //
 // ## Arquitectura de datos
@@ -86,9 +87,10 @@ class _TareasScreenState extends State<TareasScreen> {
   void initState() {
     super.initState();
     final uid = FirebaseAuth.instance.currentUser!.uid;
-    _userDocRef = FirebaseFirestore.instance.collection('users').doc(uid);
+    // Inicializa las referencias en initState para evitar recalcularlas en build.
+    _userDocRef      = FirebaseFirestore.instance.collection('users').doc(uid);
     _tasksCollection = _userDocRef.collection('tasks');
-    _userDocStream = _userDocRef.snapshots();
+    _userDocStream   = _userDocRef.snapshots(); // Stream cacheado para el AppBar
   }
 
   @override
@@ -212,8 +214,14 @@ class _TareasScreenState extends State<TareasScreen> {
     );
   }
 
+  /// Lista en tiempo real de tareas con tres niveles de filtrado:
+  ///   1. Excluye las marcadas como soft-deleted (deletedByUser: true)
+  ///   2. Filtra por categoría si hay un chip seleccionado
+  ///   3. Ordena pendientes primero, completadas al final
   Widget _buildTasksList() {
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      // Ordenar por createdAt desc en Firestore garantiza que las tareas más
+      // recientes aparezcan primero dentro de cada grupo (pendiente/completada).
       stream:
           _tasksCollection.orderBy('createdAt', descending: true).snapshots(),
       builder: (context, snapshot) {
@@ -224,20 +232,24 @@ class _TareasScreenState extends State<TareasScreen> {
           return const Center(child: Text('Error al cargar tareas'));
         }
 
+        // Nivel 1: Excluye soft-deleted. El tutor puede verlas en su panel.
         final all = (snapshot.data?.docs ?? [])
             .where((d) => d.data()['deletedByUser'] != true)
             .toList();
+
+        // Nivel 2: Filtro por categoría (null = "Todas").
         final filtered = _selectedCategory == null
             ? all
             : all
                 .where((d) => d.data()['category'] == _selectedCategory)
                 .toList();
 
+        // Nivel 3: Pendientes arriba, completadas abajo.
         final sorted = [...filtered]..sort((a, b) {
             final aDone = a.data()['done'] as bool? ?? false;
             final bDone = b.data()['done'] as bool? ?? false;
             if (aDone == bDone) return 0;
-            return aDone ? 1 : -1;
+            return aDone ? 1 : -1; // false (pendiente) → 0, true (done) → 1
           });
 
         if (sorted.isEmpty) {
@@ -276,12 +288,15 @@ class _TareasScreenState extends State<TareasScreen> {
 
             return Dismissible(
               key: ValueKey(taskId),
+              // Solo las tareas COMPLETADAS son deslizables para eliminar.
+              // Evita eliminaciones accidentales de tareas pendientes.
               direction: isDone
                   ? DismissDirection.horizontal
                   : DismissDirection.none,
               background: _buildDismissBackground(Alignment.centerLeft),
               secondaryBackground:
                   _buildDismissBackground(Alignment.centerRight),
+              // Soft-delete: no borra de Firestore, solo marca deletedByUser: true.
               onDismissed: (_) => _deleteTask(taskId, text),
               child: GestureDetector(
                 onLongPress: () => _showTaskOptionsDialog(
@@ -397,19 +412,30 @@ class _TareasScreenState extends State<TareasScreen> {
     );
   }
 
+  /// Alterna el estado done de una tarea y actualiza puntos en batch atómico.
+  ///
+  /// Al COMPLETAR (isDone cambia de false a true):
+  ///   1. Cancela el recordatorio de notificación
+  ///   2. Actualiza la racha diaria (StreakService)
+  ///   3. Registra la actividad en el log del usuario (visible para el tutor)
   Future<void> _toggleTask(String taskId, bool isDone) async {
-    final pointsChange = isDone ? -10 : 10;
+    final pointsChange = isDone ? -10 : 10; // +10 al completar, -10 al descompletar
     final batch = FirebaseFirestore.instance.batch();
     batch.update(_tasksCollection.doc(taskId), {'done': !isDone});
     batch.update(_userDocRef, {'points': FieldValue.increment(pointsChange)});
     try {
       await batch.commit();
       if (!isDone) {
+        // Cancela el recordatorio local para que no llegue una notificación
+        // de una tarea que el usuario ya marcó como hecha.
         await ReminderDispatcher.cancelTaskReminder(
             userDocRef: _userDocRef, taskId: taskId);
+        // Transacción Firestore que actualiza el streak de forma segura.
         await StreakService.updateStreakOnTaskCompletion(_userDocRef);
+        // Leer el texto de la tarea para el log (el texto no está en memoria aquí).
         final taskSnap = await _tasksCollection.doc(taskId).get();
         final taskText = taskSnap.data()?['text'] as String? ?? '';
+        // Registro de auditoría: el tutor puede ver esto en _TutorHistorialTab.
         await ActivityLogService.log(
           userId: _userDocRef.id,
           type: ActivityType.taskCompleted,
@@ -435,11 +461,15 @@ class _TareasScreenState extends State<TareasScreen> {
     );
   }
 
+  /// Soft-delete: marca la tarea como eliminada sin borrarla de Firestore.
+  ///
+  /// El tutor puede ver las tareas eliminadas en la sección "Eliminadas"
+  /// de su panel. El campo deletedAt permite al tutor saber cuándo ocurrió.
   Future<void> _deleteTask(String taskId, String text) async {
     try {
       await _tasksCollection.doc(taskId).update({
-        'deletedByUser': true,
-        'deletedAt': FieldValue.serverTimestamp(),
+        'deletedByUser': true,              // Flag de soft-delete
+        'deletedAt': FieldValue.serverTimestamp(), // Timestamp de eliminación
       });
       await ReminderDispatcher.cancelTaskReminder(
           userDocRef: _userDocRef, taskId: taskId);

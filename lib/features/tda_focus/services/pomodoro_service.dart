@@ -1,3 +1,13 @@
+// ============================================================
+// lib/features/tda_focus/services/pomodoro_service.dart
+// ============================================================
+// Servicio de estado global del temporizador Pomodoro.
+//
+// Patrón: ChangeNotifier inyectado via MultiProvider en main.dart.
+// Cualquier widget puede escucharlo con context.watch<PomodoroService>()
+// o context.read<PomodoroService>() para acceder sin reconstruir.
+// ============================================================
+
 import 'dart:async';
 
 import 'package:flutter/widgets.dart';
@@ -5,7 +15,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/services/notification_service.dart';
 
-enum PomodoroStatus { idle, running, paused, finished }
+/// Estados posibles del timer Pomodoro.
+enum PomodoroStatus {
+  idle,     // Sin timer activo
+  running,  // Timer en curso
+  paused,   // Timer pausado (remaining guardado en memoria y SharedPreferences)
+  finished, // Timer llegó a cero (el listener en FocoScreen lo detecta)
+}
 
 /// ChangeNotifier que gestiona el ciclo de vida completo de un temporizador
 /// Pomodoro, incluyendo persistencia entre sesiones y notificaciones.

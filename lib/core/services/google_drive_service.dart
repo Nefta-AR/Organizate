@@ -1,3 +1,36 @@
+// ============================================================
+// lib/core/services/google_drive_service.dart
+// ============================================================
+// Servicio singleton para backup y restauración en Google Drive.
+//
+// ## Autenticación
+//
+//   Usa GoogleSignIn con scope `drive.file` (acceso solo a archivos
+//   creados por la app). [GoogleAuthHttpClient] extiende BaseClient
+//   para agregar el header Authorization en cada petición HTTP.
+//
+// ## Estructura en Drive
+//
+//   Simple_App_Backup/
+//     settings_backup.json   ← Configuración del usuario (Firestore export)
+//     pictogramas/            ← Pictogramas personalizados
+//
+// ## Clases de resultado
+//
+//   [DriveBackupStatus]: resultado de backupToDrive()
+//     - success, message, timestamp, filesUploaded
+//
+//   [DriveRestoreResult]: resultado de restoreFromDrive()
+//     - success, message, cloudIsNewer, restoredFiles
+//     - cloudIsNewer: true cuando la nube tiene datos más recientes que el
+//       dispositivo (usado para mostrar advertencia antes de restaurar).
+//
+// ## Persistencia de lastSync
+//
+//   La fecha del último backup se guarda en SharedPreferences bajo
+//   'drive_last_sync' para comparación en [restoreFromDrive].
+// ============================================================
+
 import 'dart:convert';
 import 'dart:io';
 import 'package:path/path.dart' as path;

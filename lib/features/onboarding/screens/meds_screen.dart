@@ -1,4 +1,13 @@
-// lib/screens/meds_screen.dart
+// ============================================================
+// lib/features/onboarding/screens/meds_screen.dart
+// ============================================================
+// Pantalla de tareas de la categoría "Meds" (medicamentos, color rojo).
+//
+// Idéntica a HogarScreen pero con category='Meds' y color rojo.
+// Especialmente importante para usuarios con rutinas de medicación.
+// CRUD: crear, editar, eliminar, completar. Hard-delete.
+// Recordatorios via ReminderDispatcher (local + push).
+// ============================================================
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

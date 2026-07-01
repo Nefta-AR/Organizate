@@ -1,4 +1,22 @@
+// ============================================================
 // lib/screens/pantalla_paciente_tea.dart
+// ============================================================
+// Versión simplificada (prototipo) del tablero TEA — sin Firebase.
+//
+// Esta pantalla usa pictogramas hardcodeados organizados por franja horaria:
+//   - Mañana (06:00–11:59): rutinas de inicio de día.
+//   - Tarde (12:00–17:59): actividades de la tarde.
+//   - Noche (18:00–05:59): rutinas nocturnas.
+//
+// Diferencias respecto a la versión de producción en features/tea_board/:
+//   - Sin Firestore (sin configuración de tutor, sin pictogramas personalizados).
+//   - Sin registro de actividad en activityLog.
+//   - Sin sistema SOS con contacto de emergencia.
+//   - Usa flutter_tts directamente (sin caché de audio).
+//
+// La versión de producción completa está en:
+//   lib/features/tea_board/screens/pantalla_paciente_tea.dart
+// ============================================================
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';

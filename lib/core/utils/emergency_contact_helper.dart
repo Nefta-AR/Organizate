@@ -1,9 +1,34 @@
+// ============================================================
+// lib/core/utils/emergency_contact_helper.dart
+// ============================================================
+// Utilidad para llamar al contacto de emergencia del usuario.
+//
+// ## Cadena de fallback para llamadas
+//
+//   1. Llamada directa (Android): [FlutterPhoneDirectCaller] — inicia la
+//      llamada sin abrir el marcador. Requiere permiso CALL_PHONE.
+//   2. Marcador externo: si la llamada directa falla (permisos denegados,
+//      iOS, o no disponible), se abre la app de marcador via `tel://` URI.
+//
+// ## Enum [_DirectCallStatus]
+//
+//   - success: llamada iniciada correctamente.
+//   - permissionDenied: usuario negó el permiso (se puede volver a pedir).
+//   - permanentlyDenied: bloqueado desde Ajustes del sistema.
+//   - unavailable: plataforma no Android (iOS, web, desktop).
+//   - failed: error genérico al iniciar la llamada.
+// ============================================================
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+/// Muestra el diálogo de confirmación y ejecuta la llamada de emergencia.
+///
+/// Si no hay contacto configurado, ofrece ir al perfil para agregarlo.
+/// Si el permiso de llamada directa no está disponible, abre el marcador.
 Future<void> handleEmergencyContactAction(
   BuildContext context, {
   required String? emergencyName,
@@ -12,9 +37,11 @@ Future<void> handleEmergencyContactAction(
 }) async {
   final messenger = ScaffoldMessenger.of(context);
   final trimmedPhone = emergencyPhone?.trim();
+  // Valida que el teléfono tenga al menos 6 caracteres numéricos
   final hasValidPhone = trimmedPhone != null &&
       trimmedPhone.replaceAll(RegExp(r'\s+'), '').length >= 6;
 
+  // Sin teléfono configurado: ofrecer ir al perfil
   if (!hasValidPhone) {
     final goToProfile = await showDialog<bool>(
       context: context,
@@ -39,9 +66,12 @@ Future<void> handleEmergencyContactAction(
     return;
   }
 
+  // Limpia espacios del número para la llamada
   final cleanedPhone = trimmedPhone.replaceAll(RegExp(r'\s+'), '');
   final prettyName =
       (emergencyName?.trim().isEmpty ?? true) ? null : emergencyName!.trim();
+
+  // Pedir confirmación al usuario antes de llamar
   final confirmation = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
@@ -66,6 +96,7 @@ Future<void> handleEmergencyContactAction(
 
   if (confirmation != true) return;
 
+  // Web no soporta llamadas nativas
   if (kIsWeb) {
     messenger.showSnackBar(
       const SnackBar(
@@ -74,10 +105,11 @@ Future<void> handleEmergencyContactAction(
     return;
   }
 
+  // Paso 1: Intentar llamada directa (Android solamente)
   final directCallStatus = await _tryDirectEmergencyCall(cleanedPhone);
   switch (directCallStatus) {
     case _DirectCallStatus.success:
-      return;
+      return; // Llamada iniciada exitosamente, terminar aquí
     case _DirectCallStatus.permissionDenied:
       messenger.showSnackBar(
         const SnackBar(
@@ -105,9 +137,10 @@ Future<void> handleEmergencyContactAction(
       );
       break;
     case _DirectCallStatus.unavailable:
-      break;
+      break; // iOS/desktop: ir directamente al marcador sin mostrar error
   }
 
+  // Paso 2 (fallback): Abrir el marcador via URI tel://
   final uri = Uri.parse('tel:$cleanedPhone');
   try {
     final success = await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -123,7 +156,10 @@ Future<void> handleEmergencyContactAction(
   }
 }
 
+/// Intenta iniciar una llamada directa en Android sin abrir el marcador.
+/// Gestiona los permisos de llamada automáticamente.
 Future<_DirectCallStatus> _tryDirectEmergencyCall(String phone) async {
+  // Solo disponible en Android
   if (defaultTargetPlatform != TargetPlatform.android) {
     return _DirectCallStatus.unavailable;
   }
@@ -135,6 +171,7 @@ Future<_DirectCallStatus> _tryDirectEmergencyCall(String phone) async {
     return _DirectCallStatus.failed;
   }
 
+  // Solicitar permiso si aún no fue otorgado o fue restringido
   if (status.isDenied || status.isRestricted) {
     status = await Permission.phone.request();
   }
@@ -152,10 +189,11 @@ Future<_DirectCallStatus> _tryDirectEmergencyCall(String phone) async {
   }
 }
 
+/// Estado del intento de llamada directa (sin abrir el marcador).
 enum _DirectCallStatus {
-  success,
-  permissionDenied,
-  permanentlyDenied,
-  unavailable,
-  failed,
+  success,           // Llamada iniciada correctamente
+  permissionDenied,  // Permiso negado (se puede volver a pedir)
+  permanentlyDenied, // Permiso bloqueado (requiere abrir Ajustes del sistema)
+  unavailable,       // No disponible en esta plataforma (iOS, web, desktop)
+  failed,            // Error genérico al iniciar la llamada
 }

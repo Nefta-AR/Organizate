@@ -1,3 +1,15 @@
+// ============================================================
+// lib/features/auth/screens/profile_setup_screen.dart
+// ============================================================
+// Pantalla de configuración inicial de perfil. Se muestra una sola vez:
+// cuando hasCompletedProfile == false Y el campo name está vacío en Firestore.
+//
+// El usuario escribe su nombre y elige un avatar de 8 opciones.
+// Al guardar, AuthGate detecta el cambio en hasCompletedProfile via
+// su StreamBuilder y redirige automáticamente a HomeScreen/TutorScreen
+// sin necesidad de Navigator.push explícito.
+// ============================================================
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -10,21 +22,25 @@ class ProfileSetupScreen extends StatefulWidget {
 }
 
 class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
+  // Lista de nombres de archivo de avatar (sin extensión).
+  // Los assets están en assets/avatars/<nombre>.png.
   static const _avatars = [
-    'emoticon', 'koala', 'panda', 'pinguino',
-    'rana', 'tigre', 'unicornio', 'zorro',
+    'emoticon', 'koala',    'panda',    'pinguino',
+    'rana',     'tigre',    'unicornio','zorro',
   ];
 
-  static const _primary = Color(0xFF7BB3D0);
-  static const _bg = Color(0xFFF5F7FA);
+  static const _primary = Color(0xFF7BB3D0); // Azul terapéutico
+  static const _bg      = Color(0xFFF5F7FA); // Fondo gris claro
 
   late final TextEditingController _nameCtrl;
-  String? _selectedAvatar;
+  String? _selectedAvatar; // null si el usuario no eligió avatar todavía
   bool _saving = false;
 
   @override
   void initState() {
     super.initState();
+    // Pre-rellena el nombre con el displayName de Firebase Auth si existe
+    // (p. ej. si el usuario entró con Google y ya tiene nombre).
     final authUser = FirebaseAuth.instance.currentUser;
     _nameCtrl = TextEditingController(
       text: authUser?.displayName ?? '',
@@ -37,6 +53,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     super.dispose();
   }
 
+  /// Guarda el nombre y el avatar seleccionado en Firestore.
+  ///
+  /// Efecto secundario: AuthGate detecta el cambio en hasCompletedProfile
+  /// y redirige a la pantalla correcta de forma reactiva.
   Future<void> _save() async {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) {
@@ -51,12 +71,14 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       await FirebaseFirestore.instance.collection('users').doc(uid).set(
         {
           'name': name,
+          // Solo se incluye 'avatar' en el documento si el usuario eligió uno;
+          // si no eligió, el campo anterior (o el valor por defecto) se mantiene.
           if (_selectedAvatar != null) 'avatar': _selectedAvatar,
-          'hasCompletedProfile': true,
+          'hasCompletedProfile': true, // AuthGate reacciona a este cambio
         },
-        SetOptions(merge: true),
+        SetOptions(merge: true), // merge: true para no borrar otros campos
       );
-      // AuthGate reacciona automáticamente al cambio de hasCompletedProfile.
+      // No necesita Navigator.push: AuthGate redirige al detectar el cambio.
     } catch (_) {
       if (!mounted) return;
       setState(() => _saving = false);
@@ -77,6 +99,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 16),
+
+              // ── Ícono decorativo ────────────────────────────────────
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
@@ -86,6 +110,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 child: const Icon(Icons.person_rounded, size: 48, color: _primary),
               ),
               const SizedBox(height: 20),
+
+              // ── Título y subtítulo ──────────────────────────────────
               const Text(
                 '¡Casi listo!',
                 style: TextStyle(
@@ -102,10 +128,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               ),
               const SizedBox(height: 32),
 
-              // ── Nombre ──────────────────────────────────────────────
+              // ── Campo de nombre ─────────────────────────────────────
               TextField(
                 controller: _nameCtrl,
-                textCapitalization: TextCapitalization.words,
+                textCapitalization: TextCapitalization.words, // Capitaliza cada palabra
                 decoration: InputDecoration(
                   labelText: 'Tu nombre',
                   prefixIcon: const Icon(Icons.badge_rounded, color: _primary),
@@ -123,7 +149,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               ),
               const SizedBox(height: 28),
 
-              // ── Avatar ──────────────────────────────────────────────
+              // ── Selector de avatar ──────────────────────────────────
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -136,17 +162,20 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 ),
               ),
               const SizedBox(height: 12),
+
+              // Grid 4×2 de avatares con selección animada.
               GridView.builder(
                 shrinkWrap: true,
+                // NeverScrollableScrollPhysics porque el scroll es del SingleChildScrollView padre.
                 physics: const NeverScrollableScrollPhysics(),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
+                  crossAxisCount: 4,   // 4 columnas
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
                 ),
                 itemCount: _avatars.length,
                 itemBuilder: (_, i) {
-                  final name = _avatars[i];
+                  final name     = _avatars[i];
                   final selected = _selectedAvatar == name;
                   return GestureDetector(
                     onTap: () => setState(() => _selectedAvatar = name),
@@ -154,12 +183,17 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                       duration: const Duration(milliseconds: 150),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
+                        // Borde azul si está seleccionado, transparente si no.
                         border: Border.all(
                           color: selected ? _primary : Colors.transparent,
                           width: 3,
                         ),
+                        // Sombra azul suave al seleccionado para mayor visibilidad.
                         boxShadow: selected
-                            ? [BoxShadow(color: _primary.withValues(alpha: 0.35), blurRadius: 8)]
+                            ? [BoxShadow(
+                                color: _primary.withValues(alpha: 0.35),
+                                blurRadius: 8,
+                              )]
                             : [],
                       ),
                       child: CircleAvatar(
@@ -168,6 +202,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                           child: Image.asset(
                             'assets/avatars/$name.png',
                             fit: BoxFit.cover,
+                            // Fallback si el asset no existe o hay error de carga.
                             errorBuilder: (context, error, stackTrace) {
                               return const Icon(Icons.person, color: Colors.grey);
                             },
@@ -179,7 +214,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 },
               ),
               const SizedBox(height: 12),
+
+              // ── Botón para deseleccionar avatar ─────────────────────
               TextButton(
+                // Solo activo si hay un avatar seleccionado.
                 onPressed: _selectedAvatar == null
                     ? null
                     : () => setState(() => _selectedAvatar = null),
@@ -190,7 +228,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               ),
               const SizedBox(height: 32),
 
-              // ── Botón guardar ────────────────────────────────────────
+              // ── Botón "Comenzar" ─────────────────────────────────────
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -204,6 +242,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     ),
                     elevation: 0,
                   ),
+                  // Spinner mientras guarda, texto cuando está listo.
                   child: _saving
                       ? const SizedBox(
                           width: 22,
@@ -215,8 +254,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                         )
                       : const Text(
                           'Comenzar',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w700),
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                         ),
                 ),
               ),

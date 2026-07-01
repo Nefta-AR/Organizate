@@ -1,3 +1,34 @@
+// ============================================================
+// lib/core/services/notification_service.dart
+// ============================================================
+// Servicio de notificaciones locales via flutter_local_notifications.
+//
+// ## Canal de Android
+//
+//   ID: 'tareas_channel', importancia máxima, sonido y vibración.
+//   Se crea en [init] con permisos de alarma exacta para Android 12+.
+//
+// ## Funciones principales
+//
+//   [init]: inicializa el plugin, crea el canal y configura la timezone
+//     local via flutter_native_timezone (fallback a UTC si falla).
+//
+//   [scheduleReminderIfNeeded]: programa una alarma zonedSchedule
+//     para (dueDate - reminderMinutes). Si no hay permiso de alarma exacta
+//     (Android 12+), programa un alarm inexacto (setAndAllowWhileIdle).
+//
+//   [cancelTaskNotification]: cancela por ID = taskId.hashCode & 0x7FFFFFFF.
+//     El masking garantiza que el ID sea siempre positivo en 32 bits.
+//
+//   [schedulePomodoroNotification]: ID fijo 7777, al terminar el timer Pomodoro.
+//
+//   [showTestNotification]: retorna NotificationTestResult con diagnóstico
+//     detallado (permisos, canal activo, alarma exacta).
+//
+//   [showInstantNotification]: muestra una notificación inmediata
+//     (usada por PushNotificationService en foreground).
+// ============================================================
+
 import 'dart:io';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

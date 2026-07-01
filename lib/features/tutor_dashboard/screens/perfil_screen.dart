@@ -1,4 +1,21 @@
-// lib/screens/perfil_screen.dart
+// ============================================================
+// lib/features/tutor_dashboard/screens/perfil_screen.dart
+// ============================================================
+// Pantalla de perfil simplificada del usuario (vista secundaria).
+//
+// Muestra:
+//   - Avatar (foto de perfil o imagen de asset seleccionada).
+//   - Nombre, email y chip de rol.
+//   - Tarjetas de estadísticas: puntos y racha.
+//   - Botón para cambiar la foto de perfil (Gallery → Firebase Storage).
+//
+// Esta pantalla es más sencilla que SettingsScreen: no tiene
+// ajustes de notificaciones, backup, ni contacto de emergencia.
+// Se usa como vista de perfil rápido desde ciertas rutas.
+//
+// [_handlePhotoUpload]: sube la imagen a `user_photos/{uid}/profile.jpg`
+//   en Firebase Storage y guarda la URL en Firestore (campo `photoURL`).
+// ============================================================
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';

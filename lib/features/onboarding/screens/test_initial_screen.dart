@@ -1,4 +1,23 @@
-// lib/screens/test_initial_screen.dart
+// ============================================================
+// lib/features/onboarding/screens/test_initial_screen.dart
+// ============================================================
+// Test de configuración inicial de 4 pasos para nuevos usuarios.
+//
+// ## Pasos del test
+//
+//   1. Nivel de distracción (Slider 1-4): ¿te distraes con facilidad?
+//   2. Recordatorios preferidos (multi-select): vibración, sonido,
+//      notificación visual, widget.
+//   3. Duración de metas (radio): cortas (25-30 min) o largas (45-60 min).
+//   4. Avatar inicial (cuadrícula 4x2): 8 opciones de personaje.
+//
+// Al completar el paso 4, [_goToNextStep] guarda en Firestore:
+//   - hasCompletedOnboarding: true (AuthGate no mostrará este test de nuevo)
+//   - avatar, distractionLevel, preferredReminders, goalLength
+//   - points: 1200 (recompensa de bienvenida)
+//
+// Luego navega a WelcomeRewardScreen con pushReplacement.
+// ============================================================
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

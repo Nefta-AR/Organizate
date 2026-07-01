@@ -1,3 +1,26 @@
+// ============================================================
+// lib/features/tutor_dashboard/screens/pantallas_config_screen.dart
+// ============================================================
+// Pantalla de configuración de pestañas visibles (feature flags) para el usuario.
+//
+// Lee y escribe el documento `users/{uid}/pictogramSettings/_features`.
+// El usuario puede activar/desactivar las pestañas de su barra de navegación.
+//
+// ## Reglas de bloqueo
+//
+//   - Si el usuario tiene tutor vinculado: todos los switches se muestran
+//     bloqueados (solo el tutor puede modificarlos desde su panel).
+//     Se muestra un mensaje explicativo con ícono de candado.
+//   - Siempre debe quedar al menos 1 pestaña activa: el guard() inline
+//     deshabilita el switch de la última pestaña activa.
+//
+// ## Doble StreamBuilder
+//
+//   Outer → [AuthService.getLinkedTutorStream] para detectar si hay tutor.
+//   Inner → featuresRef.snapshots() para los valores actuales de los flags.
+//   Esto evita reads redundantes: solo escucha lo que necesita.
+// ============================================================
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';

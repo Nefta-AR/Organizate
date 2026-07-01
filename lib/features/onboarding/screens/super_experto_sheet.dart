@@ -1,4 +1,34 @@
-// lib/screens/super_experto_sheet.dart
+// ============================================================
+// lib/features/onboarding/screens/super_experto_sheet.dart
+// ============================================================
+// Bottom sheet de descomposición de tareas con IA (Gemini).
+//
+// ## Paleta de colores
+//
+//   Acento principal: #7C5CBF (púrpura).
+//   Fondo del sheet: neutral claro para reducir carga visual.
+//
+// ## Flujo principal
+//
+//   1. El usuario escribe un texto libre de la tarea a desglosar.
+//   2. Al tocar "Generar plan", se llama a [_generarPlan]:
+//        → IAService.desglosarEnPasos(texto) → Cloud Function Gemini.
+//        → Devuelve lista de pasos (strings).
+//   3. Los pasos se muestran en una lista editable.
+//   4. Al confirmar, [_guardarSubtareas] hace un batch write a Firestore:
+//        users/{uid}/tasks/{parentTaskId}/subtasks/{auto-id}
+//
+// ## Opciones de tiempo predefinidas
+//
+//   _opcionesTiempo: ['30 min', '1 hora', 'Medio día', 'Todo el día', 'Una semana']
+//   Estas opciones se pasan a Gemini como contexto de duración estimada
+//   para que los pasos generados sean coherentes con el tiempo disponible.
+//
+// ## Apertura
+//
+//   SuperExpertoSheet.show(context, parentTaskId: taskId)
+//   Usa showModalBottomSheet con DraggableScrollableSheet.
+// ============================================================
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';

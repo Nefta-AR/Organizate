@@ -1,4 +1,13 @@
-// lib/screens/estudios_screen.dart
+// ============================================================
+// lib/features/onboarding/screens/estudios_screen.dart
+// ============================================================
+// Pantalla de tareas de la categoría "Estudios" (color naranja).
+//
+// Idéntica a HogarScreen pero con category='Estudios' y color naranja.
+// CRUD: crear, editar, eliminar, completar tareas.
+// Al completar: ±10 puntos + StreakService. Hard-delete.
+// Recordatorios via ReminderDispatcher (local + push).
+// ============================================================
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

@@ -1,4 +1,23 @@
-// lib/screens/role_selection_screen.dart
+// ============================================================
+// lib/features/auth/screens/role_selection_screen.dart
+// ============================================================
+// Pantalla de selección de rol: el usuario elige entre "Usuario"
+// o "Tutor" la primera vez que entra a la app (o cuando su rol
+// es null/vacío en Firestore).
+//
+// Flujo:
+//   1. El usuario toca una tarjeta (_RoleCard).
+//   2. _selectRole() llama a AuthService.setRole() para escribir
+//      el rol en Firestore y marca hasCompletedOnboarding: true.
+//   3. Se limpia el stack de navegación y se redirige a AuthGate,
+//      que ahora re-evalúa el rol y navega a la pantalla correcta.
+//
+// Por qué se hace pushAndRemoveUntil a AuthGate en lugar de
+// simplemente dejar que el StreamBuilder de AuthGate reaccione:
+// RoleSelectionScreen está ENCIMA de AuthGate en el stack, así que
+// aunque AuthGate se reconstruya debajo, el usuario seguiría viendo
+// esta pantalla. Limpiar el stack garantiza que AuthGate esté visible.
+// ============================================================
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -6,15 +25,16 @@ import 'package:flutter/material.dart';
 import 'package:simple/core/navigation/auth_gate.dart';
 import 'package:simple/core/services/auth_service.dart';
 
-
+/// Paleta de colores interna de esta pantalla.
 class _Palette {
   _Palette._();
-  static const background = Color(0xFFF0F4F8);
-  static const primary = Color(0xFF607D8B);
-  static const textDark = Color(0xFF37474F);
-  static const textMuted = Color(0xFF78909C);
+  static const background = Color(0xFFF0F4F8); // Fondo azul-gris muy claro
+  static const primary    = Color(0xFF607D8B); // Gris azulado principal
+  static const textDark   = Color(0xFF37474F); // Texto oscuro
+  static const textMuted  = Color(0xFF78909C); // Texto secundario gris
 }
 
+/// Radio estándar de bordes redondeados para tarjetas de rol.
 const double _kRadius = 20;
 
 class RoleSelectionScreen extends StatefulWidget {
@@ -25,9 +45,13 @@ class RoleSelectionScreen extends StatefulWidget {
 }
 
 class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
+  // Almacena el rol que se está cargando para mostrar el spinner en esa tarjeta
+  // y deshabilitar la otra tarjeta mientras dura la operación async.
   String? _loadingRole;
 
+  /// Guarda el rol seleccionado en Firestore y redirige al AuthGate.
   Future<void> _selectRole(String role) async {
+    // Evita doble tap si ya hay una operación en curso.
     if (_loadingRole != null) return;
     setState(() => _loadingRole = role);
 
@@ -35,22 +59,26 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) throw Exception('Sin usuario autenticado');
 
+      // Convierte el string del rol al enum UserRole para type-safety.
       final userRole = role == 'tutor' ? UserRole.tutor : UserRole.usuario;
 
+      // Escribe el campo 'role' en el documento Firestore del usuario.
       await AuthService.setRole(userRole);
 
+      // Marca el onboarding como completado para que AuthGate no vuelva a
+      // mostrar esta pantalla en próximos inicios de sesión.
       await FirebaseFirestore.instance
           .collection('users')
           .doc(uid)
           .set({'hasCompletedOnboarding': true}, SetOptions(merge: true));
 
-      // Clear the entire navigation stack so AuthGate re-dispatches based on the new role.
-      // Simply relying on the AuthGate stream doesn't work here because RoleSelectionScreen
-      // sits on top of the stack and the user never sees AuthGate rebuild underneath.
+      // Limpia el stack completo y pone AuthGate como nueva raíz.
+      // AuthGate detectará el nuevo rol via su StreamBuilder y navegará
+      // a HomeScreen (usuario) o TutorSupervisarScreen (tutor).
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const AuthGate()),
-        (route) => false,
+        (route) => false, // Elimina TODAS las rutas previas
       );
     } catch (_) {
       if (!mounted) return;
@@ -59,6 +87,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
           content: Text('No pudimos guardar tu perfil. Intenta de nuevo.'),
         ),
       );
+      // Resetea para permitir reintentar.
       setState(() => _loadingRole = null);
     }
   }
@@ -74,6 +103,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const Spacer(),
+              // ── Título ───────────────────────────────────────────────
               const Text(
                 '¿Cómo usarás\nSimple hoy?',
                 textAlign: TextAlign.center,
@@ -95,30 +125,37 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                 ),
               ),
               const Spacer(),
+
+              // ── Tarjeta "Usuario" ─────────────────────────────────────
               _RoleCard(
                 role: 'usuario',
                 label: 'Usuario',
-                description: 'Organiza tu día, tareas y bienestar.\nPersonaliza tus pestañas desde Ajustes.',
+                description:
+                    'Organiza tu día, tareas y bienestar.\nPersonaliza tus pestañas desde Ajustes.',
                 icon: Icons.person_rounded,
-                cardColor: const Color(0xFFEDF2F7),
-                accentColor: const Color(0xFF7EA3BC),
-                isLoading: _loadingRole == 'usuario',
-                isDisabled: _loadingRole != null,
+                cardColor: const Color(0xFFEDF2F7),   // Azul muy claro
+                accentColor: const Color(0xFF7EA3BC), // Azul medio
+                isLoading: _loadingRole == 'usuario', // Spinner si se está guardando este rol
+                isDisabled: _loadingRole != null,     // Deshabilitado si se guarda el otro rol
                 onTap: () => _selectRole('usuario'),
               ),
               const SizedBox(height: 16),
+
+              // ── Tarjeta "Tutor" ───────────────────────────────────────
               _RoleCard(
                 role: 'tutor',
                 label: 'Tutor',
                 description: 'Acompaña y supervisa\na quien cuidas',
                 icon: Icons.favorite_rounded,
-                cardColor: const Color(0xFFEEF5F1),
-                accentColor: const Color(0xFF7DA88A),
+                cardColor: const Color(0xFFEEF5F1),   // Verde muy claro
+                accentColor: const Color(0xFF7DA88A), // Verde medio
                 isLoading: _loadingRole == 'tutor',
                 isDisabled: _loadingRole != null,
                 onTap: () => _selectRole('tutor'),
               ),
               const Spacer(),
+
+              // ── Nota informativa al pie ──────────────────────────────
               const Text(
                 'Puedes cambiarlo más adelante en Ajustes.',
                 style: TextStyle(fontSize: 12, color: _Palette.textMuted),
@@ -132,6 +169,11 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
   }
 }
 
+/// Tarjeta de selección de rol con animaciones de opacidad y estado de carga.
+///
+/// Muestra un spinner en el ícono cuando [isLoading] es true, y reduce la
+/// opacidad a 45% cuando está [isDisabled] pero no está cargando (la otra
+/// tarjeta está siendo procesada).
 class _RoleCard extends StatelessWidget {
   const _RoleCard({
     required this.role,
@@ -149,21 +191,23 @@ class _RoleCard extends StatelessWidget {
   final String label;
   final String description;
   final IconData icon;
-  final Color cardColor;
-  final Color accentColor;
-  final bool isLoading;
-  final bool isDisabled;
+  final Color cardColor;   // Color de fondo de la tarjeta
+  final Color accentColor; // Color del ícono y texto del título
+  final bool isLoading;    // True: muestra spinner en lugar del ícono
+  final bool isDisabled;   // True: ignora taps (pero sigue visible)
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return AnimatedOpacity(
+      // La tarjeta no activa se vuelve semitransparente durante la carga de la otra.
       opacity: isDisabled && !isLoading ? 0.45 : 1.0,
       duration: const Duration(milliseconds: 200),
       child: Material(
         color: cardColor,
         borderRadius: BorderRadius.circular(_kRadius),
         child: InkWell(
+          // Ripple effect; null deshabilita el tap.
           onTap: isDisabled ? null : onTap,
           borderRadius: BorderRadius.circular(_kRadius),
           child: Container(
@@ -171,6 +215,7 @@ class _RoleCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(_kRadius),
+              // Borde sutil del color de acento para dar identidad a la tarjeta.
               border: Border.all(
                 color: accentColor.withValues(alpha: 0.45),
                 width: 1.5,
@@ -178,13 +223,16 @@ class _RoleCard extends StatelessWidget {
             ),
             child: Row(
               children: [
+                // ── Ícono / Spinner ───────────────────────────────────
                 Container(
                   width: 56,
                   height: 56,
                   decoration: BoxDecoration(
+                    // Fondo traslúcido del color de acento.
                     color: accentColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(16),
                   ),
+                  // Muestra spinner durante la carga, ícono en reposo.
                   child: isLoading
                       ? Padding(
                           padding: const EdgeInsets.all(14),
@@ -196,6 +244,8 @@ class _RoleCard extends StatelessWidget {
                       : Icon(icon, color: accentColor, size: 28),
                 ),
                 const SizedBox(width: 20),
+
+                // ── Texto ─────────────────────────────────────────────
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -220,6 +270,8 @@ class _RoleCard extends StatelessWidget {
                     ],
                   ),
                 ),
+
+                // ── Flecha indicadora ────────────────────────────────
                 Icon(
                   Icons.arrow_forward_ios_rounded,
                   size: 16,

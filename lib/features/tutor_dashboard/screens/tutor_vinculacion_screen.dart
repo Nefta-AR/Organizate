@@ -1,3 +1,22 @@
+// ============================================================
+// lib/features/tutor_dashboard/screens/tutor_vinculacion_screen.dart
+// ============================================================
+// Pantalla de gestión de vínculos entre tutor y pacientes.
+//
+// Permite al tutor:
+//   1. Generar un código de invitación de 6 caracteres (expira en 7 días).
+//      [_generateCode] → [AuthService.generateInvitationCode]
+//   2. Ver y copiar el código generado al portapapeles. [_copyCode]
+//   3. Ver la lista de usuarios vinculados en tiempo real via Stream.
+//   4. Desvincular un usuario después de confirmación. [_removePatient]
+//   5. Navegar al panel de supervisión tocando un usuario vinculado.
+//
+// ## Flujo de vinculación
+//
+//   Tutor genera código → comparte con el paciente → el paciente
+//   lo ingresa en VinculacionTutorScreen → aceptación atómica en Firestore.
+// ============================================================
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

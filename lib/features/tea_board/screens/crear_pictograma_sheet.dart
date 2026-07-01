@@ -1,3 +1,31 @@
+// ============================================================
+// lib/features/tea_board/screens/crear_pictograma_sheet.dart
+// ============================================================
+// Bottom sheet para crear pictogramas personalizados con foto.
+//
+// ## Flujo de creación
+//
+//   1. El usuario elige la fuente de imagen:
+//        - Galería: ImagePicker.getImage(source: gallery)
+//        - Cámara: ImagePicker.getImage(source: camera)
+//   2. La imagen seleccionada pasa por image_cropper para recorte cuadrado.
+//   3. El archivo recortado se sube a Firebase Storage via PictogramService.
+//   4. PictogramService.createPictogram() escribe el documento en Firestore:
+//        users/{uid}/pictogramConfig/{auto-id}
+//        con los campos: label, storageUrl, isCustom:true
+//   5. El sheet se cierra y retorna el PictogramDisplay creado.
+//
+// ## Apertura
+//
+//   CrearPictogramaSheet.show(context)
+//   Método estático con showModalBottomSheet + DraggableScrollableSheet.
+//
+// ## Feedback háptico
+//
+//   HapticFeedback.lightImpact() al tocar cada opción de fuente,
+//   diseñado para usuarios TEA que se benefician del feedback táctil.
+// ============================================================
+
 import 'dart:io';
 
 import 'package:flutter/material.dart';

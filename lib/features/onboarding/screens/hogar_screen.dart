@@ -1,4 +1,18 @@
-// lib/screens/hogar_screen.dart
+// ============================================================
+// lib/features/onboarding/screens/hogar_screen.dart
+// ============================================================
+// Pantalla de tareas de la categoría "Hogar" (color verde).
+//
+// Funcionalmente idéntica a TareasScreen pero filtrada a category='Hogar'.
+// Diferencias respecto a TareasScreen:
+//   - Usa hard-delete (no soft-delete con deletedByUser: true).
+//   - Sin IA / SuperExpertoSheet.
+//   - Color temático: verde.
+//
+// CRUD completo: crear, editar, eliminar, marcar completada.
+// Al completar una tarea: ±10 puntos en batch + StreakService.
+// Recordatorios: ReminderDispatcher (local + push).
+// ============================================================
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

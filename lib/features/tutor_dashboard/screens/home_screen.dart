@@ -1,4 +1,23 @@
-// lib/screens/home_screen.dart
+// ============================================================
+// lib/features/tutor_dashboard/screens/home_screen.dart
+// ============================================================
+// Pantalla principal del rol 'usuario'. Muestra:
+//   - Saludo personalizado + frase motivacional del día
+//   - Tarjeta de tarea prioritaria (la más urgente pendiente)
+//   - Promo del Súper Experto (asistente IA)
+//   - Accesos rápidos a Estudios, Hogar y Meds
+//
+// Arquitectura reactiva:
+//   - _userDocRef.snapshots() → puntos, racha, contacto de emergencia
+//   - _tasksCollection.snapshots() → tarea prioritaria en tiempo real
+//
+// La frase motivacional rota día a día usando DateTime.now().day % 6,
+// lo que garantiza estabilidad dentro del mismo día sin estado persistente.
+//
+// La tarjeta de tarea prioritaria usa un algoritmo de ordenamiento:
+//   1. Tareas con dueDate más próxima (ascending)
+//   2. En empate: las creadas antes (ascending por createdAt)
+// ============================================================
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -28,8 +47,11 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  // Getter directo a FirebaseAuth para no guardar referencia al usuario
+  // (el usuario puede cambiar si hace logout/login sin reiniciar la app).
   User? get _currentUser => FirebaseAuth.instance.currentUser;
 
+  // Frases motivacionales para usuarios con TEA/TDAH. Se rotan por día del mes.
   static const List<String> _motivationalPhrases = [
     'Paso pequeño también es progreso.',
     'Tu valor no depende de cuántas tareas terminas.',
@@ -39,14 +61,19 @@ class _HomeScreenState extends State<HomeScreen> {
     'Organizarte es un acto de cuidado propio.',
   ];
 
+  // Referencia al documento del usuario en Firestore.
   DocumentReference<Map<String, dynamic>> get _userDocRef =>
       FirebaseFirestore.instance.collection('users').doc(_currentUser!.uid);
 
+  // Referencia a la subcolección de tareas del usuario.
   CollectionReference<Map<String, dynamic>> get _tasksCollection =>
       _userDocRef.collection('tasks');
 
+  // Formateador de fechas en español para las fechas de entrega.
   final DateFormat _dateTimeFormatter = DateFormat('dd MMM, HH:mm', 'es_ES');
 
+  // Selecciona la frase motivacional del día usando el día del mes como índice.
+  // Módulo garantiza que el índice nunca esté fuera del rango de la lista.
   String get _motivationLine {
     final index = DateTime.now().day % _motivationalPhrases.length;
     return _motivationalPhrases[index];
@@ -184,6 +211,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Construye la tarjeta de tarea prioritaria en tiempo real.
+  ///
+  /// Ordena las tareas pendientes por urgencia:
+  ///   - Primero por dueDate más próxima (null al final)
+  ///   - En empate: por createdAt más antigua (la tarea más vieja tiene prioridad)
   Widget _buildPriorityTaskCard() {
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: _tasksCollection.snapshots(),
@@ -197,17 +229,22 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         final docs = snapshot.data?.docs ?? [];
+        // Filtra solo las tareas no completadas.
         final pending =
             docs.where((d) => !(d.data()['done'] as bool? ?? false)).toList();
 
+        // Algoritmo de ordenamiento por urgencia:
+        // 1. Si ambas tienen dueDate, la más próxima primero.
+        // 2. Si solo una tiene dueDate, esa tiene prioridad.
+        // 3. Si ninguna tiene dueDate, ordena por createdAt (más antigua primero).
         pending.sort((a, b) {
           final aData = a.data();
           final bData = b.data();
           final aDue = (aData['dueDate'] as Timestamp?)?.toDate();
           final bDue = (bData['dueDate'] as Timestamp?)?.toDate();
           if (aDue != null && bDue != null) return aDue.compareTo(bDue);
-          if (aDue != null) return -1;
-          if (bDue != null) return 1;
+          if (aDue != null) return -1; // a tiene fecha → a es más urgente
+          if (bDue != null) return 1;  // b tiene fecha → b es más urgente
           final aCreated = (aData['createdAt'] as Timestamp?)?.toDate();
           final bCreated = (bData['createdAt'] as Timestamp?)?.toDate();
           if (aCreated != null && bCreated != null) {
@@ -586,11 +623,25 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Marca o desmarca una tarea como completada y actualiza los puntos.
+  ///
+  /// Usa batch atómico para que la actualización de puntos y el estado
+  /// de la tarea ocurran en la misma operación Firestore.
+  ///
+  /// Al completar (isDone era false → ahora true):
+  ///   - Cancela el recordatorio de notificación de esa tarea.
+  ///   - Actualiza la racha diaria del usuario.
+  ///
+  /// Al descompletar (isDone era true → ahora false):
+  ///   - Solo revierte el cambio de puntos, no reactiva el recordatorio.
   Future<void> _toggleTaskCompletion(String taskId, bool isDone) async {
     final messenger = ScaffoldMessenger.of(context);
+    // +10 al completar, -10 al descompletar.
     final pointsChange = isDone ? -10 : 10;
     final batch = FirebaseFirestore.instance.batch();
+    // Cambia el estado done de la tarea.
     batch.update(_tasksCollection.doc(taskId), {'done': !isDone});
+    // Incrementa o decrementa los puntos del usuario.
     batch.update(_userDocRef, {'points': FieldValue.increment(pointsChange)});
     try {
       await batch.commit();
@@ -601,6 +652,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
+    // Solo al COMPLETAR (no al descompletar) se cancela el recordatorio y se actualiza la racha.
     if (!isDone) {
       try {
         await ReminderDispatcher.cancelTaskReminder(
@@ -610,6 +662,8 @@ class _HomeScreenState extends State<HomeScreen> {
             '[REMINDER] No se pudo cancelar recordatorio $taskId: $error');
       }
       try {
+        // StreakService usa una transacción Firestore para actualizar la racha
+        // de forma segura (lee el valor actual antes de modificar).
         await StreakService.updateStreakOnTaskCompletion(_userDocRef);
       } catch (error) {
         debugPrint('No se pudo actualizar la racha: $error');

@@ -1,4 +1,21 @@
-// lib/screens/login_screen.dart
+// ============================================================
+// lib/features/auth/screens/login_screen.dart
+// ============================================================
+// Pantalla dual de autenticación: alterna entre modo LOGIN y REGISTRO
+// mediante el booleano _isLogin. Ambos modos comparten el mismo Form
+// pero el modo Registro muestra un campo extra para el nombre.
+//
+// Flujos de autenticación disponibles:
+//   1. Email + Contraseña  (_handleLogin)
+//   2. Google OAuth        (_handleGoogleLogin)
+//   3. Recuperación de contraseña (_handleForgotPassword)
+//
+// Después de un login exitoso se navega a '/' (root), lo que dispara
+// a AuthGate para que re-evalúe el estado y redirija correctamente.
+//
+// Persistencia: el último email usado se guarda en SharedPreferences
+// para pre-rellenar el campo en el siguiente inicio de la app.
+// ============================================================
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -7,16 +24,19 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Paleta de colores interna de la pantalla de login.
+/// Se define como clase privada para que no contamine el namespace global.
 class _Palette {
   _Palette._();
-  static const background = Color(0xFFF5F7FA);
-  static const primary = Color(0xFF4A90E2);
-  static const surface = Colors.white;
-  static const textDark = Color(0xFF2D3748);
-  static const textMuted = Color(0xFF718096);
-  static const border = Color(0xFFE2E8F0);
+  static const background = Color(0xFFF5F7FA); // Fondo gris muy claro
+  static const primary    = Color(0xFF4A90E2); // Azul principal
+  static const surface    = Colors.white;       // Fondo de tarjetas / inputs
+  static const textDark   = Color(0xFF2D3748); // Texto principal oscuro
+  static const textMuted  = Color(0xFF718096); // Texto secundario gris
+  static const border     = Color(0xFFE2E8F0); // Borde de inputs
 }
 
+/// Radio de borde estándar para inputs y botones en esta pantalla.
 const double _kRadius = 14;
 
 class LoginScreen extends StatefulWidget {
@@ -27,92 +47,125 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  // Clave global del Form para poder llamar a _formKey.currentState!.validate().
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _nameController = TextEditingController();
 
-  bool _isLogin = true;
-  bool _isLoading = false;
-  bool _isGoogleLoading = false;
-  bool _obscurePassword = true;
+  // Controladores de los campos de texto.
+  final _emailController    = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _nameController     = TextEditingController(); // Solo visible en modo REGISTRO
+
+  // Modo de la pantalla: true = Login, false = Registro.
+  bool _isLogin          = true;
+  // Indicadores de carga para deshabilitar botones durante peticiones async.
+  bool _isLoading        = false; // Login / Registro con email
+  bool _isGoogleLoading  = false; // Login con Google
+  // Controla si la contraseña es visible o está oculta con puntos.
+  bool _obscurePassword  = true;
 
   @override
   void initState() {
     super.initState();
+    // Carga el email guardado de la sesión anterior para comodidad del usuario.
     _loadSavedEmail();
   }
 
   @override
   void dispose() {
+    // Libera los controladores de texto al desmontar el widget para evitar memory leaks.
     _emailController.dispose();
     _passwordController.dispose();
     _nameController.dispose();
     super.dispose();
   }
 
+  /// Recupera el último email usado desde SharedPreferences y lo pone en el campo.
   Future<void> _loadSavedEmail() async {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getString('saved_email');
+    // Verifica mounted porque este método es async y el widget puede desmontarse
+    // antes de que SharedPreferences resuelva.
     if (!mounted || saved == null) return;
     _emailController.text = saved;
   }
 
+  /// Persiste el email en SharedPreferences para reutilizarlo la próxima vez.
   Future<void> _saveEmail(String email) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('saved_email', email);
   }
 
+  /// Maneja el flujo de login o registro con email y contraseña.
+  ///
+  /// En modo LOGIN: llama signInWithEmailAndPassword.
+  /// En modo REGISTRO: crea la cuenta y luego escribe el documento Firestore
+  /// inicial con rol 'usuario', puntos en 0, racha en 0.
   Future<void> _handleLogin() async {
+    // Ejecuta todos los validators del Form antes de continuar.
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
 
-    final auth = FirebaseAuth.instance;
-    final email = _emailController.text.trim();
+    final auth     = FirebaseAuth.instance;
+    final email    = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
     try {
       if (_isLogin) {
+        // ── LOGIN ──────────────────────────────────────────────────────
         await auth.signInWithEmailAndPassword(email: email, password: password);
         await _saveEmail(email);
       } else {
+        // ── REGISTRO ───────────────────────────────────────────────────
         final cred = await auth.createUserWithEmailAndPassword(
           email: email,
           password: password,
         );
         final user = cred.user;
         if (user != null) {
+          // Actualiza el displayName de Firebase Auth para que aparezca
+          // en otras partes de la app sin leer Firestore.
           await user.updateDisplayName(_nameController.text.trim());
+
+          // Crea el documento Firestore del usuario con valores iniciales.
+          // SetOptions(merge: true) por seguridad: si el doc ya existe no lo borra.
           await FirebaseFirestore.instance
               .collection('users')
               .doc(user.uid)
               .set({
-            'name': _nameController.text.trim(),
-            'email': email,
-            'role': 'usuario',
-            'avatar': 'emoticon',
-            'points': 0,
-            'streak': 0,
-            'hasCompletedProfile': true,
-            'hasCompletedOnboarding': false,
-            'createdAt': FieldValue.serverTimestamp(),
+            'name':                   _nameController.text.trim(),
+            'email':                  email,
+            'role':                   'usuario',       // Rol por defecto; cambiable en RoleSelectionScreen
+            'avatar':                 'emoticon',      // Avatar por defecto
+            'points':                 0,               // Puntos de gamificación
+            'streak':                 0,               // Racha diaria de tareas
+            'hasCompletedProfile':    true,            // El nombre ya está puesto en el registro
+            'hasCompletedOnboarding': false,           // AuthGate redirigirá a RoleSelectionScreen
+            'createdAt':              FieldValue.serverTimestamp(),
           }, SetOptions(merge: true));
           await _saveEmail(email);
         }
       }
+      // Navega a '/' limpiando el stack. AuthGate reacciona al nuevo estado de Auth.
       if (mounted) {
         Navigator.of(context).pushNamedAndRemoveUntil('/', (_) => false);
       }
     } on FirebaseAuthException catch (e) {
+      // Mapea los códigos de error de Firebase a mensajes en español.
       if (mounted) _showError(_mapAuthError(e.code));
     } catch (_) {
       if (mounted) _showError('Ocurrió un error inesperado. Intenta de nuevo.');
     } finally {
+      // Siempre desactiva el spinner, haya error o no.
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
+  /// Maneja el login con Google en plataformas web y móvil.
+  ///
+  /// Web: usa signInWithPopup (abre ventana emergente del navegador).
+  /// Móvil: usa el flujo nativo de GoogleSignIn que abre el selector de cuentas del SO.
   Future<void> _handleGoogleLogin() async {
+    // Evita doble tap durante la carga.
     if (_isGoogleLoading) return;
     setState(() => _isGoogleLoading = true);
 
@@ -120,17 +173,22 @@ class _LoginScreenState extends State<LoginScreen> {
       final UserCredential userCred;
 
       if (kIsWeb) {
+        // kIsWeb es una constante de Flutter que es true solo en compilación web.
         final provider = GoogleAuthProvider()
-          ..setCustomParameters({'prompt': 'select_account'});
+          ..setCustomParameters({'prompt': 'select_account'}); // Siempre muestra selector
         userCred = await FirebaseAuth.instance.signInWithPopup(provider);
       } else {
+        // En móvil, abre el selector nativo de cuentas de Google.
         final googleUser = await GoogleSignIn().signIn();
+        // El usuario canceló el selector (no es un error, simplemente no hace nada).
         if (googleUser == null) return;
 
+        // Obtiene los tokens OAuth2 de la cuenta seleccionada.
         final googleAuth = await googleUser.authentication;
+        // Crea las credenciales de Firebase a partir de los tokens de Google.
         final credential = GoogleAuthProvider.credential(
           accessToken: googleAuth.accessToken,
-          idToken: googleAuth.idToken,
+          idToken:     googleAuth.idToken,
         );
         userCred = await FirebaseAuth.instance.signInWithCredential(credential);
       }
@@ -138,27 +196,31 @@ class _LoginScreenState extends State<LoginScreen> {
       final user = userCred.user;
 
       if (user != null) {
+        // isNewUser es true solo en el PRIMER login de esta cuenta de Google.
         final isNew = userCred.additionalUserInfo?.isNewUser ?? false;
+        // Datos básicos que se actualizan en cada login para mantener el nombre sincronizado.
         final payload = {
-          'name': user.displayName ?? 'Usuario de Simple',
+          'name':  user.displayName ?? 'Usuario de Simple',
           'email': user.email,
         };
         if (isNew) {
+          // Usuario nuevo: crea documento completo en Firestore.
           await FirebaseFirestore.instance
               .collection('users')
               .doc(user.uid)
               .set({
             ...payload,
-            'role': 'usuario',
-            'avatar': 'emoticon',
-            'points': 0,
-            'streak': 0,
-            'hasCompletedProfile': true,
-            'hasCompletedOnboarding': false,
-            'createdAt': FieldValue.serverTimestamp(),
+            'role':                   'usuario',
+            'avatar':                 'emoticon',
+            'points':                 0,
+            'streak':                 0,
+            'hasCompletedProfile':    true,
+            'hasCompletedOnboarding': false, // Irá a RoleSelectionScreen
+            'createdAt':              FieldValue.serverTimestamp(),
           }, SetOptions(merge: true));
           if (user.email != null) await _saveEmail(user.email!);
         } else {
+          // Usuario existente: solo actualiza nombre y email (por si cambió en Google).
           await FirebaseFirestore.instance
               .collection('users')
               .doc(user.uid)
@@ -178,6 +240,9 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  /// Envía un correo de recuperación de contraseña al email del campo.
+  ///
+  /// Requiere que el email ya esté escrito; si no, muestra un aviso.
   Future<void> _handleForgotPassword() async {
     final email = _emailController.text.trim();
     if (email.isEmpty || !email.contains('@')) {
@@ -198,11 +263,13 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  /// Traduce los códigos de error de Firebase Auth a mensajes amigables en español.
   String _mapAuthError(String code) {
     switch (code) {
       case 'user-not-found':
       case 'wrong-password':
       case 'invalid-credential':
+        // Se agrupan para no revelar si el email existe (seguridad).
         return 'Correo o contraseña incorrectos.';
       case 'email-already-in-use':
         return 'Este correo ya está registrado. Inicia sesión.';
@@ -219,6 +286,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  /// Muestra un SnackBar flotante con el mensaje de error.
   void _showError(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -227,6 +295,8 @@ class _LoginScreenState extends State<LoginScreen> {
     ));
   }
 
+  /// Construye un campo de texto con estilo unificado para toda la pantalla.
+  /// El diseño sigue las guías de accesibilidad WCAG 2.1 AA (contraste, tamaño).
   Widget _buildInput({
     required TextEditingController controller,
     required String label,
@@ -246,20 +316,23 @@ class _LoginScreenState extends State<LoginScreen> {
         labelStyle: const TextStyle(color: _Palette.textMuted, fontSize: 14),
         filled: true,
         fillColor: _Palette.surface,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        // Sin borde por defecto para un look más limpio.
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(_kRadius),
           borderSide: BorderSide.none,
         ),
+        // Borde sutil cuando el campo no tiene foco.
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(_kRadius),
           borderSide: const BorderSide(color: _Palette.border, width: 1.5),
         ),
+        // Borde azul cuando el campo está activo.
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(_kRadius),
           borderSide: const BorderSide(color: _Palette.primary, width: 2),
         ),
+        // Borde rojo cuando hay un error de validación.
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(_kRadius),
           borderSide: const BorderSide(color: Color(0xFFE53E3E)),
@@ -277,6 +350,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _Palette.background,
+      // Copyright al fondo de la pantalla, por encima del área del teclado.
       bottomNavigationBar: const SafeArea(
         child: Padding(
           padding: EdgeInsets.only(bottom: 14),
@@ -297,6 +371,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
+                  // ── Logo y título ────────────────────────────────────
                   Image.asset('assets/images/Simple.png', height: 140),
                   const SizedBox(height: 20),
                   const Text(
@@ -314,29 +389,35 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: TextStyle(fontSize: 15, color: _Palette.textMuted),
                   ),
                   const SizedBox(height: 36),
+
+                  // ── Botón Google ─────────────────────────────────────
                   _GoogleButton(
                     isLoading: _isGoogleLoading,
                     onTap: _handleGoogleLogin,
                   ),
                   const SizedBox(height: 24),
+
+                  // ── Separador "o continúa con correo" ────────────────
                   const Row(children: [
                     Expanded(child: Divider(color: _Palette.border)),
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 12),
                       child: Text(
                         'o continúa con correo',
-                        style:
-                            TextStyle(fontSize: 12, color: _Palette.textMuted),
+                        style: TextStyle(fontSize: 12, color: _Palette.textMuted),
                       ),
                     ),
                     Expanded(child: Divider(color: _Palette.border)),
                   ]),
                   const SizedBox(height: 20),
+
+                  // ── Campo Nombre (solo en modo REGISTRO) ─────────────
+                  // AnimatedSize anima la aparición/desaparición del campo.
                   AnimatedSize(
                     duration: const Duration(milliseconds: 250),
                     curve: Curves.easeInOut,
                     child: _isLogin
-                        ? const SizedBox.shrink()
+                        ? const SizedBox.shrink() // Invisible en modo login
                         : Column(children: [
                             _buildInput(
                               controller: _nameController,
@@ -349,6 +430,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             const SizedBox(height: 14),
                           ]),
                   ),
+
+                  // ── Campo Email ──────────────────────────────────────
                   _buildInput(
                     controller: _emailController,
                     label: 'Correo electrónico',
@@ -359,6 +442,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             : null,
                   ),
                   const SizedBox(height: 14),
+
+                  // ── Campo Contraseña ─────────────────────────────────
                   _buildInput(
                     controller: _passwordController,
                     label: 'Contraseña',
@@ -367,11 +452,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       if (v == null || v.length < 6) {
                         return 'Debe contener al menos 6 caracteres, una letra y un número';
                       }
+                      // Requiere al menos una mayúscula Y un dígito.
                       if (!RegExp(r'^(?=.*[A-Z])(?=.*\d)').hasMatch(v)) {
                         return 'Debe contener al menos 6 caracteres, una letra y un número';
                       }
                       return null;
                     },
+                    // Botón ojo para alternar visibilidad de la contraseña.
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
@@ -384,6 +471,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
+
+                  // ── "¿Olvidaste tu contraseña?" (solo en modo LOGIN) ─
                   if (_isLogin)
                     Align(
                       alignment: Alignment.centerRight,
@@ -401,13 +490,17 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   const SizedBox(height: 4),
+
+                  // ── Botón principal de acción ────────────────────────
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
+                      // Deshabilita el botón durante la carga para evitar doble envío.
                       onPressed: _isLoading ? null : _handleLogin,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _Palette.primary,
                         foregroundColor: Colors.white,
+                        // Color semitransparente cuando está deshabilitado.
                         disabledBackgroundColor:
                             _Palette.primary.withValues(alpha: 0.45),
                         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -416,6 +509,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         elevation: 0,
                       ),
+                      // Muestra spinner mientras carga, texto cuando está listo.
                       child: _isLoading
                           ? const SizedBox(
                               height: 22,
@@ -435,11 +529,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
+
+                  // ── Toggle LOGIN ↔ REGISTRO ──────────────────────────
                   TextButton(
+                    // Bloquea el toggle durante una operación en curso.
                     onPressed: _isLoading
                         ? null
                         : () => setState(() {
                               _isLogin = !_isLogin;
+                              // Resetea errores de validación al cambiar de modo.
                               _formKey.currentState?.reset();
                             }),
                     style: TextButton.styleFrom(
@@ -463,6 +561,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
+/// Botón de inicio de sesión con Google con estado de carga.
+///
+/// Se extrae como widget separado para mantener el árbol de build de
+/// LoginScreen más legible y reutilizar el botón si se necesita en otra pantalla.
 class _GoogleButton extends StatelessWidget {
   const _GoogleButton({required this.isLoading, required this.onTap});
 
@@ -480,10 +582,12 @@ class _GoogleButton extends StatelessWidget {
         shadowColor: Colors.black.withValues(alpha: 0.08),
         child: InkWell(
           borderRadius: BorderRadius.circular(_kRadius),
+          // Deshabilita el tap durante la carga.
           onTap: isLoading ? null : onTap,
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 24),
             child: isLoading
+                // Spinner centrado mientras carga.
                 ? const Center(
                     child: SizedBox(
                       height: 24,
@@ -494,6 +598,7 @@ class _GoogleButton extends StatelessWidget {
                       ),
                     ),
                   )
+                // Fila con logo de Google y texto.
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [

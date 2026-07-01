@@ -1,4 +1,42 @@
-// lib/screens/settings_screen.dart
+// ============================================================
+// lib/features/tutor_dashboard/screens/settings_screen.dart
+// ============================================================
+// Pantalla de ajustes completa (~1500 líneas) para el usuario paciente/tutor.
+//
+// ## Secciones principales (Cards)
+//
+//   PerfilCard         — editar nombre, subir foto de perfil a Firebase Storage
+//                        (ruta: user_photos/{uid}/profile.jpg).
+//
+//   NotificacionesCard — toggle notiTaskEnabled + picker de offset en minutos
+//                        (notiTaskDefaultOffsetMinutes). Persiste en Firestore.
+//
+//   FocoCard           — configuración Pomodoro: duración de sesión, descanso,
+//                        sonido (pomodoroSound, pomodoroSoundEnabled),
+//                        vibración (pomodoroVibrationEnabled).
+//
+//   BackupCard         — backup/restauración con Google Drive via GoogleDriveService.
+//                        Muestra lastSyncTime y botones Respaldar / Restaurar.
+//
+//   ContactoEmergenciaCard — nombre + teléfono del contacto de emergencia.
+//                        Se usa en PantallaPackienteTEA para llamadas SOS.
+//
+//   VinculacionCard    — si el usuario es paciente: pegar código de tutor para
+//                        vincularse. Lógica de batch atómico en Firestore.
+//
+// ## Métodos clave
+//
+//   [_handleLogout]           — cierra sesión (Firebase + GoogleSignIn) con
+//                               diálogo de confirmación.
+//   [_saveEmergencyContact]   — valida y guarda emergencyName/emergencyPhone.
+//   [_uploadProfilePhoto]     — ImagePicker → Firebase Storage → Firestore photoURL.
+//   [_vincularConTutor]       — lee invitation_codes/{code}, hace batch write
+//                               para asociar paciente al tutor.
+//
+// ## Paleta interna (_Palette)
+//
+//   Colores blue-grey para diferenciar visualmente de HomeScreen (warmCream).
+// ============================================================
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
