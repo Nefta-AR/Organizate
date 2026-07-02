@@ -37,18 +37,26 @@ import '../../../core/theme/app_theme.dart';
 import 'pictogram_crop_page.dart';
 
 class CrearPictogramaSheet extends StatefulWidget {
-  const CrearPictogramaSheet({super.key});
+  /// Si es null, el pictograma se crea para el usuario autenticado.
+  /// Si se proporciona, se crea para ese usuario (por ejemplo, un tutor
+  /// agregando un pictograma a la cuenta de su paciente).
+  final String? targetUserId;
+
+  const CrearPictogramaSheet({super.key, this.targetUserId});
 
   // Método estático de apertura del sheet.
   // Retorna el pictograma creado, o null si el usuario cerró sin guardar.
   // Usando tipo genérico <PictogramaPersonalizado> para que pop(picto) devuelva
   // el valor correcto al caller en _buildBotonGuardar().
-  static Future<PictogramaPersonalizado?> show(BuildContext context) {
+  static Future<PictogramaPersonalizado?> show(
+    BuildContext context, {
+    String? targetUserId,
+  }) {
     return showModalBottomSheet<PictogramaPersonalizado>(
       context: context,
       isScrollControlled: true,    // Permite que el sheet ocupe más del 50% de pantalla
       backgroundColor: Colors.transparent, // El Container interior define el fondo real
-      builder: (_) => const CrearPictogramaSheet(),
+      builder: (_) => CrearPictogramaSheet(targetUserId: targetUserId),
     );
   }
 
@@ -167,22 +175,34 @@ class _CrearPictogramaSheetState extends State<CrearPictogramaSheet> {
     });
 
     try {
+      final targetUserId = widget.targetUserId;
+
       // Paso 1: subimos la imagen a Firebase Storage.
-      // PictogramService.uploadImage() escoge una ruta única bajo user_photos/{uid}/.
-      // Retorna la URL pública de descarga (HTTPS) para guardarla en Firestore.
-      final downloadUrl = await PictogramService.uploadImage(
-        filePath: _imagenSeleccionada!.path,
-      );
+      // Si hay targetUserId, el archivo se guarda en su carpeta (tutor → paciente).
+      final downloadUrl = targetUserId != null
+          ? await PictogramService.uploadImageFor(
+              userId: targetUserId,
+              filePath: _imagenSeleccionada!.path,
+            )
+          : await PictogramService.uploadImage(
+              filePath: _imagenSeleccionada!.path,
+            );
 
       // Paso 2: creamos el documento en Firestore con todos los campos del pictograma.
-      // createPictogram() escribe en users/{uid}/pictogramConfig/{auto-id}.
-      // Retorna el objeto PictogramaPersonalizado para que el caller pueda actualizarse.
-      final picto = await PictogramService.createPictogram(
-        imageUrl: downloadUrl,                          // URL de Storage
-        etiqueta: _etiquetaController.text.trim(),     // Nombre visible en el tablero
-        textoTts: _textoTtsController.text.trim(),     // Texto leído por voz al tocar
-        categoria: _categoriaSeleccionada,             // Categoría del pictograma
-      );
+      final picto = targetUserId != null
+          ? await PictogramService.createPictogramFor(
+              userId: targetUserId,
+              imageUrl: downloadUrl,
+              etiqueta: _etiquetaController.text.trim(),
+              textoTts: _textoTtsController.text.trim(),
+              categoria: _categoriaSeleccionada,
+            )
+          : await PictogramService.createPictogram(
+              imageUrl: downloadUrl,
+              etiqueta: _etiquetaController.text.trim(),
+              textoTts: _textoTtsController.text.trim(),
+              categoria: _categoriaSeleccionada,
+            );
 
       if (mounted) {
         // Feedback háptico de éxito (pulso medio): refuerzo sensorial para usuarios TEA
@@ -220,9 +240,9 @@ class _CrearPictogramaSheetState extends State<CrearPictogramaSheet> {
 
       builder: (_, scrollController) {
         return Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: AppTheme.warmCream, // Fondo crema cálido (tono AAC accesible)
-            borderRadius: const BorderRadius.vertical(
+            borderRadius: BorderRadius.vertical(
               top: Radius.circular(AppTheme.radiusXLarge), // Esquinas redondeadas solo arriba
             ),
           ),

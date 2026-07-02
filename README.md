@@ -4,10 +4,17 @@
 
 Simple es una aplicación móvil inclusiva diseñada específicamente para apoyar a personas neurodivergentes, con módulos dedicados para el **Trastorno del Espectro Autista (TEA)** y el **Trastorno por Déficit de Atención e Hiperactividad (TDAH)**.
 
-**Estado del Proyecto:** 🟠 En Desarrollo (95% Completado) | **Fecha Estimada:** Julio 2026
+**Estado del Proyecto:** 🟠 En Desarrollo (97% Completado) | **Fecha Estimada:** Julio 2026
 
 ### 📝 Registro de Cambios Recientes
 
+- ✅ **Botón "Agregar" redundante eliminado** del tab Pictogramas del tutor; ahora solo queda el botón naranja "Organizar".
+- ✅ **FAB de Súper Experto más visible** en HomeScreen: color púrpura de alto contraste, tamaño grande y posición validada para no quedar fuera de pantalla.
+- ✅ **Análisis estático limpio**: `flutter analyze` reporta 0 issues tras corregir `pictogram_service.dart` y advertencias de deprecación.
+- ✅ **Tutor puede crear pictogramas personalizados** para el paciente desde `pictogram_manager_screen.dart` (cámara/galería + subida a Storage).
+- ✅ **Personalización de pantalla y cambio de rol ocultos** para usuarios vinculados a un tutor.
+- ✅ **Pestaña Perfil protegida**: no se puede desactivar si el usuario no tiene tutor vinculado.
+- ✅ **Recorte de pictogramas responsive** con cropper Flutter puro y temas UCrop ajustados.
 - ✅ **Ícono de app generado** y funcionando en Android (mipmap adaptativo).
 - ✅ **Kiosk Mode removido** del MVP (escalabilidad futura).
 - ✅ **Badges de urgencia** en tareas (HOY / MAÑANA / DESPUÉS).
@@ -80,7 +87,7 @@ Las reglas de Firestore implementan control de acceso granular:
 
 ## Estado del Proyecto
 
-### Progreso General: 85%
+### Progreso General: 97%
 
 El proyecto ha alcanzado hitos significativos desde su inicio el **27 de Abril 2026**:
 
@@ -127,6 +134,10 @@ El proyecto ha alcanzado hitos significativos desde su inicio el **27 de Abril 2
 - [x] Ícono de app generado y funcionando
 - [x] Badges de urgencia en tareas
 - [x] Promo card de Súper Experto
+- [x] Análisis estático limpio (`flutter analyze` 0 issues)
+- [x] Tutor puede crear pictogramas personalizados para el paciente
+- [x] Restricciones de personalización para usuarios con tutor
+- [x] Recorte de pictogramas responsive
 - [ ] Pulir dashboard de progreso (gráficos fl_chart)
 - [ ] Notificaciones push FCM completas
 - [ ] Testing y correcciones de bugs menores

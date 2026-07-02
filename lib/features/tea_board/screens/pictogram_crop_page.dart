@@ -193,142 +193,147 @@ class _PictogramCropPageState extends State<PictogramCropPage> {
 
   @override
   Widget build(BuildContext context) {
-    final mq = MediaQuery.of(context);
-
-    // El cuadro de recorte ocupa todo el ancho disponible,
-    // dejando espacio para la barra superior, el hint y el botón.
-    final cropSide = min(
-      mq.size.width - 24.0,
-      mq.size.height - mq.padding.top - mq.padding.bottom - 176.0,
-    ).toDouble();
-
     return Scaffold(
       backgroundColor: const Color(0xFF111111),
+      resizeToAvoidBottomInset: false,
       body: SafeArea(
-        child: Column(
-          children: [
-            // ── Barra superior ─────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(4, 4, 16, 4),
-              child: Row(
-                children: [
-                  TextButton.icon(
-                    onPressed: _saving
-                        ? null
-                        : () => Navigator.of(context).pop(null),
-                    icon: const Icon(Icons.close_rounded,
-                        color: Colors.white70, size: 20),
-                    label: const Text(
-                      'Cancelar',
-                      style: TextStyle(color: Colors.white70, fontSize: 14),
-                    ),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                    ),
-                  ),
-                  const Expanded(
-                    child: Text(
-                      'Encuadrar pictograma',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                      ),
-                    ),
-                  ),
-                  // Espacio simétrico al botón Cancelar (~90 px)
-                  const SizedBox(width: 90),
-                ],
-              ),
-            ),
+        minimum: const EdgeInsets.symmetric(horizontal: 12),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Reservamos espacio fijo para la barra superior (~64), el hint (~36)
+            // y el botón de confirmar (~76). El resto es para el cuadro de recorte.
+            final reservedHeight = 64.0 + 36.0 + 76.0 + MediaQuery.paddingOf(context).bottom;
+            final cropSide = min(
+              constraints.maxWidth - 24.0,
+              constraints.maxHeight - reservedHeight,
+            ).clamp(120.0, 600.0);
 
-            // ── Cuadro de recorte ──────────────────────────────────
-            Expanded(
-              child: Center(
-                child: _loading || _srcImage == null
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onScaleStart:  _onScaleStart,
-                        onScaleUpdate: (d) => _onScaleUpdate(d, cropSide),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(18),
-                          child: SizedBox(
-                            width:  cropSide,
-                            height: cropSide,
-                            child: RepaintBoundary(
-                              child: CustomPaint(
-                                // Imagen de fondo (pan + zoom)
-                                painter: _ImagePainter(
-                                  image: _srcImage!,
-                                  pan:   _pan,
-                                  zoom:  _zoom,
-                                ),
-                                // Cuadrícula superpuesta (foregroundPainter)
-                                foregroundPainter: _GridPainter(),
-                              ),
-                            ),
+            return Column(
+              children: [
+                // ── Barra superior ─────────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 4, 16, 4),
+                  child: Row(
+                    children: [
+                      TextButton.icon(
+                        onPressed: _saving
+                            ? null
+                            : () => Navigator.of(context).pop(null),
+                        icon: const Icon(Icons.close_rounded,
+                            color: Colors.white70, size: 20),
+                        label: const Text(
+                          'Cancelar',
+                          style: TextStyle(color: Colors.white70, fontSize: 14),
+                        ),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                        ),
+                      ),
+                      const Expanded(
+                        child: Text(
+                          'Encuadrar pictograma',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
                           ),
                         ),
                       ),
-              ),
-            ),
-
-            // ── Indicación gestual ─────────────────────────────────
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.open_with_rounded,
-                      color: Colors.white38, size: 15),
-                  SizedBox(width: 6),
-                  Text(
-                    'Arrastra · Pellizca para hacer zoom',
-                    style: TextStyle(color: Colors.white38, fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-
-            // ── Botón confirmar ────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: (_saving || _loading)
-                      ? null
-                      : () => _confirm(cropSide),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5B8ED6),
-                    disabledBackgroundColor:
-                        const Color(0xFF5B8ED6).withValues(alpha: 0.35),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18)),
-                    elevation: 0,
-                  ),
-                  icon: _saving
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2.5),
-                        )
-                      : const Icon(Icons.check_circle_rounded, size: 24),
-                  label: Text(
-                    _saving ? 'Procesando...' : 'Usar esta foto',
-                    style: const TextStyle(
-                        fontSize: 17, fontWeight: FontWeight.w700),
+                      // Espacio simétrico al botón Cancelar (~90 px)
+                      const SizedBox(width: 90),
+                    ],
                   ),
                 ),
-              ),
-            ),
-          ],
+
+                // ── Cuadro de recorte ──────────────────────────────────
+                Expanded(
+                  child: Center(
+                    child: _loading || _srcImage == null
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onScaleStart:  _onScaleStart,
+                            onScaleUpdate: (d) => _onScaleUpdate(d, cropSide),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(18),
+                              child: SizedBox(
+                                width:  cropSide,
+                                height: cropSide,
+                                child: RepaintBoundary(
+                                  child: CustomPaint(
+                                    // Imagen de fondo (pan + zoom)
+                                    painter: _ImagePainter(
+                                      image: _srcImage!,
+                                      pan:   _pan,
+                                      zoom:  _zoom,
+                                    ),
+                                    // Cuadrícula superpuesta (foregroundPainter)
+                                    foregroundPainter: _GridPainter(),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                  ),
+                ),
+
+                // ── Indicación gestual ─────────────────────────────────
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.open_with_rounded,
+                          color: Colors.white38, size: 15),
+                      SizedBox(width: 6),
+                      Text(
+                        'Arrastra · Pellizca para hacer zoom',
+                        style: TextStyle(color: Colors.white38, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // ── Botón confirmar ────────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: (_saving || _loading)
+                          ? null
+                          : () => _confirm(cropSide),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF5B8ED6),
+                        disabledBackgroundColor:
+                            const Color(0xFF5B8ED6).withValues(alpha: 0.35),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18)),
+                        elevation: 0,
+                      ),
+                      icon: _saving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                  color: Colors.white, strokeWidth: 2.5),
+                            )
+                          : const Icon(Icons.check_circle_rounded, size: 24),
+                      label: Text(
+                        _saving ? 'Procesando...' : 'Usar esta foto',
+                        style: const TextStyle(
+                            fontSize: 17, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -398,8 +403,8 @@ class _GridPainter extends CustomPainter {
     const arm = 22.0; // longitud de cada brazo de la L
 
     // Superior-izquierda
-    canvas.drawLine(Offset(0, arm), Offset.zero, cornerPaint);
-    canvas.drawLine(Offset(0, 0), Offset(arm, 0), cornerPaint);
+    canvas.drawLine(const Offset(0, arm), Offset.zero, cornerPaint);
+    canvas.drawLine(const Offset(0, 0), const Offset(arm, 0), cornerPaint);
     // Superior-derecha
     canvas.drawLine(
         Offset(size.width - arm, 0), Offset(size.width, 0), cornerPaint);

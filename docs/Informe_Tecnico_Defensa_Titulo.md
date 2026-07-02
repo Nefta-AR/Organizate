@@ -640,6 +640,11 @@ class RoleDispatcher extends StatelessWidget {
 | **Error 10 Google Sign-In**: Falta de SHA-1 en Firebase Console | Se documentó el proceso de extracción de SHA-1 con `keytool` y configuración en Firebase Console | Autenticación funcional en dispositivos físicos |
 | **Role routing incorrecto**: Todos los usuarios veían HomeScreen sin importar rol | Se implementó `RoleDispatcher` con switch sobre `UserRole` | Routing correcto: usuario → Pictogramas, tutor → Dashboard |
 | **Permisos de Firestore complejos**: Tutor no podía escribir en subcolección de usuario | Se diseñaron reglas de seguridad que verifican `isLinkedTutor` usando `linkedTutors` con `status == 'active'` | Acceso bidireccional seguro sin necesidad de cloud functions adicionales |
+| **Código duplicado en `PictogramService`**: Bloque huérfano de subida a Storage dejó de compilar tras un refactor | Se eliminó el fragmento duplicado y se consolidaron los métodos `uploadImageFor` / `createPictogramFor` para uso del tutor | `flutter analyze` vuelve a reportar 0 issues |
+| **Conflictos de configuración tutor/usuario**: Usuario con tutor vinculado podía cambiar de rol o desactivar pestañas controladas por el tutor | Se ocultaron las opciones de personalización de pantalla y edición de rol cuando existe `linkedTutors` activo | Configuración coherente y sin competencia entre roles |
+| **Recorte de pictogramas en pantallas pequeñas**: Controles nativos de `image_cropper` se superponían con la navegación por gestos | Se implementó cropper Flutter puro (`PictogramCropPage`) con `LayoutBuilder`/`SafeArea` y se ocultaron los bottom controls del cropper nativo | Experiencia de recorte usable en cualquier tamaño de pantalla |
+| **FAB de Súper Experto poco visible**: Botón flotante de IA en HomeScreen usaba color gris apagado y podía quedar fuera de pantalla | Se migró a `FloatingActionButton.large` con color púrpura de alto contraste, se validó la posición guardada y se fijó la ubicación por encima de la barra de navegación | El asistente IA es ahora visible y accesible desde el inicio |
+| **Botón "Agregar" redundante en Pictogramas del tutor**: Dos FABs (Organizar + Agregar) generaban confusión | Se eliminó el FAB "+ Agregar" y su bottom sheet; la creación de pictogramas se centraliza en `PictogramManagerScreen` | Interfaz del tutor más limpia y consistente |
 
 ---
 

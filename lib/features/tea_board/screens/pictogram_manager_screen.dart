@@ -33,6 +33,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:simple/core/services/pictogram_service.dart';
+import 'package:simple/features/tea_board/screens/crear_pictograma_sheet.dart';
 
 // ─── Opciones de categoría asignable ─────────────────────────────────────────
 
@@ -329,6 +330,17 @@ class _PictogramManagerScreenState extends State<PictogramManagerScreen> {
                 Expanded(child: _buildGrid()), // Cuadrícula de tarjetas
               ],
             ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          await CrearPictogramaSheet.show(
+            context,
+            targetUserId: widget.userId,
+          );
+        },
+        icon: const Icon(Icons.add_a_photo_rounded),
+        label: const Text('Nuevo'),
+        backgroundColor: Colors.blueGrey,
+      ),
     );
   }
 

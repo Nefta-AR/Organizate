@@ -3,7 +3,7 @@
 Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y el registro de avance real del desarrollo de la aplicación Simple.
 
 **Período:** 27 Abril 2026 - 07 Julio 2026 (10 semanas)  
-**Estado Actual:** 97% Completado | Pulido final e ícono de app completados  
+**Estado Actual:** 99% Completado | Código estable, análisis estático limpio y últimos ajustes de tutoría completados  
 **Próximo Hito:** Generación del APK firmado para entrega
 
 ---
@@ -20,7 +20,7 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
 | **Fase 4** | 05-09 May | Módulo TDAH (Tareas y Foco) | ✅ Completado | 100% |
 | **Fase 5** | 09-23 May | Integración y Correcciones | ✅ Completado | 100% |
 | **Fase 6** | 24 May-16 Jun | Pulido y Testing | ✅ Completado | 100% |
-| **Fase 7** | 17 Jun-07 Jul | Documentación y Entrega | 🔄 En Curso | 50% |
+| **Fase 7** | 17 Jun-07 Jul | Documentación y Entrega | 🔄 En Curso | 60% |
 
 ### Hitos del Proyecto
 
@@ -382,6 +382,14 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
 | 30 Jun | Corrección de sintaxis en `VinculacionTutorScreen` | Se agrega paréntesis faltante en `createState()` detectado por el analyzer (`missing_method_parameters`) | Fase 6 |
 | 01 Jul | Botón SOS de pictogramas reemplazado | Se cambia el botón rojo "SOS" del AppBar de `PantallaPacienteTEA` por el ícono `health_and_safety` con el mismo comportamiento de `HomeScreen` (`handleEmergencyContactAction`); se elimina `_showSosDialog` y dependencia directa de `url_launcher` | Fase 6 |
 | 01 Jul | Fix parámetros `$fields` en Google Drive service | Se corrige `\$fields:` a `$fields:` en `google_drive_service.dart`; el escape con backslash era inválido en código Dart y rompía `assembleRelease` | Fase 6 |
+| 01 Jul | Recorte de pictogramas responsive | `PictogramCropPage` usa `LayoutBuilder`/`SafeArea`; cropper nativo oculta bottom controls; temas UCrop ajustados en `styles.xml` para evitar solapamiento con la navegación del sistema | Fase 6 |
+| 01 Jul | Protección de pestaña Perfil | `PantallasConfigScreen` bloquea el switch de Perfil cuando el usuario no tiene tutor vinculado, garantizando siempre al menos una pestaña activa y acceso a perfil propio | Fase 6 |
+| 02 Jul | Tutor crea pictogramas personalizados para el paciente | `pictogram_manager_screen.dart` expone FAB de cámara/galería para el tutor; `PictogramService` agrega `uploadImageFor` y `createPictogramFor` con `targetUserId` | Fase 6 |
+| 02 Jul | Restricciones de personalización con tutor vinculado | `settings_screen.dart` oculta "Personalización de pantalla" y el lápiz de edición de rol para usuarios que tienen un tutor vinculado, evitando conflictos de configuración | Fase 6 |
+| 02 Jul | Fix bloque de código duplicado en `PictogramService` | Se elimina código huérfano duplicado en `pictogram_service.dart` que rompía `flutter analyze` con 17 errores de compilación | Fase 6 |
+| 02 Jul | Limpieza de análisis estático | Se reemplazan llamadas deprecadas `withOpacity` por `withValues(alpha:)` y se ajustan constructores `const`; `flutter analyze` pasa a 0 issues | Fase 6 |
+| 02 Jul | FAB de Súper Experto más visible en HomeScreen | Se cambia a `FloatingActionButton.large` con color púrpura de alto contraste, se valida la posición guardada contra los límites de pantalla y se reposiciona por encima de la nav bar | Fase 6 |
+| 02 Jul | Botón "Agregar" redundante eliminado del tab Pictogramas del tutor | Se elimina el FAB extendido "+ Agregar" y su bottom sheet asociado; el tutor accede a la creación de pictogramas desde "Organizar pictogramas" → "Nuevo" | Fase 6 |
 
 ---
 
@@ -447,6 +455,6 @@ El Trello original tenía 5 sprints. Estado actual vs lo planificado:
 
 ## Notas de Actualización
 
-**Última actualización:** 24 Mayo 2026 — fix completo del flujo de registro: sin parpadeo de pantallas en cuentas nuevas  
-**Próxima revisión:** 02 Junio 2026 (cierre Sprint A de Fase 6)  
-**Próximo milestone:** 16 Junio 2026 (cierre Fase 6 — inicio documentación)
+**Última actualización:** 02 Julio 2026 — `flutter analyze` limpio y últimas restricciones de tutoría implementadas  
+**Próxima revisión:** Inmediata — generación del APK firmado y QA final  
+**Próximo milestone:** 07 Julio 2026 (entrega final APK + documentación)

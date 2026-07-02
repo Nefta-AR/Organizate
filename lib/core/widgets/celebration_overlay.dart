@@ -246,7 +246,7 @@ class _ConfettiPainter extends CustomPainter {
 
       if (y > size.height + p.size || alpha <= 0) continue;
 
-      paint.color = p.color.withOpacity(alpha);
+      paint.color = p.color.withValues(alpha: alpha);
       canvas.save();
       canvas.translate(x, y);
       canvas.rotate(p.rotation + p.rotSpeed * t);

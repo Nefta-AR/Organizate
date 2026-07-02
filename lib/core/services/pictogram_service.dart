@@ -322,16 +322,19 @@ class PictogramService {
         // Configuración UI específica para Android
         AndroidUiSettings(
           toolbarTitle:              'Recortar pictograma',
-          toolbarColor:              const Color(0xFF7BB3D0), // Azul de la app
+          toolbarColor:              const Color(0xFF5A9ABF), // Azul de la app
           toolbarWidgetColor:        Colors.white,
           initAspectRatio:           CropAspectRatioPreset.square,
           lockAspectRatio:           true,  // El usuario no puede cambiar el ratio
-          hideBottomControls:        false, // Muestra controles de recorte
+          // Se ocultan los controles inferiores para evitar que el slider de zoom
+          // se superponga con la barra de navegación del sistema en dispositivos
+          // con pantalla pequeña o con navegación por gestos.
+          hideBottomControls:        true,
           showCropGrid:              true,  // Cuadrícula de regla de tercios
           statusBarLight:            true,
-          activeControlsWidgetColor: const Color(0xFF7BB3D0),
+          activeControlsWidgetColor: const Color(0xFF5A9ABF),
           dimmedLayerColor:          Colors.black.withValues(alpha: 0.5),
-          cropFrameColor:            const Color(0xFF7BB3D0),
+          cropFrameColor:            const Color(0xFF5A9ABF),
           cropGridColor:             Colors.white.withValues(alpha: 0.6),
           cropFrameStrokeWidth:      3,
           cropGridRowCount:          3,    // Cuadrícula de 3x3 (regla de tercios)
@@ -362,8 +365,21 @@ class PictogramService {
   /// Los metadatos personalizados (`uploadedBy`, `createdAt`) permiten auditar
   /// quién y cuándo subió cada archivo desde la consola de Firebase Storage.
   static Future<String> uploadImage({
-    required String filePath,    // Path local al archivo de imagen (post-recorte)
+    required String filePath,    // Path local al archivo imagen (post-recorte)
     String? customFileName,      // Nombre de archivo custom (opcional)
+  }) async {
+    return uploadImageFor(userId: _userId, filePath: filePath, customFileName: customFileName);
+  }
+
+  /// Sube una imagen al Storage de un usuario específico.
+  ///
+  /// Usado por el tutor para subir pictogramas personalizados a la cuenta
+  /// del paciente. El `uploadedBy` en los metadatos refleja quién realiza
+  /// la subida (tutor), pero el archivo se guarda en `users/{targetUserId}`.
+  static Future<String> uploadImageFor({
+    required String userId,
+    required String filePath,
+    String? customFileName,
   }) async {
     final file = File(filePath);
 
@@ -377,7 +393,7 @@ class PictogramService {
         'picto_${DateTime.now().millisecondsSinceEpoch}.jpg';
 
     // Referencia al path en Storage donde se subirá el archivo
-    final ref = _storage.ref().child('users/$_userId/pictograms/$fileName');
+    final ref = _storage.ref().child('users/$userId/pictograms/$fileName');
 
     // Subimos el archivo con metadata para auditoría
     final uploadTask = ref.putFile(
@@ -385,7 +401,7 @@ class PictogramService {
       SettableMetadata(
         contentType: 'image/jpeg', // Tipo MIME explícito
         customMetadata: {
-          'uploadedBy': _userId,                          // UID del subidor
+          'uploadedBy': _userId,                          // UID de quien sube
           'createdAt':  DateTime.now().toIso8601String(), // Timestamp legible
         },
       ),

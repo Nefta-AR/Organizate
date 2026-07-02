@@ -94,22 +94,49 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadFabPosition() async {
-    final prefs = await SharedPreferences.getInstance();
-    final dx = prefs.getDouble('fab_dx');
-    final dy = prefs.getDouble('fab_dy');
-    if (dx != null && dy != null) {
-      if (mounted) setState(() { _fabOffset = Offset(dx, dy); _fabReady = true; });
-    } else {
-      // Primera vez: posición por defecto tras el primer frame (necesitamos el tamaño de pantalla)
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final size = MediaQuery.of(context).size;
+      final mq = MediaQuery.of(context);
+      final safeBottom = mq.padding.bottom + mq.viewInsets.bottom;
+      const navBarHeight = 80.0; // Altura aproximada de CustomNavBar
+
+      Future<void> applySaved() async {
+        final prefs = await SharedPreferences.getInstance();
+        final dx = prefs.getDouble('fab_dx');
+        final dy = prefs.getDouble('fab_dy');
         if (!mounted) return;
-        final size = MediaQuery.of(context).size;
-        setState(() {
-          _fabOffset = Offset(size.width / 2 - 28, size.height - 160);
-          _fabReady = true;
-        });
-      });
-    }
+
+        final maxLeft = size.width - 64;
+        final maxTop = size.height - safeBottom - navBarHeight - 64;
+        final minTop = mq.padding.top + 16;
+
+        if (dx != null && dy != null) {
+          // Validamos que la posición guardada siga dentro de la pantalla visible
+          final clamped = Offset(
+            dx.clamp(8.0, maxLeft),
+            dy.clamp(minTop, maxTop),
+          );
+          setState(() {
+            _fabOffset = clamped;
+            _fabReady = true;
+          });
+          // Si la posición estaba fuera de límites, guardamos la corregida
+          if (clamped.dx != dx || clamped.dy != dy) {
+            await prefs.setDouble('fab_dx', clamped.dx);
+            await prefs.setDouble('fab_dy', clamped.dy);
+          }
+        } else {
+          // Primera vez: posición fija arriba de la nav bar, a la derecha
+          setState(() {
+            _fabOffset = Offset(size.width - 80, size.height - safeBottom - navBarHeight - 80);
+            _fabReady = true;
+          });
+        }
+      }
+
+      applySaved();
+    });
   }
 
   Future<void> _saveFabPosition() async {
@@ -725,12 +752,16 @@ class _HomeScreenState extends State<HomeScreen> {
         // Actualiza posición mientras se arrastra (limitada a bordes de pantalla)
         onLongPressMoveUpdate: (details) {
           if (_dragOrigin == null) return;
+          final safeBottom = MediaQuery.of(context).padding.bottom +
+              MediaQuery.of(context).viewInsets.bottom;
+          const fabSize = 96.0; // FloatingActionButton.large
+          const navBarHeight = 80.0;
           setState(() {
             _fabOffset = Offset(
               (_dragOrigin!.dx + details.offsetFromOrigin.dx)
-                  .clamp(0, size.width - 56),
+                  .clamp(8.0, size.width - fabSize - 8.0),
               (_dragOrigin!.dy + details.offsetFromOrigin.dy)
-                  .clamp(0, size.height - 100),
+                  .clamp(8.0, size.height - safeBottom - navBarHeight - fabSize - 8.0),
             );
           });
         },
@@ -742,13 +773,13 @@ class _HomeScreenState extends State<HomeScreen> {
         child: AnimatedScale(
           scale: _dragOrigin != null ? 1.15 : 1.0,
           duration: const Duration(milliseconds: 180),
-          child: FloatingActionButton(
+          child: FloatingActionButton.large(
             onPressed: null, // manejado por GestureDetector
-            backgroundColor: const Color(0xFF7B93A3),
+            backgroundColor: const Color(0xFF7C5CBF),
             foregroundColor: Colors.white,
             tooltip: 'Súper Experto\n(mantén presionado para mover)',
-            elevation: _dragOrigin != null ? 10 : 6,
-            child: const Icon(Icons.auto_fix_high, size: 24),
+            elevation: _dragOrigin != null ? 12 : 8,
+            child: const Icon(Icons.auto_fix_high, size: 28),
           ),
         ),
       ),

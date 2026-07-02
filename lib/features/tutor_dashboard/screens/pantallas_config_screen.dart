@@ -241,14 +241,15 @@ class PantallasConfigScreen extends StatelessWidget {
                     title: 'Perfil',
                     subtitle: 'Configuración y estadísticas personales',
                     value: perfil,
-                    locked: hasTutor || (perfil && activeCount <= 1),
-                    onToggle: guard(
-                      perfil,
-                      () => featuresRef.set(
-                        {'featurePerfil': !perfil},
-                        SetOptions(merge: true),
-                      ),
-                    ),
+                    // Sin tutor vinculado el usuario debe mantener acceso a Perfil
+                    // para gestionar su cuenta; solo el tutor puede desactivarla.
+                    locked: !hasTutor || (perfil && activeCount <= 1),
+                    onToggle: !hasTutor || (perfil && activeCount <= 1)
+                        ? null
+                        : () => featuresRef.set(
+                              {'featurePerfil': !perfil},
+                              SetOptions(merge: true),
+                            ),
                   ),
                 ],
               );

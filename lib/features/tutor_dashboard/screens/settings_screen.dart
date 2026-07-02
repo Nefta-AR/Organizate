@@ -586,8 +586,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 if (role != 'tutor') ...[
                   _buildVinculacionUsuarioCard(),  // Estado de vinculación con tutor
                   const SizedBox(height: 16),
-                  _buildPantallasNavTile(),         // Navega a PantallasConfigScreen
-                  const SizedBox(height: 16),
+                  // La personalización de pestañas solo aparece si el usuario
+                  // NO tiene tutor vinculado. Con tutor, el tutor gestiona las
+                  // pestañas desde su panel de supervisión.
+                  StreamBuilder<Map<String, dynamic>?>(
+                    stream: AuthService.getLinkedTutorStream(),
+                    builder: (context, tutorSnap) {
+                      final hasTutor = tutorSnap.data != null;
+                      if (hasTutor) return const SizedBox.shrink();
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildPantallasNavTile(), // Navega a PantallasConfigScreen
+                          const SizedBox(height: 16),
+                        ],
+                      );
+                    },
+                  ),
                   _buildEmergencyCard(),            // Contacto de emergencia
                   const SizedBox(height: 16),
                   _buildNotificacionesCard(notiTaskEnabled, notiOffset),
@@ -757,14 +772,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             color: _Palette.textDark),
                       ),
                     ),
-                    // Botón de lápiz: muestra confirmación antes de ir a RoleSelectionScreen
-                    GestureDetector(
-                      onTap: () => _showRoleChangeConfirmation(),
-                      child: const Padding(
-                        padding: EdgeInsets.only(left: 6),
-                        child: Icon(Icons.edit_outlined,
-                            size: 18, color: _Palette.accent),
-                      ),
+                    // Botón de lápiz: muestra confirmación antes de ir a RoleSelectionScreen.
+                    // Se oculta si el usuario tiene tutor vinculado para evitar que rompa
+                    // la relación tutor-paciente.
+                    StreamBuilder<Map<String, dynamic>?>(
+                      stream: AuthService.getLinkedTutorStream(),
+                      builder: (context, tutorSnap) {
+                        final hasTutor = tutorSnap.data != null;
+                        if (hasTutor) return const SizedBox.shrink();
+                        return GestureDetector(
+                          onTap: () => _showRoleChangeConfirmation(),
+                          child: const Padding(
+                            padding: EdgeInsets.only(left: 6),
+                            child: Icon(Icons.edit_outlined,
+                                size: 18, color: _Palette.accent),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),

@@ -4,7 +4,7 @@
 
 La visión detrás de **Simple** nace de la necesidad de ofrecer una herramienta tecnológica que no abrume, sino que acompañe. Evolucionando desde nuestra idea original (*Organízate*), Simple busca ser un **puente de comunicación** y una **ancla de enfoque** para mentes neurodivergentes.
 
-**Estado Actual:** 🟠 En Desarrollo Avanzado (85% Completado) | **Proyección de Entrega:** Julio 2026
+**Estado Actual:** 🟠 En Desarrollo Avanzado (97% Completado) | **Proyección de Entrega:** Julio 2026
 
 ---
 
@@ -108,12 +108,16 @@ Simple no es una adaptación de una app genérica. Fue concebida desde cero con 
 - ✅ Sincronización bidireccional de tareas
 - ✅ Corrección de bugs de integración
 
-### Fase 6: Pulido y Testing ✅ (27 May - 30 Jun 2026)
+### Fase 6: Pulido y Testing ✅ (27 May - 02 Jul 2026)
 **Optimización y control:**
 - ✅ Dashboard de progreso con gráficos (fl_chart)
 - ✅ Badges de urgencia en tareas
 - ✅ Promo card de Súper Experto
 - ✅ Ícono de app generado
+- ✅ Análisis estático limpio (`flutter analyze` 0 issues)
+- ✅ Tutor puede crear pictogramas personalizados para el paciente
+- ✅ Restricciones de personalización para usuarios con tutor
+- ✅ Recorte de pictogramas responsive
 - 🔄 Notificaciones push FCM
 - 🔄 Testing exhaustivo y corrección de bugs
 
@@ -161,6 +165,7 @@ Nuestra meta inmediata es consolidar un **MVP funcional** que demuestre que la t
 - ✅ Vinculación segura tutor-paciente
 - ✅ Sincronización en tiempo real
 - ✅ Ícono de app generado
+- ✅ Código estable y análisis estático limpio
 - 🔄 APK funcional listo para instalación directa
 
 ### Roadmap Post-MVP
@@ -197,8 +202,8 @@ Para alcanzar el MVP en Julio 2026, estas son las tareas prioritarias:
 ## Métricas de Éxito
 
 ### Indicadores Técnicos
-- **Progreso actual:** 95% completado
-- **Líneas de código:** ~15,000+ (Flutter + Firebase)
+- **Progreso actual:** 97% completado
+- **Líneas de código:** ~18,000+ (Flutter + Firebase)
 - **Módulos funcionales:** 7 de 8 completados
 - **Tests unitarios:** Pendiente implementación completa
 
@@ -214,7 +219,7 @@ Para alcanzar el MVP en Julio 2026, estas son las tareas prioritarias:
 
 Simple no es una app terminada. Es una conversación en curso con las familias que la usan. Desde su concepción en abril de 2026 hasta su entrega proyectada en julio, el proyecto ha evolucionado de una idea simple a una solución completa que abarca comunicación aumentativa, organización personal y supervisión familiar.
 
-El reto ahora es cerrar los últimos 15%: la sincronización perfecta entre tutor y paciente, el pulido de la experiencia de usuario y la preparación para que esta herramienta llegue a quienes más la necesitan.
+El reto ahora es cerrar los últimos 3%: generar el APK firmado, realizar la prueba final de usuario y completar la documentación de entrega.
 
 **La tecnología es simple cuando está bien hecha. Y esta app está diseñada para ser exactamente eso: simple.**
 

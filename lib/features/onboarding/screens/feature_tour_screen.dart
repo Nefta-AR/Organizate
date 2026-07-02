@@ -146,7 +146,7 @@ class _FeatureTourScreenState extends State<FeatureTourScreen>
                   'Saltar',
                   style: GoogleFonts.nunito(
                     fontSize: 15,
-                    color: slide.color.withOpacity(0.7),
+                    color: slide.color.withValues(alpha: 0.7),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -180,7 +180,7 @@ class _FeatureTourScreenState extends State<FeatureTourScreen>
                   decoration: BoxDecoration(
                     color: active
                         ? slide.color
-                        : slide.color.withOpacity(0.25),
+                        : slide.color.withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(4),
                   ),
                 );
@@ -253,7 +253,7 @@ class _SlidePage extends StatelessWidget {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: slide.color.withOpacity(0.18),
+                    color: slide.color.withValues(alpha: 0.18),
                     blurRadius: 28,
                     offset: const Offset(0, 8),
                   ),
@@ -285,7 +285,7 @@ class _SlidePage extends StatelessWidget {
             style: GoogleFonts.nunito(
               fontSize: 16,
               height: 1.55,
-              color: const Color(0xFF3D3835).withOpacity(0.8),
+              color: const Color(0xFF3D3835).withValues(alpha: 0.8),
             ),
           ),
           const SizedBox(height: 28),
@@ -295,10 +295,10 @@ class _SlidePage extends StatelessWidget {
             padding:
                 const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                  color: slide.color.withOpacity(0.25), width: 1.5),
+                  color: slide.color.withValues(alpha: 0.25), width: 1.5),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,

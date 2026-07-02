@@ -619,181 +619,6 @@ class _TutorPictogramsTab extends StatelessWidget {
     required this.patientName,
   });
 
-  static const _builtins = [
-    _BuiltinPicto('assets/images/pictogramas/ayuda.svg', 'AYUDA',
-        'Necesito ayuda', 'Emergencia'),
-    _BuiltinPicto('assets/images/pictogramas/alto.svg', 'ALTO',
-        'Por favor, para', 'Emergencia'),
-    _BuiltinPicto('assets/images/pictogramas/cepillar-dientes.svg',
-        'DIENTES', 'Cepillarme los dientes', 'Mañana'),
-    _BuiltinPicto('assets/images/pictogramas/colegio.svg', 'COLEGIO',
-        'Ir al colegio', 'Mañana'),
-    _BuiltinPicto(
-        'assets/images/pictogramas/baño.svg', 'BAÑO', 'Ir al baño', 'General'),
-    _BuiltinPicto('assets/images/pictogramas/almuerzo.svg', 'ALMUERZO',
-        'Quiero almorzar', 'Tarde'),
-    _BuiltinPicto('assets/images/pictogramas/calle.svg', 'CALLE',
-        'Salir a la calle', 'Tarde'),
-    _BuiltinPicto('assets/images/pictogramas/beber.svg', 'AGUA',
-        'Tengo sed, quiero agua', 'General'),
-    _BuiltinPicto('assets/images/pictogramas/casa.svg', 'CASA',
-        'Quiero ir a casa', 'Noche'),
-    _BuiltinPicto('assets/images/pictogramas/cansado.svg', 'CANSADO',
-        'Estoy cansado', 'Noche'),
-    _BuiltinPicto('assets/images/pictogramas/desayuno.svg', 'DESAYUNO',
-        'Quiero desayunar', 'Mañana'),
-    _BuiltinPicto('assets/images/pictogramas/ducha.svg', 'DUCHA',
-        'Ducharme', 'Mañana'),
-    _BuiltinPicto('assets/images/pictogramas/computador.svg', 'PC',
-        'Usar el computador', 'Tarde'),
-    _BuiltinPicto('assets/images/pictogramas/feliz.svg', 'FELIZ',
-        'Estoy feliz', 'Emociones'),
-    _BuiltinPicto('assets/images/pictogramas/estudiar.svg', 'ESTUDIAR',
-        'Debo estudiar', 'Tarde'),
-  ];
-
-  Future<void> _showAddSheet(BuildContext context) async {
-    _BuiltinPicto? selected;
-    final labelCtrl = TextEditingController();
-    final ttsCtrl = TextEditingController();
-
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setS) => Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
-            top: 20,
-            left: 16,
-            right: 16,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Agregar pictograma',
-                  style: TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 4),
-              Text('Selecciona una imagen y personaliza la etiqueta',
-                  style: TextStyle(
-                      color: Colors.grey.shade600, fontSize: 13)),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 110,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _builtins.length,
-                  separatorBuilder: (_, __) =>
-                      const SizedBox(width: 8),
-                  itemBuilder: (_, i) {
-                    final p = _builtins[i];
-                    final isSel = selected == p;
-                    return GestureDetector(
-                      onTap: () => setS(() {
-                        selected = p;
-                        labelCtrl.text = p.label;
-                        ttsCtrl.text = p.tts;
-                      }),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
-                        width: 85,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: isSel
-                                ? Colors.blue
-                                : Colors.grey.shade300,
-                            width: isSel ? 2.5 : 1,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                          color: isSel
-                              ? Colors.blue.shade50
-                              : Colors.grey.shade50,
-                        ),
-                        padding: const EdgeInsets.all(6),
-                        child: Column(
-                          mainAxisAlignment:
-                              MainAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: p.asset.endsWith('.svg')
-                                  ? SvgPicture.asset(p.asset, fit: BoxFit.contain)
-                                  : Image.asset(p.asset,
-                                      fit: BoxFit.contain,
-                                      errorBuilder: (_, __, ___) =>
-                                          const Icon(Icons.image)),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(p.label,
-                                style: const TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold),
-                                textAlign: TextAlign.center),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: labelCtrl,
-                textCapitalization: TextCapitalization.characters,
-                decoration: const InputDecoration(
-                  labelText: 'Etiqueta (texto visible)',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: ttsCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Texto de voz',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: selected == null ||
-                          labelCtrl.text.trim().isEmpty
-                      ? null
-                      : () async {
-                          final label = labelCtrl.text.trim();
-                          final tts = ttsCtrl.text.trim();
-                          final s = selected!;
-                          Navigator.pop(ctx);
-                          await PictogramService.createPictogramFor(
-                            userId: patientId,
-                            etiqueta: label,
-                            textoTts: tts.isEmpty ? label : tts,
-                            imageUrl: s.asset,
-                            categoria: s.categoria,
-                          );
-                        },
-                  icon: const Icon(Icons.add),
-                  label: const Text('Agregar pictograma'),
-                  style: ElevatedButton.styleFrom(
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    labelCtrl.dispose();
-    ttsCtrl.dispose();
-  }
-
   void _openManager(BuildContext context) {
     Navigator.push(
       context,
@@ -810,24 +635,12 @@ class _TutorPictogramsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton(
-            heroTag: 'organizar_$patientId',
-            onPressed: () => _openManager(context),
-            tooltip: 'Organizar pictogramas',
-            backgroundColor: Colors.orange.shade400,
-            child: const Icon(Icons.tune_rounded),
-          ),
-          const SizedBox(height: 12),
-          FloatingActionButton.extended(
-            heroTag: 'agregar_$patientId',
-            onPressed: () => _showAddSheet(context),
-            icon: const Icon(Icons.add),
-            label: const Text('Agregar'),
-          ),
-        ],
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'organizar_$patientId',
+        onPressed: () => _openManager(context),
+        tooltip: 'Organizar pictogramas',
+        backgroundColor: Colors.orange.shade400,
+        child: const Icon(Icons.tune_rounded),
       ),
       body: StreamBuilder<List<PictogramaPersonalizado>>(
         stream: PictogramService.getCustomPictogramsStreamFor(patientId),
@@ -1077,9 +890,9 @@ class _DailySummaryCard extends StatelessWidget {
             .length;
         final minutes = todayLogs
             .where((l) => l['type'] == ActivityType.pomodoroCompleted)
-            .fold<int>(0, (sum, l) {
+            .fold<int>(0, (total, l) {
           final meta = l['metadata'] as Map<String, dynamic>?;
-          return sum + ((meta?['minutes'] as num?)?.toInt() ?? 0);
+          return total + ((meta?['minutes'] as num?)?.toInt() ?? 0);
         });
 
         return Container(
@@ -1868,10 +1681,4 @@ class _Cat {
   const _Cat(this.label, this.icon, this.color);
 }
 
-class _BuiltinPicto {
-  final String asset;
-  final String label;
-  final String tts;
-  final String categoria;
-  const _BuiltinPicto(this.asset, this.label, this.tts, this.categoria);
-}
+
