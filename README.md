@@ -15,6 +15,7 @@ Simple es una aplicación móvil inclusiva diseñada específicamente para apoya
 - ✅ **Sincronización tutor ↔ paciente** completada.
 - ✅ **Botón SOS de pictogramas** reemplazado por ícono de contacto de emergencia (igual que HomeScreen).
 - ✅ **Corrección** de sintaxis en `vinculacion_tutor_screen.dart`.
+- ✅ **Fix** parámetros `$fields` en `google_drive_service.dart` para compilación release.
 
 ---
 
