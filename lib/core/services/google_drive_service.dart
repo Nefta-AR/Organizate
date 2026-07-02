@@ -179,7 +179,7 @@ class GoogleDriveService {
           "and mimeType='application/vnd.google-apps.folder' "
           "and trashed=false",
       spaces: 'drive',
-      \$fields: 'files(id, name)', // Solo pedimos los campos que necesitamos
+      $fields: 'files(id, name)', // Solo pedimos los campos que necesitamos
     );
 
     // Si ya existe, retornamos el ID de la primera coincidencia
@@ -203,7 +203,7 @@ class GoogleDriveService {
       // Filtramos: nombre exacto + padre = folderId + no en papelera
       q: "name='$fileName' and '$folderId' in parents and trashed=false",
       spaces: 'drive',
-      \$fields: 'files(id, name, modifiedTime)',
+      $fields: 'files(id, name, modifiedTime)',
     );
 
     if (result.files != null && result.files!.isNotEmpty) {
@@ -218,7 +218,7 @@ class GoogleDriveService {
     final result = await _driveApi!.files.list(
       q: "name='$_settingsFileName' and '$folderId' in parents and trashed=false",
       spaces: 'drive',
-      \$fields: 'files(modifiedTime)', // Solo necesitamos la fecha de modificación
+      $fields: 'files(modifiedTime)', // Solo necesitamos la fecha de modificación
     );
 
     if (result.files != null && result.files!.isNotEmpty) {
@@ -348,7 +348,7 @@ class GoogleDriveService {
           "and mimeType='application/vnd.google-apps.folder' "
           "and trashed=false",
       spaces: 'drive',
-      \$fields: 'files(id, name)',
+      $fields: 'files(id, name)',
     );
 
     if (existing.files != null && existing.files!.isNotEmpty) {
@@ -560,7 +560,7 @@ class GoogleDriveService {
       final cloudPictograms = await _driveApi!.files.list(
         q: "'$pictogramFolderId' in parents and trashed=false",
         spaces: 'drive',
-        \$fields: 'files(id, name, modifiedTime)',
+        $fields: 'files(id, name, modifiedTime)',
       );
 
       if (cloudPictograms.files != null &&

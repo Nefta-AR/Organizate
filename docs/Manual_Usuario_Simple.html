@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manual de Usuario — Simple App</title>
+<style>
+  /* ─── BASE ─── */
+  body {
+    font-family: Calibri, 'Segoe UI', Arial, sans-serif;
+    font-size: 11pt;
+    line-height: 1.6;
+    color: #3D3835;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+  }
+  h1 { font-size: 22pt; color: #5B8ED6; page-break-before: always; margin-top: 40px; }
+  h2 { font-size: 16pt; color: #5B8ED6; border-bottom: 2px solid #5B8ED6; padding-bottom: 4px; margin-top: 30px; }
+  h3 { font-size: 13pt; color: #3D3835; margin-top: 20px; }
+  h4 { font-size: 11pt; color: #6B8F71; margin-top: 14px; }
+  p  { margin: 6px 0 10px; }
+  ul, ol { margin: 6px 0 10px 24px; }
+  li { margin-bottom: 4px; }
+  a  { color: #5B8ED6; }
+
+  /* ─── PORTADA ─── */
+  .cover {
+    text-align: center;
+    padding: 80px 40px 60px;
+    background: linear-gradient(160deg, #EBF2FF 0%, #F7F4F0 100%);
+    page-break-after: always;
+    min-height: 600px;
+  }
+  .cover img.logo { width: 180px; height: 180px; margin-bottom: 20px; }
+  .cover h1 { font-size: 36pt; color: #5B8ED6; page-break-before: avoid; margin: 0; }
+  .cover .subtitle { font-size: 16pt; color: #6B8F71; margin: 10px 0 30px; }
+  .cover .version { font-size: 10pt; color: #888; margin-top: 60px; }
+  .cover .tagline {
+    font-size: 13pt; color: #7C6FAD; background: #F3EFFF;
+    display: inline-block; padding: 8px 24px; border-radius: 20px; margin: 16px 0;
+  }
+
+  /* ─── TABLA DE CONTENIDOS ─── */
+  .toc { page-break-after: always; }
+  .toc ul { list-style: none; margin: 0; padding: 0; }
+  .toc li { padding: 4px 0; border-bottom: 1px dotted #ccc; }
+  .toc li.level2 { padding-left: 20px; font-size: 10pt; }
+  .toc li.level3 { padding-left: 40px; font-size: 9.5pt; color: #666; }
+
+  /* ─── CAJAS DE PANTALLA (placeholder) ─── */
+  .screen-placeholder {
+    width: 280px;
+    min-height: 160px;
+    border: 2px dashed #B0C8F0;
+    border-radius: 18px;
+    background: #F0F6FF;
+    display: inline-block;
+    vertical-align: top;
+    text-align: center;
+    padding: 20px 14px;
+    margin: 10px 8px;
+    box-sizing: border-box;
+    font-size: 9pt;
+    color: #5B8ED6;
+  }
+  .screen-placeholder .screen-title {
+    font-weight: bold;
+    font-size: 10pt;
+    color: #3D6BAD;
+    margin-bottom: 8px;
+    display: block;
+  }
+  .screen-placeholder .elements {
+    text-align: left;
+    color: #555;
+    font-size: 8.5pt;
+  }
+
+  /* ─── CAJAS REALES (imágenes) ─── */
+  .screen-real {
+    display: inline-block;
+    vertical-align: top;
+    margin: 10px 8px;
+    text-align: center;
+  }
+  .screen-real img {
+    max-width: 300px;
+    border-radius: 16px;
+    border: 1px solid #dce8f8;
+    box-shadow: 0 4px 12px rgba(91,142,214,0.15);
+  }
+  .screen-real .caption {
+    font-size: 8.5pt;
+    color: #666;
+    margin-top: 4px;
+    display: block;
+    font-style: italic;
+  }
+  .screens-row { text-align: center; margin: 16px 0; }
+
+  /* ─── STEPS ─── */
+  .steps { counter-reset: step; margin: 10px 0; padding: 0; list-style: none; }
+  .steps li {
+    counter-increment: step;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+  .steps li::before {
+    content: counter(step);
+    background: #5B8ED6;
+    color: white;
+    font-weight: bold;
+    font-size: 10pt;
+    min-width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* ─── NOTAS Y ADVERTENCIAS ─── */
+  .note {
+    background: #EBF5FB; border-left: 4px solid #5B8ED6;
+    padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 12px 0;
+    font-size: 10pt;
+  }
+  .tip {
+    background: #EAF7EE; border-left: 4px solid #6B8F71;
+    padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 12px 0;
+    font-size: 10pt;
+  }
+  .warning {
+    background: #FFF8E1; border-left: 4px solid #F6A623;
+    padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 12px 0;
+    font-size: 10pt;
+  }
+
+  /* ─── TABLAS ─── */
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 10pt; }
+  th { background: #5B8ED6; color: white; padding: 8px 10px; text-align: left; }
+  td { padding: 7px 10px; border: 1px solid #D0E3F7; }
+  tr:nth-child(even) td { background: #F3F8FE; }
+
+  /* ─── MÓDULOS INTRO ─── */
+  .module-card {
+    border: 1px solid #D0E3F7; border-radius: 12px; padding: 14px 18px;
+    margin: 10px 0; background: #F7FBFF;
+  }
+  .module-card .icon { font-size: 20pt; margin-right: 8px; }
+  .module-card .title { font-weight: bold; font-size: 11.5pt; color: #3D6BAD; }
+
+  /* ─── ROLES ─── */
+  .role-card {
+    display: inline-block; width: 45%; vertical-align: top;
+    border-radius: 16px; padding: 20px; margin: 8px 1%; box-sizing: border-box;
+  }
+  .role-usuario { background: #EBF2FF; border: 2px solid #5B8ED6; }
+  .role-tutor   { background: #EAF7EE; border: 2px solid #6B8F71; }
+  .role-card .role-name { font-size: 14pt; font-weight: bold; margin-bottom: 6px; }
+  .role-usuario .role-name { color: #2E6BAD; }
+  .role-tutor   .role-name { color: #3D6B45; }
+
+  /* ─── ICONOS TABLA ─── */
+  .badge {
+    display: inline-block; padding: 2px 10px; border-radius: 12px;
+    font-size: 8.5pt; font-weight: bold;
+  }
+  .badge-blue   { background: #D6E9FF; color: #2E5B9A; }
+  .badge-green  { background: #D6F0E0; color: #2E6B45; }
+  .badge-purple { background: #E8D6FF; color: #6B2EA8; }
+  .badge-orange { background: #FFE8CC; color: #C25A00; }
+  .badge-red    { background: #FFD6D6; color: #A82E2E; }
+
+  /* page breaks */
+  .page-break { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════
+     PORTADA
+══════════════════════════════════════════════════════════════ -->
+<div class="cover">
+  <img class="logo" src="file:///d:/ProyectosFlutter/Organizate/assets/images/Simple.png" alt="Logo Simple"/>
+  <h1>Simple</h1>
+  <div class="subtitle">Manual de Usuario</div>
+  <div class="tagline">Prótesis cognitiva para personas con TEA y TDAH</div>
+  <br><br>
+  <table style="width:60%; margin: 0 auto; border:none; font-size:10pt;">
+    <tr><td style="border:none; color:#666; text-align:right;"><b>Versión:</b></td><td style="border:none;">1.0.0</td></tr>
+    <tr><td style="border:none; color:#666; text-align:right;"><b>Plataforma:</b></td><td style="border:none;">Android (iOS próximamente)</td></tr>
+    <tr><td style="border:none; color:#666; text-align:right;"><b>Fecha:</b></td><td style="border:none;">Julio 2026</td></tr>
+    <tr><td style="border:none; color:#666; text-align:right;"><b>Proyecto:</b></td><td style="border:none;">Defensa de Título — Analista Programador</td></tr>
+  </table>
+  <div class="version">© 2026 Neftali Arriagada — Todos los derechos reservados</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     TABLA DE CONTENIDOS
+══════════════════════════════════════════════════════════════ -->
+<div class="toc">
+  <h2 style="page-break-before:avoid;">Tabla de Contenidos</h2>
+  <ul>
+    <li>1. Introducción a Simple</li>
+    <li class="level2">1.1 ¿Qué es Simple?</li>
+    <li class="level2">1.2 ¿Para quién es?</li>
+    <li class="level2">1.3 Módulos principales</li>
+    <li>2. Requisitos del sistema</li>
+    <li>3. Descarga e instalación</li>
+    <li class="level2">3.1 Instalación en Android</li>
+    <li>4. Primeros pasos: Registro e inicio de sesión</li>
+    <li class="level2">4.1 Crear una cuenta nueva</li>
+    <li class="level2">4.2 Iniciar sesión con Google</li>
+    <li class="level2">4.3 Iniciar sesión con correo y contraseña</li>
+    <li class="level2">4.4 Recuperar contraseña</li>
+    <li>5. Configuración inicial (primera vez)</li>
+    <li class="level2">5.1 Selección de rol</li>
+    <li class="level2">5.2 Configuración de perfil</li>
+    <li class="level2">5.3 Test inicial de preferencias (solo usuarios)</li>
+    <li class="level2">5.4 Pantalla de bienvenida y recompensa</li>
+    <li>6. Pantalla de Inicio (Usuario)</li>
+    <li>7. Gestión de Tareas</li>
+    <li class="level2">7.1 Ver todas las tareas</li>
+    <li class="level2">7.2 Agregar una tarea</li>
+    <li class="level2">7.3 Completar y eliminar tareas</li>
+    <li class="level2">7.4 Tareas por categoría (Estudios / Hogar / Medicamentos)</li>
+    <li>8. Tablero de Pictogramas (Mi Día)</li>
+    <li class="level2">8.1 Usar pictogramas para comunicarse</li>
+    <li class="level2">8.2 Crear un pictograma personalizado</li>
+    <li class="level2">8.3 Administrar pictogramas</li>
+    <li class="level2">8.4 Botón SOS y emergencia</li>
+    <li>9. Módulo de Foco (Pomodoro)</li>
+    <li class="level2">9.1 Usar el temporizador Pomodoro</li>
+    <li class="level2">9.2 Ejercicio de respiración guiada</li>
+    <li>10. Progreso y Estadísticas</li>
+    <li>11. Súper Experto — Asistente de IA</li>
+    <li>12. Ajustes y Perfil</li>
+    <li class="level2">12.1 Editar nombre y foto de perfil</li>
+    <li class="level2">12.2 Contacto de emergencia</li>
+    <li class="level2">12.3 Notificaciones</li>
+    <li class="level2">12.4 Backup en Google Drive</li>
+    <li class="level2">12.5 Configurar pestañas de navegación</li>
+    <li>13. Vinculación Tutor–Usuario</li>
+    <li class="level2">13.1 Desde el lado del usuario: ingresar código</li>
+    <li class="level2">13.2 Desde el lado del tutor: generar código</li>
+    <li>14. Panel del Tutor</li>
+    <li class="level2">14.1 Pestaña Tareas del paciente</li>
+    <li class="level2">14.2 Pestaña Pictogramas</li>
+    <li class="level2">14.3 Pestaña Progreso</li>
+    <li class="level2">14.4 Pestaña Historial</li>
+    <li class="level2">14.5 Pestaña Ajustes del paciente</li>
+    <li>15. Preguntas Frecuentes</li>
+    <li>16. Glosario</li>
+  </ul>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     1. INTRODUCCIÓN
+══════════════════════════════════════════════════════════════ -->
+<h1>1. Introducción a Simple</h1>
+
+<h2>1.1 ¿Qué es Simple?</h2>
+<p><b>Simple</b> es una aplicación móvil diseñada como <i>prótesis cognitiva</i> para personas con Trastorno del Espectro Autista (TEA) y Trastorno de Déficit Atencional con Hiperactividad (TDAH). Ofrece una interfaz amigable, visual y estructurada que ayuda a organizar el día, comunicarse mediante pictogramas y mantener el foco en las tareas del día a día.</p>
+<p>La aplicación integra en una sola plataforma herramientas que normalmente se encuentran dispersas: gestión de tareas, tablero de comunicación aumentativa, temporizador Pomodoro, ejercicios de respiración y supervisión remota por parte de tutores o cuidadores.</p>
+
+<div class="screens-row">
+  <div class="screen-real">
+    <img src="file:///d:/ProyectosFlutter/Organizate/assets/images/Simple.png" alt="Logo Simple" style="width:150px; height:150px; border:none; box-shadow:none;"/>
+    <span class="caption">Logo oficial de la aplicación Simple</span>
+  </div>
+</div>
+
+<h2>1.2 ¿Para quién es?</h2>
+<p>Simple tiene dos tipos de usuarios:</p>
+<div style="text-align:center; margin:16px 0;">
+  <div class="role-card role-usuario">
+    <div class="role-name">&#128101; Usuario (Persona con TEA/TDAH)</div>
+    <ul style="text-align:left;">
+      <li>Organiza sus tareas del día</li>
+      <li>Se comunica con pictogramas</li>
+      <li>Usa el Pomodoro para concentrarse</li>
+      <li>Hace ejercicios de respiración</li>
+      <li>Gana puntos y mantiene rachas</li>
+      <li>Accede al asistente de IA</li>
+    </ul>
+  </div>
+  <div class="role-card role-tutor">
+    <div class="role-name">&#128149; Tutor (Cuidador / Padre / Docente)</div>
+    <ul style="text-align:left;">
+      <li>Supervisa el progreso del usuario</li>
+      <li>Agrega y gestiona tareas remotamente</li>
+      <li>Configura los pictogramas disponibles</li>
+      <li>Ve el historial de actividad</li>
+      <li>Configura el contacto de emergencia</li>
+      <li>Activa o desactiva funciones</li>
+    </ul>
+  </div>
+</div>
+
+<h2>1.3 Módulos principales</h2>
+<div class="module-card">
+  <span class="icon">&#9989;</span><span class="title">Gestión de Tareas</span>
+  <p>Crea, organiza y completa tareas por categoría (Estudios, Hogar, Medicamentos, Foco). Incluye fechas de entrega, badges de urgencia y notificaciones.</p>
+</div>
+<div class="module-card">
+  <span class="icon">&#128247;</span><span class="title">Tablero de Pictogramas (Mi Día)</span>
+  <p>Banco de 28 pictogramas predefinidos más pictogramas personalizados con voz (texto-a-voz). Organizado por rutina, comida, emociones y acciones.</p>
+</div>
+<div class="module-card">
+  <span class="icon">&#9200;</span><span class="title">Módulo de Foco (Pomodoro)</span>
+  <p>Temporizador configurable de 5 a 50 minutos con progreso visual circular. Incluye ejercicio de respiración guiada animada.</p>
+</div>
+<div class="module-card">
+  <span class="icon">&#128200;</span><span class="title">Progreso y Estadísticas</span>
+  <p>Tres gráficos en tiempo real: tareas por categoría (barras), uso de pictogramas (circular) y minutos de foco semanales (líneas).</p>
+</div>
+<div class="module-card">
+  <span class="icon">&#10024;</span><span class="title">Súper Experto (Inteligencia Artificial)</span>
+  <p>Asistente con IA (Google Gemini) que descompone una tarea compleja en 3 a 7 pasos pequeños y los guarda directamente en tu lista de tareas.</p>
+</div>
+<div class="module-card">
+  <span class="icon">&#128101;</span><span class="title">Panel del Tutor</span>
+  <p>Panel de supervisión de 5 pestañas para que el tutor gestione al usuario de forma remota en tiempo real.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     2. REQUISITOS
+══════════════════════════════════════════════════════════════ -->
+<h1>2. Requisitos del Sistema</h1>
+
+<table>
+  <tr><th>Componente</th><th>Requisito mínimo</th><th>Recomendado</th></tr>
+  <tr><td>Sistema operativo</td><td>Android 6.0 (Marshmallow)</td><td>Android 10 o superior</td></tr>
+  <tr><td>RAM</td><td>2 GB</td><td>4 GB o más</td></tr>
+  <tr><td>Almacenamiento</td><td>100 MB libres</td><td>500 MB libres</td></tr>
+  <tr><td>Conexión a Internet</td><td>Requerida (Firebase)</td><td>WiFi o 4G estable</td></tr>
+  <tr><td>Cuenta Google</td><td>Opcional (para Sign-In con Google)</td><td>Recomendada para Backup</td></tr>
+  <tr><td>Cámara</td><td>Opcional</td><td>Para crear pictogramas personalizados</td></tr>
+</table>
+
+<div class="note">
+  <b>Nota:</b> Simple requiere conexión a Internet para sincronizar tareas, pictogramas y progreso con la nube (Firebase Firestore). Algunas funciones como el temporizador Pomodoro y la respiración guiada funcionan sin conexión.
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     3. DESCARGA E INSTALACIÓN
+══════════════════════════════════════════════════════════════ -->
+<h1>3. Descarga e Instalación</h1>
+
+<h2>3.1 Instalación en Android</h2>
+<p>Simple se distribuye actualmente como archivo APK para instalación directa. Sigue estos pasos:</p>
+
+<ol class="steps">
+  <li>
+    <div>
+      <b>Obtén el archivo APK</b><br>
+      El archivo <code>simple-v1.0.0.apk</code> es entregado directamente por el desarrollador o estará disponible en Google Play Store en su lanzamiento oficial. Guarda el archivo en la memoria de tu teléfono (carpeta Descargas).
+    </div>
+  </li>
+  <li>
+    <div>
+      <b>Habilita la instalación desde fuentes desconocidas</b><br>
+      Ve a <b>Ajustes → Seguridad</b> (o <b>Ajustes → Aplicaciones → Instalar aplicaciones desconocidas</b>). Activa el permiso para tu navegador o gestor de archivos.
+    </div>
+  </li>
+  <li>
+    <div>
+      <b>Instala el APK</b><br>
+      Abre el gestor de archivos, navega a la carpeta Descargas y toca <b>simple-v1.0.0.apk</b>. Toca <b>Instalar</b> cuando aparezca el aviso. Espera a que finalice la instalación.
+    </div>
+  </li>
+  <li>
+    <div>
+      <b>Abre la app</b><br>
+      Toca <b>Abrir</b> al terminar la instalación, o busca el ícono de Simple <img src="file:///d:/ProyectosFlutter/Organizate/assets/images/Simple.png" style="width:20px; height:20px; vertical-align:middle; border:none; border-radius:4px;"/> en tu cajón de aplicaciones.
+    </div>
+  </li>
+  <li>
+    <div>
+      <b>Acepta los permisos</b><br>
+      En el primer inicio, Simple puede solicitar permisos para: <b>Notificaciones</b> (recordatorios de tareas), <b>Cámara y Galería</b> (pictogramas personalizados), y <b>Llamadas</b> (botón SOS de emergencia). Acepta los que necesites.
+    </div>
+  </li>
+</ol>
+
+<div class="tip">
+  <b>Consejo:</b> Si tu teléfono muestra "Aplicación bloqueada por Play Protect", toca <b>Más detalles → Instalar de todas formas</b>. Esto ocurre porque el APK no está en Play Store aún — la aplicación es segura.
+</div>
+
+<div class="screens-row">
+  <div class="screen-placeholder" style="min-height:200px;">
+    <span class="screen-title">&#128247; Pantalla de instalación Android</span>
+    <div class="elements">
+      • Ventana "¿Deseas instalar esta aplicación?"<br>
+      • Icono de Simple + nombre "Simple"<br>
+      • Botón INSTALAR (azul)<br>
+      • Botón CANCELAR<br>
+      • Lista de permisos solicitados
+    </div>
+  </div>
+  <div class="screen-placeholder" style="min-height:200px;">
+    <span class="screen-title">&#10003; Instalación completada</span>
+    <div class="elements">
+      • Mensaje "Aplicación instalada"<br>
+      • Botón ABRIR<br>
+      • Botón LISTO<br><br>
+      • El ícono aparece en el launcher del dispositivo
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     4. REGISTRO E INICIO DE SESIÓN
+══════════════════════════════════════════════════════════════ -->
+<h1>4. Primeros Pasos: Registro e Inicio de Sesión</h1>
+
+<p>Al abrir Simple por primera vez, verás la pantalla de inicio de sesión. Puedes registrarte con un correo electrónico nuevo o ingresar directamente con tu cuenta de Google.</p>
+
+<div class="screens-row">
+  <div class="screen-placeholder" style="min-height:340px; width:240px;">
+    <span class="screen-title">&#128274; Pantalla de Login</span>
+    <div class="elements">
+      <br>
+      [Logo Simple 80×80 centrado]<br><br>
+      <b>"Simple"</b> (título azul)<br><br>
+      ──────────────────<br>
+      [G] <b>Continuar con Google</b><br>
+      ──────────────────<br><br>
+      Campo: <b>Correo electrónico</b><br>
+      Campo: <b>Contraseña</b> [👁]<br><br>
+      <span style="color:#5B8ED6; text-decoration:underline;">¿Olvidaste tu contraseña?</span><br><br>
+      [        <b>Iniciar sesión</b>        ]<br><br>
+      ¿No tienes cuenta? <u>Regístrate</u>
+    </div>
+  </div>
+  <div class="screen-placeholder" style="min-height:340px; width:240px;">
+    <span class="screen-title">&#128221; Pantalla de Registro</span>
+    <div class="elements">
+      <br>
+      [Logo Simple 80×80 centrado]<br><br>
+      <b>"Simple"</b> (título azul)<br><br>
+      ──────────────────<br>
+      [G] <b>Continuar con Google</b><br>
+      ──────────────────<br><br>
+      Campo: <b>Nombre</b> ← nuevo campo<br>
+      Campo: <b>Correo electrónico</b><br>
+      Campo: <b>Contraseña</b> [👁]<br><br>
+      [          <b>Registrarse</b>          ]<br><br>
+      ¿Ya tienes cuenta? <u>Inicia sesión</u>
+    </div>
+  </div>
+</div>
+
+<h2>4.1 Crear una cuenta nueva</h2>
+<ol class="steps">
+  <li><b>Abre Simple.</b> Verás la pantalla de inicio de sesión con el logo y los campos de acceso.</li>
+  <li><b>Toca "¿No tienes cuenta? Regístrate"</b> en la parte inferior. El formulario cambiará al modo de registro y aparecerá un campo adicional para tu nombre.</li>
+  <li><b>Escribe tu nombre</b> en el campo "Nombre" (aparece animado desde arriba).</li>
+  <li><b>Escribe tu correo electrónico</b> en el campo correspondiente. Usa una dirección válida porque la recibirás para verificación.</li>
+  <li><b>Crea una contraseña.</b> Debe tener al menos 6 caracteres. Toca el ícono de ojo (👁) para ver o ocultar lo que escribes.</li>
+  <li><b>Toca el botón "Registrarse".</b> Si todo es correcto, la app creará tu cuenta y pasará automáticamente a la selección de rol.</li>
+</ol>
+
+<div class="warning">
+  <b>Importante:</b> Si el correo ya está registrado, verás un mensaje de error en rojo. Usa el enlace "¿Olvidaste tu contraseña?" para recuperar el acceso.
+</div>
+
+<h2>4.2 Iniciar sesión con Google</h2>
+<ol class="steps">
+  <li><b>Toca el botón "Continuar con Google"</b> (el botón grande con el logo de Google <img src="file:///d:/ProyectosFlutter/Organizate/assets/icons/google.png" style="width:18px; height:18px; vertical-align:middle; border:none;"/>).</li>
+  <li><b>Selecciona tu cuenta de Google</b> en el selector que aparece. Si tienes varias cuentas, elige la que quieras usar con Simple.</li>
+  <li><b>Toca "Continuar"</b> para autorizar el acceso. Simple usará tu nombre y foto de Google automáticamente.</li>
+  <li>La app te llevará directamente a la <b>selección de rol</b> si es tu primera vez, o a la pantalla principal si ya tienes cuenta.</li>
+</ol>
+
+<div class="tip">
+  <b>Consejo:</b> Google Sign-In es la forma más rápida de empezar. No necesitas recordar contraseñas y el backup con Google Drive queda configurado automáticamente.
+</div>
+
+<h2>4.3 Iniciar sesión con correo y contraseña</h2>
+<ol class="steps">
+  <li><b>Escribe tu correo electrónico</b> registrado. La app recordará el último correo usado.</li>
+  <li><b>Escribe tu contraseña.</b> Toca el ícono de ojo para verla si la olvidaste.</li>
+  <li><b>Toca "Iniciar sesión".</b> Serás llevado a la pantalla principal de tu rol.</li>
+</ol>
+
+<h2>4.4 Recuperar contraseña</h2>
+<ol class="steps">
+  <li><b>Escribe tu correo electrónico</b> en el campo de la pantalla de login.</li>
+  <li><b>Toca "¿Olvidaste tu contraseña?"</b> (enlace azul bajo el campo de contraseña).</li>
+  <li>Simple enviará un <b>correo de recuperación</b> a tu dirección. Revisa tu bandeja de entrada (y la carpeta de spam si no lo encuentras).</li>
+  <li><b>Abre el correo</b> de Firebase y toca el enlace "Restablecer contraseña".</li>
+  <li>Escribe tu <b>nueva contraseña</b> y vuelve a Simple para iniciar sesión.</li>
+</ol>
+
+<!-- ══════════════════════════════════════════════════════════════
+     5. CONFIGURACIÓN INICIAL
+══════════════════════════════════════════════════════════════ -->
+<h1>5. Configuración Inicial (Primera Vez)</h1>
+
+<p>La primera vez que creas una cuenta, Simple te guía por tres pasos automáticos de configuración. Estos pasos solo ocurren una vez.</p>
+
+<h2>5.1 Selección de Rol</h2>
+<p>Simple pregunta cómo vas a usar la app. Esta elección define toda la experiencia:</p>
+
+<div class="screens-row">
+  <div class="screen-placeholder" style="min-height:300px; width:260px;">
+    <span class="screen-title">&#10067; Selección de Rol</span>
+    <div class="elements">
+      <br>
+      <b>"¿Cómo usarás Simple hoy?"</b><br><br>
+      ┌──────────────────────────┐<br>
+      │  👤  <b>Usuario</b>              │<br>
+      │  Organizo mi propio día  │<br>
+      │  (Azul suave)            │<br>
+      └──────────────────────────┘<br><br>
+      ┌──────────────────────────┐<br>
+      │  💚  <b>Tutor</b>               │<br>
+      │  Supervisaré a alguien   │<br>
+      │  (Verde suave)           │<br>
+      └──────────────────────────┘<br><br>
+      <i>Puedes cambiarlo en Ajustes</i>
+    </div>
+  </div>
+</div>
+
+<ol class="steps">
+  <li><b>Lee las dos tarjetas.</b> "Usuario" es para la persona con TEA/TDAH. "Tutor" es para padres, cuidadores o docentes.</li>
+  <li><b>Toca la tarjeta que corresponde</b> a tu rol. La tarjeta seleccionada se iluminará.</li>
+  <li>La app guarda tu elección y continúa automáticamente a la configuración de perfil.</li>
+</ol>
+
+<div class="note">
+  <b>Nota:</b> Puedes cambiar tu rol después en <b>Ajustes → Perfil → Rol (ícono de lápiz)</b>. Simple pedirá confirmación antes de hacer el cambio.
+</div>
+
+<h2>5.2 Configuración de Perfil</h2>
+<p>Aquí personalizas tu nombre y eliges un avatar divertido:</p>
+
+<div class="screens-row">
+  <div class="screen-placeholder" style="min-height:300px; width:260px;">
+    <span class="screen-title">&#128100; ¡Casi listo!</span>
+    <div class="elements">
+      <br>
+      [Ícono de persona grande]<br><br>
+      <b>"¡Casi listo!"</b><br>
+      ¿Cómo te llamas?<br><br>
+      [  Campo: Tu nombre   ]<br><br>
+      Elige un avatar:<br>
+      [😀][🐨][🐼][🐧]<br>
+      [🐸][🐯][🦄][🦊]<br><br>
+      [Sin avatar por ahora]<br><br>
+      [        <b>Comenzar</b>        ]
+    </div>
+  </div>
+  <div style="display:inline-block; vertical-align:top; padding: 20px; text-align:center;">
+    <p><b>Avatares disponibles:</b></p>
+    <img src="file:///d:/ProyectosFlutter/Organizate/assets/avatars/emoticon.png"  style="width:42px; height:42px; margin:4px; border-radius:50%; border:2px solid #D0E3F7;"/>
+    <img src="file:///d:/ProyectosFlutter/Organizate/assets/avatars/koala.png"     style="width:42px; height:42px; margin:4px; border-radius:50%; border:2px solid #D0E3F7;"/>
+    <img src="file:///d:/ProyectosFlutter/Organizate/assets/avatars/panda.png"     style="width:42px; height:42px; margin:4px; border-radius:50%; border:2px solid #D0E3F7;"/>
+    <img src="file:///d:/ProyectosFlutter/Organizate/assets/avatars/pinguino.png"  style="width:42px; height:42px; margin:4px; border-radius:50%; border:2px solid #D0E3F7;"/>
+    <br>
+    <img src="file:///d:/ProyectosFlutter/Organizate/assets/avatars/rana.png"      style="width:42px; height:42px; margin:4px; border-radius:50%; border:2px solid #D0E3F7;"/>
+    <img src="file:///d:/ProyectosFlutter/Organizate/assets/avatars/tigre.png"     style="width:42px; height:42px; margin:4px; border-radius:50%; border:2px solid #D0E3F7;"/>
+    <img src="file:///d:/ProyectosFlutter/Organizate/assets/avatars/unicornio.png" style="width:42px; height:42px; margin:4px; border-radius:50%; border:2px solid #D0E3F7;"/>
+    <img src="file:///d:/ProyectosFlutter/Organizate/assets/avatars/zorro.png"     style="width:42px; height:42px; margin:4px; border-radius:50%; border:2px solid #D0E3F7;"/>
+    <p style="font-size:8.5pt; color:#666;">Elige el que más te guste</p>
+  </div>
+</div>
+
+<ol class="steps">
+  <li><b>Escribe tu nombre</b> en el campo de texto. Si usaste Google, tu nombre ya estará precargado.</li>
+  <li><b>Toca uno de los 8 avatares</b> para seleccionarlo. El avatar elegido tendrá un borde destacado.</li>
+  <li>Si prefieres no usar avatar, toca <b>"Sin avatar por ahora"</b>.</li>
+  <li>Toca <b>"Comenzar"</b>. Simple guarda tu perfil y avanza al siguiente paso.</li>
+</ol>
+
+<h2>5.3 Test Inicial de Preferencias (solo Usuarios)</h2>
+<p>Simple te hace 4 preguntas rápidas para personalizar la experiencia desde el primer día. Hay una barra de progreso en la parte superior que muestra en qué paso vas.</p>
+
+<div class="screens-row">
+  <div class="screen-placeholder" style="min-height:240px; width:240px;">
+    <span class="screen-title">Paso 1 de 4</span>
+    <div class="elements">
+      [■■░░░░░░] 1/4<br><br>
+      <b>"¿Cuánto te distraes?"</b><br><br>
+      Slider: ●────────<br>
+      🙂 Me concentro bien<br>
+      😐 Me cuesta un poco<br>
+      🤯 Me distraigo mucho<br>
+      🛸 ¡Necesito mucha ayuda!<br><br>
+      [      <b>Siguiente →</b>      ]
+    </div>
+  </div>
+  <div class="screen-placeholder" style="min-height:240px; width:240px;">
+    <span class="screen-title">Paso 2 de 4</span>
+    <div class="elements">
+      [■■■■░░░░] 2/4<br><br>
+      <b>"¿Qué recordatorios prefieres?"</b><br><br>
+      ☑ Vibración<br>
+      ☑ Sonido suave<br>
+      ☐ Notificación visual<br>
+      ☐ Widget en pantalla<br><br>
+      (Puedes elegir varios)<br><br>
+      [← Atrás] [<b>Siguiente →</b>]
+    </div>
+  </div>
+  <div class="screen-placeholder" style="min-height:240px; width:240px;">
+    <span class="screen-title">Paso 3 de 4</span>
+    <div class="elements">
+      [■■■■■■░░] 3/4<br><br>
+      <b>"¿Cuánto tiempo trabajas?"</b><br><br>
+      ◉ Cortas (25–30 min)<br>
+      ○ Más largas (45–60 min)<br><br>
+      <br><br>
+      [← Atrás] [<b>Siguiente →</b>]
+    </div>
+  </div>
+  <div class="screen-placeholder" style="min-height:240px; width:240px;">
+    <span class="screen-title">Paso 4 de 4</span>
+    <div class="elements">
+      [■■■■■■■■] 4/4<br><br>
+      <b>"¿Qué avatar te gusta?"</b><br><br>
+      [😀][🐨][🐼][🐧]<br>
+      [🐸][🐯][🦄][🦊]<br><br>
+      <br><br>
+      [← Atrás] [✓ <b>Listo</b>]
+    </div>
+  </div>
+</div>
+
+<ol class="steps">
+  <li><b>Paso 1 — Nivel de distracción:</b> Mueve el slider según cuánto te cuesta concentrarte. Esto ajusta la intensidad de los recordatorios.</li>
+  <li><b>Paso 2 — Tipos de recordatorio:</b> Marca todos los que quieras. Puedes elegir varios al mismo tiempo.</li>
+  <li><b>Paso 3 — Duración de sesión:</b> Elige entre sesiones cortas (25–30 min) o más largas (45–60 min). Esto pre-configura el Pomodoro.</li>
+  <li><b>Paso 4 — Avatar final:</b> Confirma o cambia tu avatar. Toca <b>"Listo"</b> para finalizar.</li>
+</ol>
+
+<h2>5.4 Pantalla de Bienvenida y Recompensa</h2>
+<p>Al completar el test, Simple te muestra una pantalla de celebración:</p>
+
+<div class="screens-row">
+  <div class="screen-placeholder" style="min-height:180px; width:260px;">
+    <span class="screen-title">&#127881; ¡Felicitaciones!</span>
+    <div class="elements">
+      <br>
+      <b>"🎉 ¡Felicitaciones! 🎉"</b><br><br>
+      Has ganado <b>1.200 puntos</b><br>
+      por configurar tu perfil.<br><br>
+      ¡Ya estás listo para empezar!<br><br>
+      [      <b>Comenzar el día</b>      ]
+    </div>
+  </div>
+</div>
+
+<p>Toca <b>"Comenzar el día"</b> para ir directamente a la pantalla de inicio. ¡Tu cuenta ya tiene 1.200 puntos de bienvenida!</p>
+
+<!-- ══════════════════════════════════════════════════════════════
+     6. PANTALLA DE INICIO
+══════════════════════════════════════════════════════════════ -->
+<h1>6. Pantalla de Inicio (Usuario)</h1>
+
+<p>La pantalla de inicio es el centro de operaciones del usuario. Desde aquí puedes ver tu tarea más importante, acceder a las secciones principales y usar el asistente de IA.</p>
+
+<div class="screens-row">
+  <div class="screen-placeholder" style="min-height:440px; width:260px;">
+    <span class="screen-title">&#127968; Pantalla de Inicio</span>
+    <div class="elements">
+      ┌────────────────────────┐<br>
+      │ Simple   ⭐1200  🔥3  🆘 │<br>
+      ├────────────────────────┤<br>
+      │ Hola, <b>Nombre</b> 👋         │<br>
+      │ "¡Tú puedes!"          │<br>
+      ├────────────────────────┤<br>
+      │ 📌 TAREA PRIORITARIA   │<br>
+      │ [Entregar informe]     │<br>
+      │ 📅 Hoy · 🔴 URGENTE   │<br>
+      │ [✓ Marcar hecha] [Ver] │<br>
+      ├────────────────────────┤<br>
+      │ ✨ SÚPER EXPERTO        │<br>
+      │ Divide tu tarea con IA │<br>
+      ├────────────────────────┤<br>
+      │  📚Estudios  🏠Hogar  💊Meds  │<br>
+      ├────────────────────────┤<br>
+      │  🏠  ✅  🖼️  ⏱️  👤    │<br>
+      └────────────────────────┘<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[✨ FAB]
+    </div>
+  </div>
+  <div style="display:inline-block; vertical-align:top; max-width:300px; padding: 10px 16px;">
+    <h4>Elementos de la barra superior</h4>
+    <table>
+      <tr><th>Elemento</th><th>Qué hace</th></tr>
+      <tr><td>⭐ + número</td><td>Tus puntos acumulados</td></tr>
+      <tr><td>🔥 + número</td><td>Tu racha de días activos</td></tr>
+      <tr><td>🆘 (icono)</td><td>Botón de emergencia SOS</td></tr>
+    </table>
+    <h4>Barra de navegación inferior</h4>
+    <table>
+      <tr><th>Ícono</th><th>Sección</th></tr>
+      <tr><td><img src="file:///d:/ProyectosFlutter/Organizate/assets/icons/Inicio.png" style="width:22px; vertical-align:middle; border:none;"/> Inicio</td><td>Pantalla principal</td></tr>
+      <tr><td>✅ Tareas</td><td>Todas las tareas</td></tr>
+      <tr><td>🖼️ Pictogramas</td><td>Mi Día (tablero)</td></tr>
+      <tr><td><img src="file:///d:/ProyectosFlutter/Organizate/assets/icons/Foco.png" style="width:22px; vertical-align:middle; border:none;"/> Foco</td><td>Pomodoro</td></tr>
+      <tr><td>👤 Perfil</td><td>Ajustes y configuración</td></tr>
+    </table>
+  </div>
+</div>
+
+<h3>Acciones desde la pantalla de inicio</h3>
+<ul>
+  <li><b>Toca "✓ Marcar hecha"</b> en la tarea prioritaria → completa la tarea, gana puntos y actualiza tu racha.</li>
+  <li><b>Toca "Ver todas"</b> → va a la pantalla completa de tareas.</li>
+  <li><b>Toca la tarjeta "Súper Experto"</b> o el <b>FAB ✨</b> (botón morado flotante) → abre el asistente de IA.</li>
+  <li><b>Toca "Estudios", "Hogar" o "Meds"</b> (iconos de acceso rápido) → abre la lista filtrada de esa categoría.</li>
+</ul>
+
+<!-- ══════════════════════════════════════════════════════════════
+     7. GESTIÓN DE TAREAS
+══════════════════════════════════════════════════════════════ -->
+<h1>7. Gestión de Tareas</h1>
+
+<h2>7.1 Ver Todas las Tareas</h2>
+<p>Toca el ícono <b>Tareas</b> en la barra inferior. Verás la lista completa con filtros por categoría en la parte superior.</p>
+
+<div class="screens-row">
+  <div class="screen-placeholder" style="min-height:400px; width:260px;">
+    <span class="screen-title">&#9989; Mis Tareas</span>
+    <div class="elements">
+      ┌────────────────────────┐<br>
+      │ Mis tareas  ⭐1200 🔥3 │<br>
+      ├────────────────────────┤<br>
+      │[Todas][📚][🏠][💊][⏱️][⚙️]│<br>
+      ├────────────────────────┤<br>
+      │ PENDIENTES              │<br>
+      │ ○ Entregar informe     │<br>
+      │   📅 Hoy · 🔴 URGENTE  │<br>
+      │   [Tutor]              │<br>
+      │ ○ Comprar medicamento  │<br>
+      │   📅 Mañana            │<br>
+      ├────────────────────────┤<br>
+      │ COMPLETADAS             │<br>
+      │ ✓ Lavar platos         │<br>
+      │   ← desliza para borrar│<br>
+      └────────────────────────┘<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[+ FAB]
+    </div>
+  </div>
+</div>
+
+<p><b>Chips de filtro disponibles:</b></p>
+<ul>
+  <li><span class="badge badge-blue">Todas</span> — muestra todas las tareas</li>
+  <li><span class="badge badge-orange">📚 Estudios</span> — tareas de estudio</li>
+  <li><span class="badge badge-green">🏠 Hogar</span> — tareas del hogar</li>
+  <li><span class="badge badge-red">💊 Meds</span> — medicamentos</li>
+  <li><span class="badge badge-purple">⏱️ Foco</span> — tareas de concentración</li>
+  <li><span class="badge" style="background:#E8E8E8; color:#555;">⚙️ General</span> — otras tareas</li>
+</ul>
+
+<h2>7.2 Agregar una Tarea</h2>
+<ol class="steps">
+  <li>Toca el botón <b>"+"</b> (FAB azul) en la esquina inferior derecha.</li>
+  <li>Escribe el <b>nombre de la tarea</b> en el campo de texto.</li>
+  <li>Selecciona la <b>categoría</b> del menú desplegable (Estudios, Hogar, Meds, Foco, General).</li>
+  <li>Toca el <b>ícono de calendario</b> para elegir una fecha de entrega (opcional).</li>
+  <li>Selecciona un <b>tipo de recordatorio</b> del menú (Sin recordatorio, 15 min antes, 1 hora antes, 1 día antes).</li>
+  <li>Toca <b>"Guardar"</b>. La tarea aparecerá al instante en la lista.</li>
+</ol>
+
+<div class="screens-row">
+  <div class="screen-placeholder" style="min-height:260px; width:260px;">
+    <span class="screen-title">&#128221; Agregar Tarea</span>
+    <div class="elements">
+      ┌──────────────────────────┐<br>
+      │     <b>Nueva tarea</b>          │<br>
+      ├──────────────────────────┤<br>
+      │ [  Nombre de la tarea  ]│<br>
+      │                          │<br>
+      │ Categoría: [Estudios ▼] │<br>
+      │                          │<br>
+      │ Fecha: [📅 Seleccionar] │<br>
+      │                          │<br>
+      │ Recordatorio: [1h antes▼]│<br>
+      ├──────────────────────────┤<br>
+      │ [Cancelar]  [<b>Guardar</b>]  │<br>
+      └──────────────────────────┘
+    </div>
+  </div>
+</div>
+
+<h2>7.3 Completar y Eliminar Tareas</h2>
+<h4>Completar una tarea:</h4>
+<ol class="steps">
+  <li>Toca el <b>círculo vacío (○)</b> a la izquierda del nombre de la tarea.</li>
+  <li>La tarea se tachará y se moverá a la sección "Completadas". Ganarás puntos automáticamente.</li>
+  <li>Para <b>deshacer</b>, toca el círculo relleno (✓) de la tarea completada.</li>
+</ol>
+<h4>Eliminar una tarea completada:</h4>
+<ol class="steps">
+  <li>Desliza la tarea <b>hacia la izquierda</b> (swipe). Aparecerá un fondo rojo con un ícono de papelera 🗑️.</li>
+  <li>Suelta para confirmar la eliminación. La tarea se elimina con soft-delete (el tutor aún puede verla).</li>
+</ol>
+<h4>Editar una tarea:</h4>
+<ol class="steps">
+  <li>Mantén presionada la tarea (<b>long-press</b> por 1 segundo).</li>
+  <li>Aparece un menú con las opciones <b>"Editar"</b> y <b>"Eliminar"</b>.</li>
+  <li>Toca "Editar", modifica los datos y guarda.</li>
+</ol>
+
+<div class="note">
+  <b>Nota sobre tareas del tutor:</b> Las tareas agregadas por tu tutor muestran el badge <span class="badge badge-green">Tutor</span>. Puedes marcarlas como completadas, pero el tutor también las verá desde su panel.
+</div>
+
+<h2>7.4 Tareas por Categoría (Estudios / Hogar / Medicamentos)</h2>
+<p>Desde la pantalla de inicio, toca los botones de acceso rápido para ir directamente a la categoría:</p>
+
+<div class="screens-row">
+  <div class="screen-placeholder" style="min-height:200px; width:200px;">
+    <span class="screen-title"><img src="file:///d:/ProyectosFlutter/Organizate/assets/icons/Estudios.png" style="width:28px; vertical-align:middle; border:none;"/> Estudios</span>
+    <div class="elements">
+      Lista de tareas con<br>ícono de libro naranja 📚<br><br>
+      FAB naranja "+"<br>
+      Long-press → Editar/Eliminar<br>
+      Botón "Hecho" / "Deshacer"
+    </div>
+  </div>
+  <div class="screen-placeholder" style="min-height:200px; width:200px;">
+    <span class="screen-title"><img src="file:///d:/ProyectosFlutter/Organizate/assets/icons/Hogar.png" style="width:28px; vertical-align:middle; border:none;"/> Hogar</span>
+    <div class="elements">
+      Lista de tareas con<br>ícono de escoba verde 🏠<br><br>
+      FAB verde "+"<br>
+      Long-press → Editar/Eliminar<br>
+      Botón "Hecho" / "Deshacer"
+    </div>
+  </div>
+  <div class="screen-placeholder" style="min-height:200px; width:200px;">
+    <span class="screen-title"><img src="file:///d:/ProyectosFlutter/Organizate/assets/icons/Meds.png" style="width:28px; vertical-align:middle; border:none;"/> Medicamentos</span>
+    <div class="elements">
+      Lista de tareas con<br>ícono de píldora roja 💊<br><br>
+      FAB rojo "+"<br>
+      Long-press → Editar/Eliminar<br>
+      Botón "Hecho" / "Deshacer"
+    </div>
+  </div>
+</div>
+
+<p>Las pantallas de categoría funcionan igual que la pantalla de tareas general, pero con el filtro pre-aplicado y el color de la categoría correspondiente.</p>
+
+<!-- ══════════════════════════════════════════════════════════════
+     8. TABLERO DE PICTOGRAMAS
+══════════════════════════════════════════════════════════════ -->
+<h1>8. Tablero de Pictogramas (Mi Día)</h1>
+
+<p>El tablero de pictogramas es una herramienta de Comunicación Aumentativa y Alternativa (CAA). Muestra imágenes simbólicas que, al tocarlas, reproducen una voz en español. Es especialmente útil para personas con TEA que se comunican mediante imágenes.</p>
+
+<div class="screens-row">
+  <div class="screen-placeholder" style="min-height:440px; width:260px;">
+    <span class="screen-title">🖼️ Mi Día — Tablero</span>
+    <div class="elements">
+      ┌───────────────────────────┐<br>
+      │ [🆘SOS] MI DÍA [🔧][➕][⏱] │<br>
+      ├───────────────────────────┤<br>
+      │ MI RUTINA │ COMIDA │ EMOCIONES │ ACCIONES │<br>
+      ├───────────────────────────┤<br>
+      │ ┌──────┐  ┌──────┐  ┌──────┐ │<br>
+      │ │Ducha │  │Desa- │  │Mochi-│ │<br>
+      │ │ SVG  │  │yuno  │  │ la   │ │<br>
+      │ └──────┘  └──────┘  └──────┘ │<br>
+      │ ┌──────┐  ┌──────┐  ┌──────┐ │<br>
+      │ │Cepill│  │Lonch-│  │Estu- │ │<br>
+      │ │dient.│  │era   │  │diar  │ │<br>
+      │ └──────┘  └──────┘  └──────┘ │<br>
+      ├───────────────────────────┤<br>
+      │    [🔴 AYUDA 🔴]            │<br>
+      └───────────────────────────┘
+    </div>
+  </div>
+</div>
+
+<h2>8.1 Usar Pictogramas para Comunicarse</h2>
+<ol class="steps">
+  <li>Toca el ícono <b>🖼️ Pictogramas</b> en la barra de navegación inferior.</li>
+  <li>Selecciona la <b>pestaña</b> que corresponde a lo que quieres comunicar:
+    <ul>
+      <li><b>MI RUTINA</b> — actividades del día (Mañana, Tarde, Noche)</li>
+      <li><b>COMIDA</b> — desayuno, almuerzo, once, etc.</li>
+      <li><b>EMOCIONES</b> — feliz, cansado, estoy bien, etc.</li>
+      <li><b>ACCIONES</b> — ducha, lavar manos, estudiar, pasear, etc.</li>
+    </ul>
+  </li>
+  <li><b>Toca el pictograma</b> que quieres usar. El teléfono:
+    <ul>
+      <li>Reproducirá el texto en voz alta (TTS en español)</li>
+      <li>Vibrará brevemente para confirmar</li>
+      <li>Registrará el uso en el historial de actividad</li>
+    </ul>
+  </li>
+  <li>Para decir <b>"Necesito ayuda"</b>, toca el botón rojo grande <b>AYUDA</b> en la parte inferior.</li>
+</ol>
+
+<div class="note">
+  <b>Contador de transición (⏱):</b> El arco circular en la esquina superior derecha muestra el tiempo restante para el siguiente bloque del día (Mañana → Tarde → Noche). Cambia de color: verde (mucho tiempo) → amarillo (pronto) → rojo (casi). Tócalo para ver cuántos minutos quedan.
+</div>
+
+<h3>Personalizar el texto de voz de un pictograma</h3>
+<ol class="steps">
+  <li>Mantén presionado un pictograma por <b>5 segundos</b> (verás una barra de progreso circular).</li>
+  <li>Aparece un diálogo para <b>editar el texto</b> que se leerá en voz alta.</li>
+  <li>Modifica el texto y toca <b>"Guardar"</b>. El cambio solo afecta a tu perfil.</li>
+</ol>
+
+<h2>8.2 Crear un Pictograma Personalizado</h2>
+<p>Puedes agregar tus propias imágenes como pictogramas personalizados con tu propia voz.</p>
+
+<ol class="steps">
+  <li>Toca el ícono <b>➕ (agregar foto)</b> en la esquina superior derecha del tablero.</li>
+  <li>Aparece un panel (hoja deslizante). Selecciona la fuente de imagen:
+    <ul>
+      <li><b>Cámara</b> — toma una foto nueva</li>
+      <li><b>Galería</b> — elige una foto existente</li>
+    </ul>
+  </li>
+  <li>La app abrirá el <b>editor de recorte</b>. Ajusta la imagen para que quede cuadrada (1:1) y toca Confirmar.</li>
+  <li>Escribe el <b>nombre del pictograma</b> (ej: "MI PERRO").</li>
+  <li>Escribe <b>qué dirá la voz</b> al tocarlo (ej: "Quiero ver a mi perro").</li>
+  <li>Selecciona la <b>categoría</b>: Personalizado, Mañana, Tarde, Noche, Comida, Emociones o Acciones.</li>
+  <li>Toca <b>"Guardar Pictograma"</b>. Mientras se sube la imagen verás un spinner. Al terminar, el nuevo pictograma aparece en el tablero.</li>
+</ol>
+
+<div class="screens-row">
+  <div class="screen-placeholder" style="min-height:320px; width:260px;">
+    <span class="screen-title">➕ Crear Pictograma</span>
+    <div class="elements">
+      [Ícono cámara] <b>Crear Pictograma</b><br><br>
+      ┌──────────┐  ┌──────────┐<br>
+      │  📷       │  │  🖼️       │<br>
+      │  Cámara   │  │  Galería  │<br>
+      └──────────┘  └──────────┘<br><br>
+      ┌────────────────┐<br>
+      │  [Vista previa]│ ← imagen 160×160<br>
+      └────────────────┘<br><br>
+      [  Nombre del pictograma  ]<br>
+      [  Qué dirá la voz...    ]<br><br>
+      [Personalizado][Mañana][Tarde]<br>
+      [Noche][Comida][Emociones][Acciones]<br><br>
+      [    <b>Guardar Pictograma</b>    ]
+    </div>
+  </div>
+</div>
+
+<h2>8.3 Administrar Pictogramas</h2>
+<ol class="steps">
+  <li>Toca el ícono <b>🔧 (tune)</b> en la barra superior del tablero.</li>
+  <li>Verás todos los pictogramas del banco con opciones para:
+    <ul>
+      <li><b>Ocultar/Mostrar</b>: toca el ícono 👁 en la esquina superior derecha de cada tarjeta</li>
+      <li><b>Cambiar categoría</b>: toca el chip de categoría → elige la nueva categoría en el menú</li>
+    </ul>
+  </li>
+  <li>Los pictogramas ocultos se muestran con texto tachado y opacidad reducida.</li>
+  <li>Un punto azul indica que el pictograma tiene configuración personalizada.</li>
+  <li>Para volver a los valores originales, toca el botón <b>"Restablecer"</b> (rojo, esquina superior derecha).</li>
+</ol>
+
+<h2>8.4 Botón SOS y Emergencia</h2>
+<ol class="steps">
+  <li>Toca el botón rojo <b>SOS</b> en la esquina superior izquierda del tablero de pictogramas.</li>
+  <li>Aparece un diálogo con el <b>nombre y teléfono del contacto de emergencia</b> configurado.</li>
+  <li>Toca <b>"Llamar"</b> para realizar la llamada de emergencia directamente.</li>
+</ol>
+
+<div class="warning">
+  <b>Importante:</b> Para que el botón SOS funcione, primero configura el contacto de emergencia en <b>Ajustes → Contacto de emergencia</b>. Si no hay contacto configurado, el botón mostrará un aviso.
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     9. MÓDULO DE FOCO
+══════════════════════════════════════════════════════════════ -->
+<h1>9. Módulo de Foco (Pomodoro)</h1>
+
+<p>La técnica Pomodoro divide el trabajo en bloques de tiempo con descansos, lo que ayuda especialmente a personas con TDAH a mantener el foco sin agotarse.</p>
+
+<div class="screens-row">
+  <div class="screen-placeholder" style="min-height:460px; width:260px;">
+    <span class="screen-title"><img src="file:///d:/ProyectosFlutter/Organizate/assets/icons/Foco.png" style="width:22px; vertical-align:middle; border:none;"/> Pantalla de Foco</span>
+    <div class="elements">
+      ┌──────────────────────────┐<br>
+      │       <b>Foco</b>  ⭐🔥        │<br>
+      ├──────────────────────────┤<br>
+      │         25:00            │<br>
+      │    ◉ (anillo 260px)      │<br>
+      │                          │<br>
+      │ [5min][15min][25min][50m]│<br>
+      │                          │<br>
+      │     [▶] [⏸] [↺]          │<br>
+      ├──────────────────────────┤<br>
+      │ 🌬️ RESPIRACIÓN GUIADA    │<br>
+      │  "Inhala 4s · Mantén 4s  │<br>
+      │   · Exhala 6s"           │<br>
+      │  [○ círculo animado ○]   │<br>
+      │  Inhala... (cuenta: 4)   │<br>
+      │   [    Iniciar    ]      │<br>
+      ├──────────────────────────┤<br>
+      │ TAREAS DE FOCO           │<br>
+      │ ○ Preparar presentación  │<br>
+      │ ✓ Leer capítulo 3        │<br>
+      └──────────────────────────┘
+    </div>
+  </div>
+</div>
+
+<h2>9.1 Usar el Temporizador Pomodoro</h2>
+<ol class="steps">
+  <li>Toca el ícono <b>Foco</b> <img src="file:///d:/ProyectosFlutter/Organizate/assets/icons/Foco.png" style="width:18px; vertical-align:middle; border:none;"/> en la barra de navegación inferior.</li>
+  <li><b>Selecciona la duración</b> tocando uno de los chips: <b>5 min</b>, <b>15 min</b>, <b>25 min</b> o <b>50 min</b>.</li>
+  <li>Toca el botón <b>▶ (Play)</b> para iniciar el temporizador. El anillo circular irá llenándose a medida que pasa el tiempo.</li>
+  <li>Si necesitas pausar, toca <b>⏸ (Pausa)</b>. Para reanudar, toca ▶ nuevamente.</li>
+  <li>Para reiniciar el conteo, toca <b>↺ (Reiniciar)</b>.</li>
+  <li>Al terminar el tiempo, escucharás una señal de campana (🔔) y el teléfono vibrará. Simple registrará la sesión y sumará minutos a tu progreso.</li>
+</ol>
+
+<div class="tip">
+  <b>Técnica recomendada:</b> Trabaja 25 minutos → descansa 5 minutos → repite. Cada 4 ciclos, toma un descanso largo de 15 minutos.
+</div>
+
+<h2>9.2 Ejercicio de Respiración Guiada</h2>
+<p>Cuando el estrés o la ansiedad dificultan el foco, usa el ejercicio de respiración:</p>
+<ol class="steps">
+  <li>En la pantalla de Foco, desplázate hacia abajo para ver la sección <b>"Respiración Guiada"</b>.</li>
+  <li>Toca <b>"Iniciar"</b>. Verás un círculo que se expande y contrae con el ritmo de la respiración.</li>
+  <li>Sigue las instrucciones animadas en pantalla:
+    <ul>
+      <li><b>Inhala</b> durante 4 segundos (círculo se expande)</li>
+      <li><b>Mantén</b> durante 4 segundos (círculo estable)</li>
+      <li><b>Exhala</b> durante 6 segundos (círculo se contrae)</li>
+    </ul>
+  </li>
+  <li>Repite el ciclo hasta sentirte más tranquilo. Toca el botón nuevamente para detener.</li>
+</ol>
+
+<!-- ══════════════════════════════════════════════════════════════
+     10. PROGRESO
+══════════════════════════════════════════════════════════════ -->
+<h1>10. Progreso y Estadísticas</h1>
+
+<p>La pantalla de Progreso muestra en tiempo real cómo estás avanzando. Accede desde el ícono <img src="file:///d:/ProyectosFlutter/Organizate/assets/icons/Progreso.png" style="width:18px; vertical-align:middle; border:none;"/> (o desde el panel del tutor para ver a un paciente).</p>
+
+<div class="screens-row">
+  <div class="screen-placeholder" style="min-height:440px; width:260px;">
+    <span class="screen-title"><img src="file:///d:/ProyectosFlutter/Organizate/assets/icons/Progreso.png" style="width:18px; vertical-align:middle; border:none;"/> Mi Progreso</span>
+    <div class="elements">
+      ┌──────────────────────────┐<br>
+      │ ⭐1200  🔥3  ⏱️8ses  🕐120m │<br>
+      │   (tarjeta azul gradiente)│<br>
+      ├──────────────────────────┤<br>
+      │ TAREAS POR CATEGORÍA      │<br>
+      │ [▊▊▊▊▊] Estudios  12      │<br>
+      │ [▊▊▊  ] Hogar      6      │<br>
+      │ [▊▊   ] Meds       4      │<br>
+      │ [▊▊▊▊ ] Foco      10      │<br>
+      │ [▊    ] General    2      │<br>
+      ├──────────────────────────┤<br>
+      │ USO DE PICTOGRAMAS        │<br>
+      │    [◉ gráfico circular]   │<br>
+      │ ■ Acciones 40%            │<br>
+      │ ■ Emociones 30%           │<br>
+      ├──────────────────────────┤<br>
+      │ MINUTOS FOCO (semana)     │<br>
+      │ /\  /\                    │<br>
+      │/  \/  \___ Lun-Dom        │<br>
+      └──────────────────────────┘
+    </div>
+  </div>
+</div>
+
+<p><b>Métricas en la tarjeta resumen:</b></p>
+<table>
+  <tr><th>Ícono</th><th>Métrica</th><th>Significado</th></tr>
+  <tr><td>⭐ Puntos</td><td>Total acumulado</td><td>Ganas puntos completando tareas y sesiones Pomodoro</td></tr>
+  <tr><td>🔥 Racha</td><td>Días consecutivos</td><td>Días seguidos que has completado al menos una tarea</td></tr>
+  <tr><td>⏱️ Sesiones</td><td>Sesiones Pomodoro</td><td>Número total de temporizadores completados</td></tr>
+  <tr><td>🕐 Minutos</td><td>Minutos de foco</td><td>Total de minutos de concentración registrados</td></tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════════
+     11. SÚPER EXPERTO
+══════════════════════════════════════════════════════════════ -->
+<h1>11. Súper Experto — Asistente de Inteligencia Artificial</h1>
+
+<p>El <b>Súper Experto</b> usa inteligencia artificial (Google Gemini) para dividir una tarea compleja en pasos pequeños y manejables. Es ideal para cuando una tarea parece imposible de empezar.</p>
+
+<div class="screens-row">
+  <div class="screen-real">
+    <img src="file:///d:/ProyectosFlutter/Organizate/flutter_01.png" alt="Súper Experto - captura real de la app"/>
+    <span class="caption">Pantalla real del Súper Experto (captura de la aplicación)</span>
+  </div>
+</div>
+
+<ol class="steps">
+  <li><b>Abre el Súper Experto</b> tocando el FAB morado ✨ en la pantalla de inicio, o la tarjeta "Súper Experto" que aparece en la parte central.</li>
+  <li><b>Selecciona la tarea</b> que quieres desglosar del menú desplegable. Solo aparecen tus tareas pendientes.</li>
+  <li><b>Elige cuánto tiempo tienes</b> tocando uno de los chips:
+    <ul>
+      <li>30 minutos</li>
+      <li>1 hora</li>
+      <li>Medio día</li>
+      <li>Todo el día</li>
+      <li>Una semana</li>
+    </ul>
+  </li>
+  <li>Toca el botón morado <b>"✨ Generar Plan"</b>. Verás una animación de carga mientras la IA procesa.</li>
+  <li>La IA generará entre <b>3 y 7 pasos</b>, cada uno con un número, título descriptivo y tiempo estimado.</li>
+  <li>Si el plan te parece bien, toca <b>"Guardar subtareas en Tareas"</b> (botón verde). Los pasos se agregan automáticamente a tu lista de tareas de Foco.</li>
+</ol>
+
+<div class="tip">
+  <b>Ejemplo:</b> Para la tarea "Preparar presentación del proyecto", el Súper Experto podría generar:
+  <ol>
+    <li>Buscar información en internet sobre el tema (20 min)</li>
+    <li>Hacer un esquema de los puntos principales (15 min)</li>
+    <li>Crear las diapositivas en PowerPoint (45 min)</li>
+    <li>Revisar ortografía y diseño (15 min)</li>
+    <li>Ensayar la presentación (30 min)</li>
+  </ol>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     12. AJUSTES Y PERFIL
+══════════════════════════════════════════════════════════════ -->
+<h1>12. Ajustes y Perfil</h1>
+
+<p>Accede a Ajustes tocando el ícono <b>👤 Perfil</b> en la barra de navegación inferior.</p>
+
+<div class="screens-row">
+  <div class="screen-placeholder" style="min-height:480px; width:260px;">
+    <span class="screen-title">&#9881;&#65039; Ajustes</span>
+    <div class="elements">
+      ┌──────────────────────────┐<br>
+      │ [foto/avatar]            │<br>
+      │ <b>Nombre de Usuario</b>       │<br>
+      │ usuario@email.com        │<br>
+      │ [chip: Usuario]          │<br>
+      ├──────────────────────────┤<br>
+      │ VINCULACIÓN CON TUTOR    │<br>
+      │ [Código de 6 caracteres] │<br>
+      ├──────────────────────────┤<br>
+      │ PANTALLAS DE NAVEGACIÓN  │<br>
+      ├──────────────────────────┤<br>
+      │ CONTACTO DE EMERGENCIA   │<br>
+      │ [Nombre]  [Teléfono]     │<br>
+      ├──────────────────────────┤<br>
+      │ NOTIFICACIONES           │<br>
+      │ [🔔 Activar recordatorios│<br>
+      ├──────────────────────────┤<br>
+      │ FOCO                     │<br>
+      │ [Sonido] [Vibración]     │<br>
+      ├──────────────────────────┤<br>
+      │ BACKUP GOOGLE DRIVE      │<br>
+      │ [Sincronizar] [Restaurar]│<br>
+      ├──────────────────────────┤<br>
+      │ [🔴 Cerrar sesión]       │<br>
+      └──────────────────────────┘
+    </div>
+  </div>
+</div>
+
+<h2>12.1 Editar Nombre y Foto de Perfil</h2>
+<ol class="steps">
+  <li>Toca la <b>foto o avatar circular</b> en la parte superior de Ajustes. Aparecerán dos opciones.</li>
+  <li>Para cambiar la foto: <b>"Subir desde galería"</b> → elige una foto → se recorta automáticamente en círculo.</li>
+  <li>Para cambiar el avatar: <b>"Elegir avatar"</b> → aparece una cuadrícula con los 8 avatares disponibles.</li>
+  <li>Para cambiar el nombre: toca el ícono de <b>lápiz ✏️</b> junto a tu nombre → escribe el nuevo nombre → guarda.</li>
+  <li>Para cambiar el rol: toca el ícono de <b>lápiz ✏️</b> junto al chip de rol → confirma el cambio → volverás a la selección de roles.</li>
+</ol>
+
+<h2>12.2 Contacto de Emergencia</h2>
+<ol class="steps">
+  <li>En Ajustes, desplázate a la sección <b>"Contacto de emergencia"</b>.</li>
+  <li>Escribe el <b>nombre</b> del contacto en el primer campo.</li>
+  <li>Escribe el <b>número de teléfono</b> en el segundo campo.</li>
+  <li>Toca <b>"Guardar"</b>. Este contacto aparecerá en el botón SOS del tablero de pictogramas.</li>
+</ol>
+
+<h2>12.3 Notificaciones</h2>
+<ol class="steps">
+  <li>En Ajustes, sección <b>"Notificaciones"</b>.</li>
+  <li>Activa o desactiva el switch de <b>"Activar recordatorios"</b>.</li>
+  <li>Elige el <b>tiempo de anticipación</b> del recordatorio en el menú desplegable (15 min, 30 min, 1 hora).</li>
+  <li>Toca <b>"Optimizar entrega"</b> para que el sistema configure los permisos de notificación del dispositivo.</li>
+  <li>Toca <b>"Probar notificación"</b> para verificar que funcione.</li>
+</ol>
+
+<h2>12.4 Backup en Google Drive</h2>
+<ol class="steps">
+  <li>En Ajustes, sección <b>"Backup"</b>.</li>
+  <li>Toca <b>"Sincronizar con Google Drive"</b> para guardar una copia de respaldo en tu cuenta de Google.</li>
+  <li>Toca <b>"Restaurar desde Drive"</b> si necesitas recuperar datos de un respaldo anterior.</li>
+  <li>Puedes ver la fecha y hora del <b>último respaldo</b> en esta misma sección.</li>
+</ol>
+
+<div class="warning">
+  <b>Importante:</b> Para usar el backup, debes haber iniciado sesión con tu cuenta de Google (ya sea directamente o a través de Google Sign-In).
+</div>
+
+<h2>12.5 Configurar Pestañas de Navegación</h2>
+<ol class="steps">
+  <li>En Ajustes, toca la sección <b>"Pantallas de navegación"</b>.</li>
+  <li>Verás 5 switches, uno por cada pestaña de la barra inferior.</li>
+  <li>Activa o desactiva las pestañas que quieres ver. <b>Debe quedar al menos una activa.</b></li>
+  <li>Los cambios se aplican inmediatamente en la barra de navegación.</li>
+</ol>
+
+<div class="note">
+  <b>Nota:</b> Si tienes un tutor vinculado, esta sección mostrará un candado 🔒. Solo el tutor puede cambiar qué pestañas están visibles desde su panel de control.
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     13. VINCULACIÓN TUTOR-USUARIO
+══════════════════════════════════════════════════════════════ -->
+<h1>13. Vinculación Tutor–Usuario</h1>
+
+<p>La vinculación conecta a un usuario con su tutor para que el tutor pueda supervisar y apoyar de forma remota. Es un proceso sencillo de dos pasos: el tutor genera un código y el usuario lo ingresa.</p>
+
+<div class="screens-row">
+  <div class="screen-placeholder" style="min-height:260px; width:240px;">
+    <span class="screen-title">&#128273; TUTOR: Generar código</span>
+    <div class="elements">
+      ┌────────────────────────┐<br>
+      │ [ícono QR]             │<br>
+      │ <b>Generar código</b>         │<br>
+      │ de invitación          │<br>
+      │ El código expira en 7d │<br>
+      │ [  <b>Generar código</b>  ]   │<br>
+      ├────────────────────────┤<br>
+      │ Tu código:             │<br>
+      │  <b>A B 3 F 7 X</b>         │<br>
+      │  [Copiar al portapap.] │<br>
+      │  Válido por 7 días     │<br>
+      └────────────────────────┘
+    </div>
+  </div>
+  <div class="screen-placeholder" style="min-height:260px; width:240px;">
+    <span class="screen-title">&#128274; USUARIO: Ingresar código</span>
+    <div class="elements">
+      ┌────────────────────────┐<br>
+      │  VINCULACIÓN           │<br>
+      │  ¿Tienes un código     │<br>
+      │  de tu tutor?          │<br>
+      │                        │<br>
+      │  [ A B 3 F 7 X ] 🔍   │<br>
+      │                        │<br>
+      │ ┌────────────────────┐ │<br>
+      │ │ Tutor: Juan García │ │<br>
+      │ │ juan@email.com     │ │<br>
+      │ │  [Aceptar y vincul]│ │<br>
+      │ └────────────────────┘ │<br>
+      └────────────────────────┘
+    </div>
+  </div>
+</div>
+
+<h2>13.1 Desde el Lado del Usuario: Ingresar Código</h2>
+<ol class="steps">
+  <li>Ve a <b>Ajustes → Vinculación con tutor</b>. También puedes llegar por la sección de vinculación en el formulario de Ajustes.</li>
+  <li>Escribe el <b>código de 6 caracteres</b> que te dio tu tutor en el campo de texto (letras y números, mayúsculas).</li>
+  <li>Toca el ícono de <b>lupa 🔍</b> o el botón de validación. Simple verificará el código en la nube.</li>
+  <li>Aparecerá una tarjeta con los datos de tu tutor (nombre y correo). <b>Verifica que sea tu tutor</b>.</li>
+  <li>Toca <b>"Aceptar y vincular"</b>. La vinculación es inmediata y bidireccional.</li>
+  <li>Verás una tarjeta verde confirmando que estás vinculado con tu tutor.</li>
+</ol>
+
+<h2>13.2 Desde el Lado del Tutor: Generar Código</h2>
+<ol class="steps">
+  <li>En el panel del tutor, ve a <b>Ajustes → Vinculación</b> o toca el ícono de configuración.</li>
+  <li>Toca <b>"Generar código"</b> (botón en la tarjeta con ícono QR).</li>
+  <li>Un código único de 6 caracteres aparecerá en la tarjeta azul.</li>
+  <li>Toca el ícono de <b>copiar 📋</b> para copiarlo al portapapeles.</li>
+  <li><b>Comparte el código</b> con el usuario por el medio que prefieras (mensaje, WhatsApp, en persona).</li>
+  <li>El código expira en <b>7 días</b>. Si pasa ese tiempo, genera uno nuevo.</li>
+</ol>
+
+<!-- ══════════════════════════════════════════════════════════════
+     14. PANEL DEL TUTOR
+══════════════════════════════════════════════════════════════ -->
+<h1>14. Panel del Tutor</h1>
+
+<p>Cuando eliges el rol de <b>Tutor</b>, la pantalla principal es el panel de supervisión. Si tienes múltiples pacientes vinculados, el nombre en la barra superior es tocable para cambiar entre ellos.</p>
+
+<div class="screens-row">
+  <div class="screen-placeholder" style="min-height:380px; width:280px;">
+    <span class="screen-title">&#128101; Panel del Tutor</span>
+    <div class="elements">
+      ┌─────────────────────────────┐<br>
+      │ [foto] <b>Nombre Paciente ▼</b> ⚙️  │<br>
+      ├─────────────────────────────┤<br>
+      │ Tareas │ Pictog │ Progr │ Hist │ Ajust │<br>
+      ├─────────────────────────────┤<br>
+      │ (contenido según pestaña)   │<br>
+      │                             │<br>
+      │                             │<br>
+      │                             │<br>
+      └─────────────────────────────┘
+    </div>
+  </div>
+</div>
+
+<h2>14.1 Pestaña Tareas del Paciente</h2>
+<p>Gestión completa de tareas del usuario desde el panel del tutor:</p>
+<ul>
+  <li><b>Pendientes:</b> Tareas activas. Las que agregaste tú muestran el badge "Tutor".</li>
+  <li><b>Completadas:</b> Tareas marcadas como hechas por el usuario.</li>
+  <li><b>Eliminadas:</b> Tareas que el usuario eliminó (soft-delete). Solo visible para el tutor.</li>
+</ul>
+<ol class="steps">
+  <li>Toca el <b>FAB "Agregar tarea"</b> para agregar una tarea al usuario.</li>
+  <li>Escribe el nombre y selecciona la categoría con los chips de colores.</li>
+  <li>Toca <b>"Agregar"</b>. La tarea aparecerá inmediatamente en el teléfono del usuario.</li>
+  <li>Para eliminar una tarea, desliza hacia la izquierda (swipe).</li>
+</ol>
+
+<h2>14.2 Pestaña Pictogramas</h2>
+<ul>
+  <li>Ve todos los <b>pictogramas personalizados</b> del paciente en un grid.</li>
+  <li>Toca el FAB naranja para <b>organizar</b> los pictogramas (abre el administrador).</li>
+  <li>Toca el FAB azul para <b>agregar</b> un nuevo pictograma al usuario (elige entre los predefinidos o crea uno).</li>
+</ul>
+
+<h2>14.3 Pestaña Progreso</h2>
+<p>Muestra los mismos gráficos que ve el usuario, pero con los datos del paciente seleccionado:</p>
+<ul>
+  <li>Tarjeta resumen: Puntos, Racha, Sesiones Pomodoro, Minutos de foco</li>
+  <li>Gráfico de barras: tareas completadas por categoría</li>
+  <li>Gráfico circular: uso de pictogramas</li>
+  <li>Gráfico de líneas: minutos de foco de la semana</li>
+</ul>
+
+<h2>14.4 Pestaña Historial</h2>
+<p>Registro de las últimas 100 acciones del usuario, codificadas por color:</p>
+<table>
+  <tr><th>Color</th><th>Tipo de evento</th></tr>
+  <tr><td><span class="badge badge-green">Verde</span></td><td>Tarea completada</td></tr>
+  <tr><td><span class="badge badge-blue">Azul</span></td><td>Sesión Pomodoro terminada</td></tr>
+  <tr><td><span class="badge badge-purple">Morado</span></td><td>Pictograma usado</td></tr>
+  <tr><td><span class="badge badge-orange">Naranja</span></td><td>Puntos ganados</td></tr>
+  <tr><td><span class="badge badge-red">Rojo</span></td><td>Tarea eliminada</td></tr>
+</table>
+
+<h2>14.5 Pestaña Ajustes del Paciente</h2>
+<p>El tutor puede configurar el entorno del paciente de forma remota:</p>
+<ul>
+  <li><b>Feature flags (5 switches):</b> Activa o desactiva funciones específicas de la app para ese usuario.</li>
+  <li><b>Contacto de emergencia:</b> El tutor puede configurar directamente el nombre y teléfono del contacto SOS del usuario.</li>
+</ul>
+
+<div class="note">
+  <b>Nota:</b> Los cambios en Ajustes del Paciente se aplican en tiempo real. El usuario verá los cambios la próxima vez que abra la sección afectada.
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     15. PREGUNTAS FRECUENTES
+══════════════════════════════════════════════════════════════ -->
+<h1>15. Preguntas Frecuentes</h1>
+
+<table>
+  <tr><th>Pregunta</th><th>Respuesta</th></tr>
+  <tr>
+    <td><b>¿Puedo usar Simple sin internet?</b></td>
+    <td>Parcialmente. El temporizador Pomodoro y la respiración guiada funcionan sin conexión. Las tareas, pictogramas y sincronización requieren internet.</td>
+  </tr>
+  <tr>
+    <td><b>¿Puedo tener más de un tutor?</b></td>
+    <td>Actualmente Simple está optimizado para una vinculación principal. El tutor puede ver múltiples pacientes, pero cada usuario tiene un tutor principal.</td>
+  </tr>
+  <tr>
+    <td><b>¿Puedo cambiar mi rol de Usuario a Tutor?</b></td>
+    <td>Sí. Ve a Ajustes → toca el lápiz junto al rol → confirma. Perderás el acceso a las funciones de usuario (tareas propias, pictogramas personales).</td>
+  </tr>
+  <tr>
+    <td><b>¿Se pierden mis datos si desinstalo la app?</b></td>
+    <td>No. Todos los datos se guardan en la nube (Firebase). Al volver a instalar e iniciar sesión, todo estará igual. Para mayor seguridad, usa la función de Backup en Google Drive.</td>
+  </tr>
+  <tr>
+    <td><b>¿Por qué el Súper Experto no funciona?</b></td>
+    <td>El Súper Experto requiere internet y conexión al servicio de IA. Si hay un error, aparecerá un mensaje en rojo. Intenta de nuevo o verifica tu conexión.</td>
+  </tr>
+  <tr>
+    <td><b>¿Cómo desvinculo a mi tutor?</b></td>
+    <td>Ve a Ajustes → Vinculación. Si ya tienes tutor vinculado, verás su tarjeta. El tutor también puede desvincular desde su panel tocando el ícono de desconexión junto a tu nombre.</td>
+  </tr>
+  <tr>
+    <td><b>¿El código de vinculación puede usarse más de una vez?</b></td>
+    <td>No. Cada código se usa una sola vez. Si necesitas vincular a otro usuario, el tutor debe generar un código nuevo.</td>
+  </tr>
+  <tr>
+    <td><b>¿Puedo agregar mis propias imágenes?</b></td>
+    <td>Sí. Desde el Tablero de Pictogramas → ícono ➕ → selecciona desde Cámara o Galería → recorta y personaliza el texto de voz.</td>
+  </tr>
+  <tr>
+    <td><b>¿Cómo recupero mi contraseña?</b></td>
+    <td>En la pantalla de Login, toca "¿Olvidaste tu contraseña?" → ingresa tu correo → recibirás un enlace de recuperación por email.</td>
+  </tr>
+  <tr>
+    <td><b>¿Los puntos y la racha se pierden?</b></td>
+    <td>Los puntos se acumulan permanentemente. La racha se reinicia si pasas un día completo sin completar ninguna tarea.</td>
+  </tr>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════════
+     16. GLOSARIO
+══════════════════════════════════════════════════════════════ -->
+<h1>16. Glosario</h1>
+
+<table>
+  <tr><th>Término</th><th>Definición</th></tr>
+  <tr><td><b>TEA</b></td><td>Trastorno del Espectro Autista. Condición del neurodesarrollo que afecta la comunicación y el comportamiento social.</td></tr>
+  <tr><td><b>TDAH</b></td><td>Trastorno de Déficit Atencional con Hiperactividad. Condición que dificulta la concentración, la organización y el control de impulsos.</td></tr>
+  <tr><td><b>Prótesis cognitiva</b></td><td>Herramienta digital que compensa o apoya funciones cognitivas como la memoria, la planificación o la comunicación.</td></tr>
+  <tr><td><b>Pictograma</b></td><td>Imagen simbólica que representa una acción, objeto o emoción. Se usa en CAA para facilitar la comunicación.</td></tr>
+  <tr><td><b>CAA</b></td><td>Comunicación Aumentativa y Alternativa. Sistema de comunicación que complementa o reemplaza el habla mediante imágenes, gestos u otros medios.</td></tr>
+  <tr><td><b>TTS</b></td><td>Text-To-Speech (Texto a Voz). Tecnología que convierte texto escrito en audio hablado.</td></tr>
+  <tr><td><b>Pomodoro</b></td><td>Técnica de gestión del tiempo que divide el trabajo en bloques de 25 minutos con descansos cortos.</td></tr>
+  <tr><td><b>Racha</b></td><td>Contador de días consecutivos en que el usuario ha completado al menos una tarea o actividad en Simple.</td></tr>
+  <tr><td><b>Soft-delete</b></td><td>Eliminación "suave" en la que el elemento no se borra permanentemente sino que se marca como eliminado, permitiendo al tutor seguir viéndolo.</td></tr>
+  <tr><td><b>FAB</b></td><td>Floating Action Button (Botón de Acción Flotante). Botón circular que flota sobre el contenido de la pantalla para la acción más importante.</td></tr>
+  <tr><td><b>Tutor</b></td><td>En Simple: cuidador, padre, docente o persona de apoyo que supervisa y apoya al usuario con TEA/TDAH.</td></tr>
+  <tr><td><b>Firebase</b></td><td>Plataforma de Google que gestiona la autenticación, base de datos en la nube y almacenamiento de imágenes de Simple.</td></tr>
+  <tr><td><b>Gemini</b></td><td>Modelo de inteligencia artificial de Google usado por el Súper Experto para descomponer tareas.</td></tr>
+  <tr><td><b>Backup</b></td><td>Copia de respaldo de los datos del usuario almacenada en Google Drive.</td></tr>
+  <tr><td><b>SOS</b></td><td>Botón de emergencia del tablero de pictogramas que permite llamar al contacto de emergencia configurado.</td></tr>
+</table>
+
+<br><br>
+<div style="text-align:center; padding:40px 0; border-top: 2px solid #D0E3F7; color:#888; font-size:9pt;">
+  <img src="file:///d:/ProyectosFlutter/Organizate/assets/images/Simple.png" style="width:50px; height:50px; opacity:0.6; border:none;"/><br><br>
+  <b>Simple — Manual de Usuario v1.0.0</b><br>
+  Neftali Arriagada — Defensa de Título, Analista Programador — 2026<br>
+  Diseñado con ❤ para personas con TEA y TDAH
+</div>
+
+</body>
+</html>

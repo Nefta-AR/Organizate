@@ -14,7 +14,7 @@
 // ============================================================
 
 import 'package:flutter/material.dart';
-import '../../tutor_dashboard/screens/home_screen.dart';
+import '../../onboarding/screens/feature_tour_screen.dart';
 
 /// Pantalla de recompensa al completar el onboarding inicial.
 class WelcomeRewardScreen extends StatelessWidget {
@@ -48,7 +48,7 @@ class WelcomeRewardScreen extends StatelessWidget {
               ElevatedButton(
                 onPressed: () => Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (_) => const HomeScreen()),
+                  MaterialPageRoute(builder: (_) => const FeatureTourScreen()),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0099FF),

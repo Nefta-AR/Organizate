@@ -86,6 +86,7 @@ flutter:
     - assets/avatars/
     - assets/icons/
     - assets/images/Simple.png
+    - assets/images/logosimple.png
     - assets/sounds/
     - assets/images/pictogramas/
     - .env

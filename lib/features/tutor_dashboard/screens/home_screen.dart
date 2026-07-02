@@ -87,12 +87,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       bottomNavigationBar: const CustomNavBar(screen: NavScreen.inicio),
       appBar: _buildAppBar(),
-      floatingActionButton: FloatingActionButton.large(
+      floatingActionButton: FloatingActionButton(
         onPressed: () => SuperExpertoSheet.show(context),
         backgroundColor: const Color(0xFF7B93A3),
         foregroundColor: Colors.white,
         tooltip: 'Súper Experto',
-        child: const Icon(Icons.auto_fix_high, size: 32),
+        child: const Icon(Icons.auto_fix_high, size: 24),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       body: _buildBody(),
