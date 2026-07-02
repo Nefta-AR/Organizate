@@ -380,6 +380,8 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
 | 30 Jun | Badges de urgencia en tareas | Nuevo helper `task_urgency_helper.dart` con estados HOY/MAÑANA/DESPUÉS/ATRASADA; aplicado en tarjeta prioritaria de HomeScreen y lista de TareasScreen | Fase 6 |
 | 30 Jun | Promo card de Súper Experto | Nueva tarjeta en HomeScreen que invoca `SuperExpertoSheet` para dividir tareas grandes con IA | Fase 6 |
 | 30 Jun | Corrección de sintaxis en `VinculacionTutorScreen` | Se agrega paréntesis faltante en `createState()` detectado por el analyzer (`missing_method_parameters`) | Fase 6 |
+| 01 Jul | Botón SOS de pictogramas reemplazado | Se cambia el botón rojo "SOS" del AppBar de `PantallaPacienteTEA` por el ícono `health_and_safety` con el mismo comportamiento de `HomeScreen` (`handleEmergencyContactAction`); se elimina `_showSosDialog` y dependencia directa de `url_launcher` | Fase 6 |
+| 01 Jul | Fix parámetros `$fields` en Google Drive service | Se corrige `\$fields:` a `$fields:` en `google_drive_service.dart`; el escape con backslash era inválido en código Dart y rompía `assembleRelease` | Fase 6 |
 
 ---
 
