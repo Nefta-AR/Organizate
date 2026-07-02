@@ -34,6 +34,7 @@ import 'package:flutter/services.dart';
 
 import '../../../core/services/pictogram_service.dart';
 import '../../../core/theme/app_theme.dart';
+import 'pictogram_crop_page.dart';
 
 class CrearPictogramaSheet extends StatefulWidget {
   const CrearPictogramaSheet({super.key});
@@ -115,16 +116,16 @@ class _CrearPictogramaSheetState extends State<CrearPictogramaSheet> {
       // Si el usuario canceló la selección (null), no hacemos nada
       if (picked == null) return;
 
-      // Abrimos image_cropper para forzar el recorte en relación de aspecto 1:1.
-      // Los pictogramas siempre deben ser cuadrados para que se vean bien en el tablero.
-      final cropped = await PictogramService.cropImage(imagePath: picked.path);
+      // Cropper Flutter puro: respeta SafeArea, no usa UCrop nativo.
+      if (!mounted) return;
+      final croppedFile = await PictogramCropPage.show(context, File(picked.path));
 
-      // Si el usuario canceló el recorte, tampoco hacemos nada
-      if (cropped == null) return;
+      // Si el usuario canceló el recorte, no hacemos nada
+      if (croppedFile == null) return;
 
       setState(() {
-        _imagenSeleccionada = File(cropped.path); // Guardamos el archivo recortado
-        _error = ''; // Limpiamos cualquier error previo al seleccionar nueva imagen
+        _imagenSeleccionada = croppedFile;
+        _error = '';
       });
 
       // Autorrelleno inteligente: si los campos están vacíos,

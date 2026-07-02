@@ -393,7 +393,10 @@ class _TutorTasksTabState extends State<_TutorTasksTab> {
 
   Future<void> _addTask() async {
     final textCtrl = TextEditingController();
+    final noteCtrl = TextEditingController();
     String selectedCat = 'General';
+    bool repeatEnabled = false;
+    String recurrence = 'daily';
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -441,6 +444,39 @@ class _TutorTasksTabState extends State<_TutorTasksTab> {
                   );
                 }).toList(),
               ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: noteCtrl,
+                decoration: InputDecoration(
+                  hintText: 'Nota para el usuario (opcional)',
+                  hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400),
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.sticky_note_2_outlined, size: 18),
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                ),
+                maxLines: 2,
+                maxLength: 120,
+              ),
+              SwitchListTile.adaptive(
+                title: const Text('Repetir tarea', style: TextStyle(fontSize: 14)),
+                value: repeatEnabled,
+                onChanged: (v) => setS(() => repeatEnabled = v),
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+              ),
+              if (repeatEnabled)
+                DropdownButtonFormField<String>(
+                  initialValue: recurrence,
+                  decoration: const InputDecoration(
+                      labelText: 'Frecuencia', border: OutlineInputBorder()),
+                  items: const [
+                    DropdownMenuItem(value: 'daily', child: Text('Diaria')),
+                    DropdownMenuItem(value: 'weekly', child: Text('Semanal')),
+                    DropdownMenuItem(value: 'monthly', child: Text('Mensual')),
+                  ],
+                  onChanged: (v) => setS(() => recurrence = v ?? 'daily'),
+                ),
             ],
           ),
           actions: [
@@ -458,15 +494,19 @@ class _TutorTasksTabState extends State<_TutorTasksTab> {
     );
 
     if (confirmed == true && textCtrl.text.trim().isNotEmpty) {
+      final note = noteCtrl.text.trim();
       await _tasksRef.add({
         'text': textCtrl.text.trim(),
         'category': selectedCat,
         'done': false,
         'createdAt': FieldValue.serverTimestamp(),
         'addedByTutor': true,
+        if (note.isNotEmpty) 'note': note,
+        if (repeatEnabled) 'recurrence': recurrence,
       });
     }
     textCtrl.dispose();
+    noteCtrl.dispose();
   }
 
   @override
@@ -908,6 +948,9 @@ class _TutorHistorialTab extends StatelessWidget {
         SliverToBoxAdapter(
           child: _StatsCard(patientId: patientId),
         ),
+        SliverToBoxAdapter(
+          child: _DailySummaryCard(patientId: patientId),
+        ),
         StreamBuilder<List<Map<String, dynamic>>>(
           stream: ActivityLogService.getStream(patientId),
           builder: (context, snap) {
@@ -996,6 +1039,149 @@ class _TutorHistorialTab extends StatelessWidget {
               ),
             );
           },
+        ),
+      ],
+    );
+  }
+}
+
+// ─── TARJETA RESUMEN DEL DÍA ─────────────────────────────────────────────────
+
+class _DailySummaryCard extends StatelessWidget {
+  final String patientId;
+  const _DailySummaryCard({required this.patientId});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: ActivityLogService.getStream(patientId),
+      builder: (context, snap) {
+        // Mientras carga, ocupa espacio mínimo para no saltar el layout
+        if (!snap.hasData) return const SizedBox(height: 8);
+
+        final today = DateTime.now();
+        final todayLogs = snap.data!.where((log) {
+          final ts = log['timestamp'] as Timestamp?;
+          if (ts == null) return false;
+          final d = ts.toDate();
+          return d.year == today.year &&
+              d.month == today.month &&
+              d.day == today.day;
+        }).toList();
+
+        final tasks = todayLogs
+            .where((l) => l['type'] == ActivityType.taskCompleted)
+            .length;
+        final pictos = todayLogs
+            .where((l) => l['type'] == ActivityType.pictogramUsed)
+            .length;
+        final minutes = todayLogs
+            .where((l) => l['type'] == ActivityType.pomodoroCompleted)
+            .fold<int>(0, (sum, l) {
+          final meta = l['metadata'] as Map<String, dynamic>?;
+          return sum + ((meta?['minutes'] as num?)?.toInt() ?? 0);
+        });
+
+        return Container(
+          margin: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEBF2FF),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFB8D0F5)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.today_rounded,
+                      size: 15, color: Color(0xFF3D6BAD)),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Hoy · ${DateFormat('d \'de\' MMMM', 'es_ES').format(today)}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF3D6BAD),
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _MetricItem(
+                    value: tasks,
+                    label: 'tareas',
+                    icon: Icons.check_circle_rounded,
+                    color: Colors.green.shade600,
+                  ),
+                  Container(width: 1, height: 36, color: const Color(0xFFB8D0F5)),
+                  _MetricItem(
+                    value: pictos,
+                    label: 'pictogramas',
+                    icon: Icons.record_voice_over_rounded,
+                    color: Colors.teal.shade600,
+                  ),
+                  Container(width: 1, height: 36, color: const Color(0xFFB8D0F5)),
+                  _MetricItem(
+                    value: minutes,
+                    label: 'min foco',
+                    icon: Icons.timer_rounded,
+                    color: Colors.deepOrange.shade500,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _MetricItem extends StatelessWidget {
+  final int value;
+  final String label;
+  final IconData icon;
+  final Color color;
+
+  const _MetricItem({
+    required this.value,
+    required this.label,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(icon, size: 15, color: color),
+            const SizedBox(width: 5),
+            Text(
+              '$value',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: color,
+                height: 1,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 3),
+        Text(
+          label,
+          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
         ),
       ],
     );

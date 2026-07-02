@@ -314,6 +314,147 @@ function isFatalError(error: unknown): boolean {
 const firestore = admin.firestore();
 const messaging = admin.messaging();
 
+// ─────────────────────────────────────────────────────────────
+// CLOUD FUNCTION: notifyTutorOnTaskComplete
+// ─────────────────────────────────────────────────────────────
+
+export const recreateRecurringTask = functionsV1.firestore
+  .document('users/{userId}/tasks/{taskId}')
+  .onUpdate(async (change, context) => {
+    const before = change.before.data() as Record<string, unknown> | undefined;
+    const after = change.after.data() as Record<string, unknown> | undefined;
+
+    // Solo cuando done cambia false → true en una tarea recurrente
+    if (before?.done === true || after?.done !== true) return null;
+    const recurrence = after?.recurrence as string | undefined;
+    if (!recurrence) return null;
+
+    const { userId } = context.params as { userId: string };
+
+    // Calcular la próxima fecha de vencimiento
+    let nextDue: admin.firestore.Timestamp | undefined;
+    const currentDue = after.dueDate as admin.firestore.Timestamp | undefined;
+    if (currentDue) {
+      const d = currentDue.toDate();
+      if (recurrence === 'daily') d.setDate(d.getDate() + 1);
+      else if (recurrence === 'weekly') d.setDate(d.getDate() + 7);
+      else if (recurrence === 'monthly') d.setMonth(d.getMonth() + 1);
+      nextDue = admin.firestore.Timestamp.fromDate(d);
+    }
+
+    const newTask: Record<string, unknown> = {
+      text: after.text,
+      category: after.category,
+      done: false,
+      recurrence,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      ...(after.iconName != null ? { iconName: after.iconName } : {}),
+      ...(after.colorName != null ? { colorName: after.colorName } : {}),
+      ...(after.addedByTutor === true ? { addedByTutor: true } : {}),
+      ...(after.note ? { note: after.note } : {}),
+      ...(after.reminderMinutes != null ? { reminderMinutes: after.reminderMinutes } : {}),
+      ...(nextDue ? { dueDate: nextDue } : {}),
+    };
+
+    await firestore
+      .collection('users')
+      .doc(userId)
+      .collection('tasks')
+      .add(newTask);
+
+    return null;
+  });
+
+export const notifyTutorOnTaskComplete = functionsV1.firestore
+  .document('users/{userId}/tasks/{taskId}')
+  .onUpdate(async (change, context) => {
+    const before = change.before.data() as { done?: boolean; text?: string } | undefined;
+    const after = change.after.data() as { done?: boolean; text?: string } | undefined;
+
+    // Solo actuar cuando done cambia de false → true
+    if (before?.done === true || after?.done !== true) return null;
+
+    const { userId } = context.params as { userId: string };
+    const taskText = after?.text ?? 'una tarea';
+
+    // Obtener nombre del usuario
+    const userSnap = await firestore.collection('users').doc(userId).get();
+    const userData = userSnap.data() as { name?: string } | undefined;
+    const userName = userData?.name ?? 'Tu estudiante';
+
+    // Obtener tutores vinculados
+    const tutorsSnap = await firestore
+      .collection('users')
+      .doc(userId)
+      .collection('linkedTutors')
+      .get();
+
+    if (tutorsSnap.empty) return null;
+
+    const invalidCodes = new Set([
+      'messaging/registration-token-not-registered',
+      'messaging/invalid-registration-token',
+      'messaging/mismatched-credential',
+      'messaging/invalid-argument',
+    ]);
+
+    const jobs = tutorsSnap.docs.map(async (tutorDoc) => {
+      const tutorId = tutorDoc.id;
+      const tutorSnap = await firestore.collection('users').doc(tutorId).get();
+      const tutorData = tutorSnap.data() as { fcmTokens?: unknown[] } | undefined;
+
+      const tokens = Array.isArray(tutorData?.fcmTokens)
+        ? (tutorData!.fcmTokens as unknown[]).filter(
+            (t): t is string => typeof t === 'string' && t.trim().length > 0,
+          )
+        : [];
+
+      if (tokens.length === 0) return;
+
+      const title = `✅ ${userName} completó una tarea`;
+      const body = taskText;
+
+      const message: admin.messaging.MulticastMessage = {
+        tokens,
+        notification: { title, body },
+        data: { userId, type: 'task_completed' },
+        android: {
+          priority: 'high',
+          notification: { channelId: 'tareas_channel' },
+        },
+        apns: {
+          payload: {
+            aps: {
+              contentAvailable: true,
+              sound: 'default',
+              alert: { title, body },
+            },
+          },
+        },
+      };
+
+      const response = await messaging.sendEachForMulticast(message);
+
+      const invalidTokens = response.responses
+        .map((resp, idx) =>
+          !resp.success && resp.error && invalidCodes.has(resp.error.code)
+            ? tokens[idx]
+            : null,
+        )
+        .filter((t): t is string => !!t);
+
+      if (invalidTokens.length) {
+        await firestore.collection('users').doc(tutorId).set(
+          { fcmTokens: admin.firestore.FieldValue.arrayRemove(...invalidTokens) },
+          { merge: true },
+        );
+      }
+    });
+
+    await Promise.all(jobs);
+    return null;
+  });
+
 const QUEUE_COLLECTION = 'notificationQueue';
 const MAX_PER_RUN = 50;
 

@@ -35,6 +35,7 @@ import 'package:simple/core/utils/reminder_helper.dart';
 import 'package:simple/core/utils/reminder_options.dart';
 import 'package:simple/core/utils/task_urgency_helper.dart';
 import 'package:simple/core/widgets/custom_nav_bar.dart';
+import 'package:simple/core/widgets/celebration_overlay.dart';
 
 class TareasScreen extends StatefulWidget {
   const TareasScreen({super.key});
@@ -285,6 +286,8 @@ class _TareasScreenState extends State<TareasScreen> {
             final isDone = data['done'] as bool? ?? false;
             final reminderMinutes = extractReminderMinutes(data);
             final addedByTutor = data['addedByTutor'] == true;
+            final tutorNote = data['note'] as String?;
+            final recurrence = data['recurrence'] as String?;
 
             return Dismissible(
               key: ValueKey(taskId),
@@ -308,6 +311,8 @@ class _TareasScreenState extends State<TareasScreen> {
                   dueDate: dueDate,
                   isDone: isDone,
                   addedByTutor: addedByTutor,
+                  tutorNote: tutorNote,
+                  recurrence: recurrence,
                   onToggle: () => _toggleTask(taskId, isDone),
                 ),
               ),
@@ -326,6 +331,8 @@ class _TareasScreenState extends State<TareasScreen> {
     required VoidCallback onToggle,
     Timestamp? dueDate,
     bool addedByTutor = false,
+    String? tutorNote,
+    String? recurrence,
   }) {
     final color = _colorOf(category);
     final icon = _iconOf(category);
@@ -366,23 +373,57 @@ class _TareasScreenState extends State<TareasScreen> {
                   isDone ? TextDecoration.lineThrough : TextDecoration.none,
             ),
           ),
-          subtitle: (dueDate != null || addedByTutor)
-              ? Row(
+          subtitle: (dueDate != null || addedByTutor || recurrence != null || (tutorNote != null && tutorNote.isNotEmpty))
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (addedByTutor) ...[
-                      const Icon(Icons.person_pin, size: 12, color: Colors.blue),
-                      const SizedBox(width: 3),
-                      const Text('Tutor',
-                          style: TextStyle(fontSize: 11, color: Colors.blue)),
-                      if (dueDate != null) const SizedBox(width: 8),
+                    if (tutorNote != null && tutorNote.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.sticky_note_2_outlined, size: 12, color: Colors.blue.shade300),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              tutorNote,
+                              style: TextStyle(fontSize: 12, color: Colors.blue.shade400, fontStyle: FontStyle.italic),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
-                    if (dueDate != null) ...[
-                      buildTaskUrgencyBadge(dueDate.toDate()) ??
-                          const SizedBox.shrink(),
-                      const SizedBox(width: 8),
-                      Text(
-                        _dateFormatter.format(dueDate.toDate()),
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                    if (dueDate != null || addedByTutor || recurrence != null) ...[
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          if (addedByTutor) ...[
+                            const Icon(Icons.person_pin, size: 12, color: Colors.blue),
+                            const SizedBox(width: 3),
+                            const Text('Tutor',
+                                style: TextStyle(fontSize: 11, color: Colors.blue)),
+                            if (dueDate != null || recurrence != null) const SizedBox(width: 8),
+                          ],
+                          if (dueDate != null) ...[
+                            buildTaskUrgencyBadge(dueDate.toDate()) ??
+                                const SizedBox.shrink(),
+                            const SizedBox(width: 8),
+                            Text(
+                              _dateFormatter.format(dueDate.toDate()),
+                              style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                            ),
+                          ],
+                          if (recurrence != null) ...[
+                            if (dueDate != null) const SizedBox(width: 8),
+                            Icon(Icons.repeat_rounded, size: 12, color: Colors.teal.shade500),
+                            const SizedBox(width: 2),
+                            Text(
+                              _recurrenceLabel(recurrence),
+                              style: TextStyle(fontSize: 11, color: Colors.teal.shade500),
+                            ),
+                          ],
+                        ],
                       ),
                     ],
                   ],
@@ -426,6 +467,8 @@ class _TareasScreenState extends State<TareasScreen> {
     try {
       await batch.commit();
       if (!isDone) {
+        // Celebración: confeti + sonido + vibración
+        if (mounted) CelebrationOverlay.show(context);
         // Cancela el recordatorio local para que no llegue una notificación
         // de una tarea que el usuario ya marcó como hecha.
         await ReminderDispatcher.cancelTaskReminder(
@@ -495,6 +538,8 @@ class _TareasScreenState extends State<TareasScreen> {
     String? selectedCat = _selectedCategory ?? 'General';
     DateTime? selectedDate;
     bool isSaving = false;
+    bool repeatEnabled = false;
+    String recurrence = 'daily';
     final defaultReminder = await fetchDefaultReminderMinutes(_userDocRef);
     int? selectedReminder = defaultReminder;
     if (!screenContext.mounted) return;
@@ -511,6 +556,36 @@ class _TareasScreenState extends State<TareasScreen> {
                 decoration: const InputDecoration(hintText: 'Descripción'),
                 autofocus: true,
               ),
+              if (_suggestionsFor(selectedCat).isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: _suggestionsFor(selectedCat).map((s) =>
+                      ActionChip(
+                        label: Text(s, style: const TextStyle(fontSize: 12)),
+                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        backgroundColor: _colorOf(selectedCat ?? 'General')
+                            .withValues(alpha: 0.10),
+                        side: BorderSide(
+                          color: _colorOf(selectedCat ?? 'General')
+                              .withValues(alpha: 0.35),
+                        ),
+                        onPressed: () {
+                          ctrl.text = s;
+                          ctrl.selection = TextSelection.fromPosition(
+                            TextPosition(offset: s.length),
+                          );
+                          setDlg(() {});
+                        },
+                      ),
+                    ).toList(),
+                  ),
+                ),
+              ],
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 initialValue: selectedCat,
@@ -558,6 +633,26 @@ class _TareasScreenState extends State<TareasScreen> {
                     .toList(),
                 onChanged: (v) => setDlg(() => selectedReminder = v),
               ),
+              const SizedBox(height: 4),
+              SwitchListTile.adaptive(
+                title: const Text('Repetir', style: TextStyle(fontSize: 14)),
+                value: repeatEnabled,
+                onChanged: (v) => setDlg(() => repeatEnabled = v),
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+              ),
+              if (repeatEnabled)
+                DropdownButtonFormField<String>(
+                  initialValue: recurrence,
+                  decoration: const InputDecoration(
+                      labelText: 'Frecuencia', border: OutlineInputBorder()),
+                  items: const [
+                    DropdownMenuItem(value: 'daily', child: Text('Diaria')),
+                    DropdownMenuItem(value: 'weekly', child: Text('Semanal')),
+                    DropdownMenuItem(value: 'monthly', child: Text('Mensual')),
+                  ],
+                  onChanged: (v) => setDlg(() => recurrence = v ?? 'daily'),
+                ),
             ]),
           ),
           actions: [
@@ -582,6 +677,7 @@ class _TareasScreenState extends State<TareasScreen> {
                           'done': false,
                           'createdAt': Timestamp.now(),
                           'reminderMinutes': selectedReminder,
+                          if (repeatEnabled) 'recurrence': recurrence,
                           if (selectedDate != null)
                             'dueDate': Timestamp.fromDate(selectedDate!),
                         };
@@ -795,6 +891,32 @@ class _TareasScreenState extends State<TareasScreen> {
         ),
       ),
     );
+  }
+
+  static String _recurrenceLabel(String r) {
+    switch (r) {
+      case 'daily': return 'Diaria';
+      case 'weekly': return 'Semanal';
+      case 'monthly': return 'Mensual';
+      default: return r;
+    }
+  }
+
+  static List<String> _suggestionsFor(String? cat) {
+    switch (cat) {
+      case 'Estudios':
+        return ['Leer capítulo', 'Hacer tarea de matemáticas', 'Estudiar para el examen', 'Repasar apuntes'];
+      case 'Hogar':
+        return ['Ordenar habitación', 'Lavar los platos', 'Hacer la cama', 'Sacar la basura'];
+      case 'Meds':
+        return ['Tomar medicamento de la mañana', 'Tomar medicamento de la tarde', 'Tomar medicamento de la noche'];
+      case 'Foco':
+        return ['Sesión Pomodoro', '10 min de meditación', 'Respiración profunda'];
+      case 'General':
+        return ['Revisar correo', 'Llamada pendiente', 'Compra semanal'];
+      default:
+        return [];
+    }
   }
 
   Color _colorOf(String cat) {

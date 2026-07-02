@@ -333,6 +333,7 @@ class _PantallaUsuarioTEAState extends State<PantallaUsuarioTEA>
 
   String? _emergencyName;
   String? _emergencyPhone;
+  bool _silentMode = false;
 
   bool _transicionNotificada = false;
 
@@ -358,6 +359,7 @@ class _PantallaUsuarioTEAState extends State<PantallaUsuarioTEA>
         setState(() {
           _emergencyName  = data['emergencyName']  as String?;
           _emergencyPhone = data['emergencyPhone'] as String?;
+          _silentMode     = data['pictogramSilentMode'] as bool? ?? false;
         });
       });
     }
@@ -448,6 +450,18 @@ class _PantallaUsuarioTEAState extends State<PantallaUsuarioTEA>
     );
   }
 
+  Future<void> _toggleSilentMode() async {
+    final newVal = !_silentMode;
+    setState(() => _silentMode = newVal);
+    if (_silentMode) await _tts.stop();
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .update({'pictogramSilentMode': newVal});
+  }
+
   Future<void> _hablar(String texto) async {
     await _tts.stop();
     await _tts.speak(texto);
@@ -456,7 +470,7 @@ class _PantallaUsuarioTEAState extends State<PantallaUsuarioTEA>
   void _hablarPictograma(PictogramaDisplay picto) {
     HapticFeedback.lightImpact();
     final texto = _localOverrides[picto.id] ?? picto.textoTts;
-    _hablar(texto);
+    if (!_silentMode) _hablar(texto);
     ActivityLogService.log(
       type: ActivityType.pictogramUsed,
       description: 'Pictograma usado: "${picto.etiqueta}"',
@@ -648,6 +662,14 @@ class _PantallaUsuarioTEAState extends State<PantallaUsuarioTEA>
           ),
           actions: [
             IconButton(
+              icon: Icon(
+                _silentMode ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                color: _silentMode ? Colors.orange.shade600 : null,
+              ),
+              tooltip: _silentMode ? 'Modo silencioso activo (toca para activar voz)' : 'Silenciar voz',
+              onPressed: _toggleSilentMode,
+            ),
+            IconButton(
               icon: const Icon(Icons.tune_rounded),
               tooltip: 'Organizar pictogramas',
               onPressed: _abrirManager,
@@ -740,7 +762,10 @@ class _PantallaUsuarioTEAState extends State<PantallaUsuarioTEA>
       child: SizedBox(
         width: double.infinity,
         child: ElevatedButton.icon(
-          onPressed: () => _hablar('Necesito ayuda, por favor'),
+          onPressed: () {
+            HapticFeedback.mediumImpact();
+            if (!_silentMode) _hablar('Necesito ayuda, por favor');
+          },
           style: ElevatedButton.styleFrom(
             backgroundColor: colors.errorContainer,
             foregroundColor: colors.onErrorContainer,

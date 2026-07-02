@@ -22,6 +22,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import 'package:simple/features/onboarding/screens/estudios_screen.dart';
@@ -36,8 +37,10 @@ import 'package:simple/core/utils/emergency_contact_helper.dart';
 import 'package:simple/core/utils/reminder_helper.dart';
 import 'package:simple/core/utils/reminder_options.dart';
 import 'package:simple/core/utils/task_urgency_helper.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple/features/onboarding/screens/super_experto_sheet.dart';
 import 'package:simple/core/widgets/custom_nav_bar.dart';
+import 'package:simple/core/widgets/celebration_overlay.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -79,6 +82,42 @@ class _HomeScreenState extends State<HomeScreen> {
     return _motivationalPhrases[index];
   }
 
+  // ── FAB arrastrable ───────────────────────────────────────────────────────
+  Offset _fabOffset = Offset.zero;
+  bool _fabReady = false;       // true después de calcular posición inicial
+  Offset? _dragOrigin;          // posición del FAB cuando inicia el drag
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFabPosition();
+  }
+
+  Future<void> _loadFabPosition() async {
+    final prefs = await SharedPreferences.getInstance();
+    final dx = prefs.getDouble('fab_dx');
+    final dy = prefs.getDouble('fab_dy');
+    if (dx != null && dy != null) {
+      if (mounted) setState(() { _fabOffset = Offset(dx, dy); _fabReady = true; });
+    } else {
+      // Primera vez: posición por defecto tras el primer frame (necesitamos el tamaño de pantalla)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final size = MediaQuery.of(context).size;
+        setState(() {
+          _fabOffset = Offset(size.width / 2 - 28, size.height - 160);
+          _fabReady = true;
+        });
+      });
+    }
+  }
+
+  Future<void> _saveFabPosition() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('fab_dx', _fabOffset.dx);
+    await prefs.setDouble('fab_dy', _fabOffset.dy);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_currentUser == null) {
@@ -87,15 +126,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       bottomNavigationBar: const CustomNavBar(screen: NavScreen.inicio),
       appBar: _buildAppBar(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => SuperExpertoSheet.show(context),
-        backgroundColor: const Color(0xFF7B93A3),
-        foregroundColor: Colors.white,
-        tooltip: 'Súper Experto',
-        child: const Icon(Icons.auto_fix_high, size: 24),
+      body: Stack(
+        children: [
+          _buildBody(),
+          if (_fabReady) _buildDraggableFab(),
+        ],
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      body: _buildBody(),
     );
   }
 
@@ -654,6 +690,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Solo al COMPLETAR (no al descompletar) se cancela el recordatorio y se actualiza la racha.
     if (!isDone) {
+      // Celebración: confeti + sonido + vibración
+      if (mounted) CelebrationOverlay.show(context, message: '¡Tarea completada! 🎉 +10 pts');
       try {
         await ReminderDispatcher.cancelTaskReminder(
             userDocRef: _userDocRef, taskId: taskId);
@@ -669,6 +707,52 @@ class _HomeScreenState extends State<HomeScreen> {
         debugPrint('No se pudo actualizar la racha: $error');
       }
     }
+  }
+
+  Widget _buildDraggableFab() {
+    final size = MediaQuery.of(context).size;
+    return Positioned(
+      left: _fabOffset.dx,
+      top: _fabOffset.dy,
+      child: GestureDetector(
+        // Tap normal → abre Súper Experto
+        onTap: () => SuperExpertoSheet.show(context),
+        // Long press → activa modo arrastre con feedback háptico
+        onLongPressStart: (_) {
+          HapticFeedback.mediumImpact();
+          _dragOrigin = _fabOffset;
+        },
+        // Actualiza posición mientras se arrastra (limitada a bordes de pantalla)
+        onLongPressMoveUpdate: (details) {
+          if (_dragOrigin == null) return;
+          setState(() {
+            _fabOffset = Offset(
+              (_dragOrigin!.dx + details.offsetFromOrigin.dx)
+                  .clamp(0, size.width - 56),
+              (_dragOrigin!.dy + details.offsetFromOrigin.dy)
+                  .clamp(0, size.height - 100),
+            );
+          });
+        },
+        // Al soltar: limpia el origen y guarda la posición
+        onLongPressEnd: (_) {
+          _dragOrigin = null;
+          _saveFabPosition();
+        },
+        child: AnimatedScale(
+          scale: _dragOrigin != null ? 1.15 : 1.0,
+          duration: const Duration(milliseconds: 180),
+          child: FloatingActionButton(
+            onPressed: null, // manejado por GestureDetector
+            backgroundColor: const Color(0xFF7B93A3),
+            foregroundColor: Colors.white,
+            tooltip: 'Súper Experto\n(mantén presionado para mover)',
+            elevation: _dragOrigin != null ? 10 : 6,
+            child: const Icon(Icons.auto_fix_high, size: 24),
+          ),
+        ),
+      ),
+    );
   }
 
   void _showTaskOptionsDialog(
