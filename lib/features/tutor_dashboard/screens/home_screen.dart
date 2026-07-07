@@ -41,6 +41,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple/features/onboarding/screens/super_experto_sheet.dart';
 import 'package:simple/core/widgets/custom_nav_bar.dart';
 import 'package:simple/core/widgets/celebration_overlay.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
+import 'package:simple/core/services/tour_service.dart';
+import 'package:simple/core/widgets/tour_step_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -87,10 +90,16 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _fabReady = false;       // true después de calcular posición inicial
   Offset? _dragOrigin;          // posición del FAB cuando inicia el drag
 
+  final _greetingTourKey    = GlobalKey();
+  final _taskCardTourKey    = GlobalKey();
+  final _superExpertoTourKey = GlobalKey();
+  final _fabTourKey         = GlobalKey();
+
   @override
   void initState() {
     super.initState();
     _loadFabPosition();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _initHomeTourIfNeeded());
   }
 
   Future<void> _loadFabPosition() async {
@@ -242,11 +251,11 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildGreeting(name),
+              KeyedSubtree(key: _greetingTourKey, child: _buildGreeting(name)),
               const SizedBox(height: 28),
-              _buildPriorityTaskCard(),
+              KeyedSubtree(key: _taskCardTourKey, child: _buildPriorityTaskCard()),
               const SizedBox(height: 24),
-              _buildSuperExpertoPromo(),
+              KeyedSubtree(key: _superExpertoTourKey, child: _buildSuperExpertoPromo()),
               const SizedBox(height: 28),
               _buildQuickAccess(),
             ],
@@ -736,12 +745,109 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _initHomeTourIfNeeded() async {
+    if (!mounted) return;
+    final needed = await TourService.needsHomeTour();
+    if (needed && mounted) {
+      await Future.delayed(const Duration(milliseconds: 1000));
+      if (mounted) _startHomeTour();
+    }
+  }
+
+  void _startHomeTour() {
+    final targets = [
+      TargetFocus(
+        identify: 'greeting',
+        keyTarget: _greetingTourKey,
+        shape: ShapeLightFocus.RRect,
+        radius: 12,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            child: const TourStepCard(
+              icon: Icons.waving_hand_rounded,
+              iconColor: Color(0xFFBFA67A),
+              title: 'Bienvenido/a',
+              body: 'Aquí ves tu saludo personalizado y una frase motivacional que cambia cada día para inspirarte.',
+            ),
+          ),
+        ],
+      ),
+      TargetFocus(
+        identify: 'task_card',
+        keyTarget: _taskCardTourKey,
+        shape: ShapeLightFocus.RRect,
+        radius: 16,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            child: const TourStepCard(
+              icon: Icons.task_alt_rounded,
+              iconColor: Color(0xFF7DA88A),
+              title: 'Tarea Prioritaria',
+              body: 'Tu tarea más urgente aparece aquí. Tócala para marcarla como hecha. Mantén presionado para editarla o eliminarla.',
+            ),
+          ),
+        ],
+      ),
+      TargetFocus(
+        identify: 'super_experto',
+        keyTarget: _superExpertoTourKey,
+        shape: ShapeLightFocus.RRect,
+        radius: 16,
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            child: const TourStepCard(
+              icon: Icons.auto_fix_high_rounded,
+              iconColor: Color(0xFF7C5CBF),
+              title: 'Súper Experto (IA)',
+              body: 'Toca aquí o el botón flotante para activar el asistente de inteligencia artificial. Divide tareas grandes en pasos simples.',
+            ),
+          ),
+        ],
+      ),
+      TargetFocus(
+        identify: 'fab',
+        keyTarget: _fabTourKey,
+        shape: ShapeLightFocus.Circle,
+        contents: [
+          TargetContent(
+            align: ContentAlign.left,
+            child: const TourStepCard(
+              icon: Icons.open_with_rounded,
+              iconColor: Color(0xFF7C5CBF),
+              title: 'Botón Mágico',
+              body: 'Toca para agregar tareas con IA. Mantén presionado y arrastra para mover el botón a donde te resulte más cómodo.',
+            ),
+          ),
+        ],
+      ),
+    ];
+
+    TutorialCoachMark(
+      targets: targets,
+      colorShadow: Colors.black,
+      opacityShadow: 0.82,
+      hideSkip: false,
+      textSkip: 'SALTAR',
+      textStyleSkip: const TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.w700,
+        fontSize: 14,
+      ),
+      onFinish: () => TourService.markHomeTourDone(),
+      onSkip: () { TourService.markHomeTourDone(); return true; },
+    ).show(context: context);
+  }
+
   Widget _buildDraggableFab() {
     final size = MediaQuery.of(context).size;
     return Positioned(
       left: _fabOffset.dx,
       top: _fabOffset.dy,
       child: GestureDetector(
+        key: _fabTourKey,
         // Tap normal → abre Súper Experto
         onTap: () => SuperExpertoSheet.show(context),
         // Long press → activa modo arrastre con feedback háptico

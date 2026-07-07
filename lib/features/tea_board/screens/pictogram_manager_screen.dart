@@ -40,12 +40,14 @@ import 'package:simple/features/tea_board/screens/crear_pictograma_sheet.dart';
 /// Lista de las 6 categorías posibles para clasificar pictogramas.
 /// El tutor las usa desde [_showCategoryPicker] para reasignar un picto.
 const kCategoriasAsignables = [
-  _CatOption('Mañana',   Icons.wb_sunny_rounded,         Color(0xFFFFA726)), // Naranja: actividades matutinas
-  _CatOption('Tarde',    Icons.wb_cloudy_rounded,         Color(0xFF42A5F5)), // Azul claro: actividades vespertinas
-  _CatOption('Noche',    Icons.nights_stay_rounded,       Color(0xFF5C6BC0)), // Azul/índigo: actividades nocturnas
-  _CatOption('Comida',   Icons.restaurant_rounded,        Color(0xFF66BB6A)), // Verde: relacionadas con alimentación
-  _CatOption('Emociones',Icons.emoji_emotions_rounded,    Color(0xFFEC407A)), // Rosa: expresión emocional
-  _CatOption('Acciones', Icons.directions_run_rounded,    Color(0xFF26C6DA)), // Cyan: acciones y actividades
+  _CatOption('Mañana',      Icons.wb_sunny_rounded,          Color(0xFFFFA726)),
+  _CatOption('Tarde',       Icons.wb_cloudy_rounded,         Color(0xFF42A5F5)),
+  _CatOption('Noche',       Icons.nights_stay_rounded,       Color(0xFF5C6BC0)),
+  _CatOption('Comida',      Icons.restaurant_rounded,        Color(0xFF66BB6A)),
+  _CatOption('Emociones',   Icons.emoji_emotions_rounded,    Color(0xFFEC407A)),
+  _CatOption('Acciones',    Icons.directions_run_rounded,    Color(0xFF26C6DA)),
+  _CatOption('Necesidades', Icons.medical_services_rounded,  Color(0xFFEF5350)),
+  _CatOption('Familia',     Icons.family_restroom_rounded,   Color(0xFFAB47BC)),
 ];
 
 /// Modelo de datos de una opción de categoría: etiqueta, ícono y color.
@@ -58,53 +60,72 @@ class _CatOption {
 
 // ─── Banco de pictogramas predeterminados ─────────────────────────────────────
 
-/// Banco de 28 pictogramas SVG incluidos con la app.
+/// Banco de pictogramas incluidos con la app (SVG + imágenes propias).
 ///
-/// - IDs con prefijo `m` → categoría Mañana (rutina de mañana).
-/// - IDs con prefijo `t` → categoría Tarde (rutina vespertina).
-/// - IDs con prefijo `n` → categoría Noche (rutina nocturna).
-/// - IDs con prefijo `c` → categoría Comida (alimentación).
-/// - IDs con prefijo `e` → categoría Emociones (estados emocionales).
-/// - IDs con prefijo `a` → categoría Acciones (acciones genéricas).
-///
-/// Estos IDs son los que se usan como clave en la colección
-/// `pictogramSettings/{pictoId}` en Firestore.
+/// Prefijos de ID: m=Mañana, t=Tarde, n=Noche, c=Comida,
+/// e=Emociones, a=Acciones, nec=Necesidades, per=Familia, sal=Saludos.
+/// Estos IDs se usan como clave en `pictogramSettings/{pictoId}` en Firestore.
 const List<PictoEntry> kBancoBuiltins = [
-  // --- Mañana: rutina de despertar ---
-  PictoEntry(id: 'm1', svgPath: 'assets/images/pictogramas/ducha.svg',           etiqueta: 'DESPERTAR',    defaultCategoria: 'Mañana',    esPersonalizado: false),
-  PictoEntry(id: 'm2', svgPath: 'assets/images/pictogramas/lavar-manos.svg',     etiqueta: 'LAVAR CARA',   defaultCategoria: 'Mañana',    esPersonalizado: false),
-  PictoEntry(id: 'm3', svgPath: 'assets/images/pictogramas/cepillar-dientes.svg',etiqueta: 'DIENTES',      defaultCategoria: 'Mañana',    esPersonalizado: false),
-  PictoEntry(id: 'm4', svgPath: 'assets/images/pictogramas/colegio.svg',          etiqueta: 'COLEGIO',      defaultCategoria: 'Mañana',    esPersonalizado: false),
-  // --- Tarde: actividades del mediodía/tarde ---
-  PictoEntry(id: 't1', svgPath: 'assets/images/pictogramas/almuerzo.svg',         etiqueta: 'ALMORZAR',     defaultCategoria: 'Tarde',     esPersonalizado: false),
-  PictoEntry(id: 't2', svgPath: 'assets/images/pictogramas/computador.svg',       etiqueta: 'TAREAS TECH',  defaultCategoria: 'Tarde',     esPersonalizado: false),
-  PictoEntry(id: 't3', svgPath: 'assets/images/pictogramas/once.svg',             etiqueta: 'MERIENDA',     defaultCategoria: 'Tarde',     esPersonalizado: false),
-  PictoEntry(id: 't4', svgPath: 'assets/images/pictogramas/pasear.svg',           etiqueta: 'JUGAR',        defaultCategoria: 'Tarde',     esPersonalizado: false),
-  // --- Noche: rutina de dormir ---
-  PictoEntry(id: 'n1', svgPath: 'assets/images/pictogramas/desayuno.svg',         etiqueta: 'CENA',         defaultCategoria: 'Noche',     esPersonalizado: false),
-  PictoEntry(id: 'n2', svgPath: 'assets/images/pictogramas/baño.svg',             etiqueta: 'BAÑO',         defaultCategoria: 'Noche',     esPersonalizado: false),
-  PictoEntry(id: 'n3', svgPath: 'assets/images/pictogramas/vestir.svg',           etiqueta: 'PIJAMA',       defaultCategoria: 'Noche',     esPersonalizado: false),
-  PictoEntry(id: 'n4', svgPath: 'assets/images/pictogramas/casa.svg',             etiqueta: 'DORMIR',       defaultCategoria: 'Noche',     esPersonalizado: false),
-  // --- Comida: alimentación e hidratación ---
-  PictoEntry(id: 'c1', svgPath: 'assets/images/pictogramas/beber.svg',            etiqueta: 'AGUA',         defaultCategoria: 'Comida',    esPersonalizado: false),
-  PictoEntry(id: 'c2', svgPath: 'assets/images/pictogramas/mochila.svg',          etiqueta: 'LONCHERA',     defaultCategoria: 'Comida',    esPersonalizado: false),
-  PictoEntry(id: 'c3', svgPath: 'assets/images/pictogramas/comprar.svg',          etiqueta: 'COMPRAR',      defaultCategoria: 'Comida',    esPersonalizado: false),
-  // --- Emociones: expresión y comunicación de estados ---
-  PictoEntry(id: 'e1', svgPath: 'assets/images/pictogramas/feliz.svg',            etiqueta: 'FELIZ',        defaultCategoria: 'Emociones', esPersonalizado: false),
-  PictoEntry(id: 'e2', svgPath: 'assets/images/pictogramas/cansado.svg',          etiqueta: 'CANSADO',      defaultCategoria: 'Emociones', esPersonalizado: false),
-  PictoEntry(id: 'e3', svgPath: 'assets/images/pictogramas/estoy-bien.svg',       etiqueta: 'BIEN',         defaultCategoria: 'Emociones', esPersonalizado: false),
-  PictoEntry(id: 'e4', svgPath: 'assets/images/pictogramas/ayuda.svg',            etiqueta: 'AYUDA',        defaultCategoria: 'Emociones', esPersonalizado: false),
-  PictoEntry(id: 'e5', svgPath: 'assets/images/pictogramas/alto.svg',             etiqueta: 'NO',           defaultCategoria: 'Emociones', esPersonalizado: false),
-  // --- Acciones: actividades y lugares genéricos ---
-  PictoEntry(id: 'a1', svgPath: 'assets/images/pictogramas/calle.svg',            etiqueta: 'SALIR',        defaultCategoria: 'Acciones',  esPersonalizado: false),
-  PictoEntry(id: 'a2', svgPath: 'assets/images/pictogramas/limpiar.svg',          etiqueta: 'LIMPIAR',      defaultCategoria: 'Acciones',  esPersonalizado: false),
-  PictoEntry(id: 'a3', svgPath: 'assets/images/pictogramas/doctor.svg',           etiqueta: 'DOCTOR',       defaultCategoria: 'Acciones',  esPersonalizado: false),
-  PictoEntry(id: 'a4', svgPath: 'assets/images/pictogramas/estudiar.svg',         etiqueta: 'ESTUDIAR',     defaultCategoria: 'Acciones',  esPersonalizado: false),
-  PictoEntry(id: 'a5', svgPath: 'assets/images/pictogramas/libro.svg',            etiqueta: 'LEER',         defaultCategoria: 'Acciones',  esPersonalizado: false),
-  PictoEntry(id: 'a6', svgPath: 'assets/images/pictogramas/detente.svg',          etiqueta: 'DETENTE',      defaultCategoria: 'Acciones',  esPersonalizado: false),
-  PictoEntry(id: 'a7', svgPath: 'assets/images/pictogramas/hospital.svg',         etiqueta: 'HOSPITAL',     defaultCategoria: 'Acciones',  esPersonalizado: false),
-  PictoEntry(id: 'a8', svgPath: 'assets/images/pictogramas/perro.svg',            etiqueta: 'PERRO',        defaultCategoria: 'Acciones',  esPersonalizado: false),
-  PictoEntry(id: 'a9', svgPath: 'assets/images/pictogramas/compras.svg',          etiqueta: 'COMPRAS',      defaultCategoria: 'Acciones',  esPersonalizado: false),
+  // --- Mañana ---
+  PictoEntry(id: 'm1', svgPath: 'assets/images/pictogramas/Ducha.svg',            etiqueta: 'DESPERTAR',    defaultCategoria: 'Mañana',      esPersonalizado: false),
+  PictoEntry(id: 'm2', svgPath: 'assets/images/pictogramas/Lavar Manos.svg',      etiqueta: 'LAVAR CARA',   defaultCategoria: 'Mañana',      esPersonalizado: false),
+  PictoEntry(id: 'm3', svgPath: 'assets/images/pictogramas/Cepillar Dientes.svg', etiqueta: 'DIENTES',      defaultCategoria: 'Mañana',      esPersonalizado: false),
+  PictoEntry(id: 'm4', svgPath: 'assets/images/pictogramas/Colegio.svg',          etiqueta: 'COLEGIO',      defaultCategoria: 'Mañana',      esPersonalizado: false),
+  // --- Tarde ---
+  PictoEntry(id: 't1', svgPath: 'assets/images/pictogramas/Almuerzo.svg',         etiqueta: 'ALMORZAR',     defaultCategoria: 'Tarde',       esPersonalizado: false),
+  PictoEntry(id: 't2', svgPath: 'assets/images/pictogramas/Computador.svg',       etiqueta: 'COMPUTADOR',   defaultCategoria: 'Tarde',       esPersonalizado: false),
+  PictoEntry(id: 't3', svgPath: 'assets/images/pictogramas/Once.svg',             etiqueta: 'MERIENDA',     defaultCategoria: 'Tarde',       esPersonalizado: false),
+  PictoEntry(id: 't4', svgPath: 'assets/images/pictogramas/Pasear.svg',           etiqueta: 'JUGAR',        defaultCategoria: 'Tarde',       esPersonalizado: false),
+  // --- Noche ---
+  PictoEntry(id: 'n1', svgPath: 'assets/images/pictogramas/Desayuno.svg',         etiqueta: 'CENA',         defaultCategoria: 'Noche',       esPersonalizado: false),
+  PictoEntry(id: 'n2', svgPath: 'assets/images/pictogramas/Baño.svg',             etiqueta: 'BAÑO',         defaultCategoria: 'Necesidades', esPersonalizado: false),
+  PictoEntry(id: 'n3', svgPath: 'assets/images/pictogramas/Vestir.svg',           etiqueta: 'PIJAMA',       defaultCategoria: 'Noche',       esPersonalizado: false),
+  PictoEntry(id: 'n4', svgPath: 'assets/images/pictogramas/Casa.svg',             etiqueta: 'DORMIR',       defaultCategoria: 'Noche',       esPersonalizado: false),
+  // --- Comida ---
+  PictoEntry(id: 'c1', svgPath: 'assets/images/pictogramas/Beber.svg',            etiqueta: 'AGUA',         defaultCategoria: 'Comida',      esPersonalizado: false),
+  PictoEntry(id: 'c2', svgPath: 'assets/images/pictogramas/Mochila.svg',          etiqueta: 'LONCHERA',     defaultCategoria: 'Comida',      esPersonalizado: false),
+  // --- Emociones (SVG base) ---
+  PictoEntry(id: 'e1', svgPath: 'assets/images/pictogramas/Feliz.svg',            etiqueta: 'FELIZ',        defaultCategoria: 'Emociones',   esPersonalizado: false),
+  PictoEntry(id: 'e2', svgPath: 'assets/images/pictogramas/Cansado.svg',          etiqueta: 'CANSADO',      defaultCategoria: 'Emociones',   esPersonalizado: false),
+  PictoEntry(id: 'e3', svgPath: 'assets/images/pictogramas/Estoy Bien.svg',       etiqueta: 'BIEN',         defaultCategoria: 'Emociones',   esPersonalizado: false),
+  PictoEntry(id: 'e4', svgPath: 'assets/images/pictogramas/Ayuda.svg',            etiqueta: 'AYUDA',        defaultCategoria: 'Emociones',   esPersonalizado: false),
+  PictoEntry(id: 'e5', svgPath: 'assets/images/pictogramas/Alto.svg',             etiqueta: 'STOP',         defaultCategoria: 'Emociones',   esPersonalizado: false),
+  // --- Acciones ---
+  PictoEntry(id: 'a1', svgPath: 'assets/images/pictogramas/Calle.svg',            etiqueta: 'SALIR',        defaultCategoria: 'Acciones',    esPersonalizado: false),
+  PictoEntry(id: 'a2', svgPath: 'assets/images/pictogramas/Limpiar.svg',          etiqueta: 'LIMPIAR',      defaultCategoria: 'Acciones',    esPersonalizado: false),
+  PictoEntry(id: 'a3', svgPath: 'assets/images/pictogramas/Doctor.svg',           etiqueta: 'DOCTOR',       defaultCategoria: 'Acciones',    esPersonalizado: false),
+  PictoEntry(id: 'a4', svgPath: 'assets/images/pictogramas/Estudiar.svg',         etiqueta: 'ESTUDIAR',     defaultCategoria: 'Acciones',    esPersonalizado: false),
+  PictoEntry(id: 'a5', svgPath: 'assets/images/pictogramas/Libro.svg',            etiqueta: 'LEER',         defaultCategoria: 'Acciones',    esPersonalizado: false),
+  PictoEntry(id: 'a6', svgPath: 'assets/images/pictogramas/Detente.svg',          etiqueta: 'DETENTE',      defaultCategoria: 'Acciones',    esPersonalizado: false),
+  PictoEntry(id: 'a7', svgPath: 'assets/images/pictogramas/Hospital.svg',         etiqueta: 'HOSPITAL',     defaultCategoria: 'Acciones',    esPersonalizado: false),
+  PictoEntry(id: 'a8', svgPath: 'assets/images/pictogramas/Perro.svg',            etiqueta: 'PERRO',        defaultCategoria: 'Acciones',    esPersonalizado: false),
+  PictoEntry(id: 'a9', svgPath: 'assets/images/pictogramas/Compras.svg',          etiqueta: 'COMPRAS',      defaultCategoria: 'Acciones',    esPersonalizado: false),
+  // --- Emociones adicionales (imágenes propias) ---
+  PictoEntry(id: 'e6',  svgPath: 'assets/images/pictogramas/Triste.png',          etiqueta: 'TRISTE',       defaultCategoria: 'Emociones',   esPersonalizado: false),
+  PictoEntry(id: 'e7',  svgPath: 'assets/images/pictogramas/Enojado.jpg',         etiqueta: 'ENOJADO',      defaultCategoria: 'Emociones',   esPersonalizado: false),
+  PictoEntry(id: 'e8',  svgPath: 'assets/images/pictogramas/Asustado.jpg',        etiqueta: 'ASUSTADO',     defaultCategoria: 'Emociones',   esPersonalizado: false),
+  PictoEntry(id: 'e9',  svgPath: 'assets/images/pictogramas/Aburrido.png',        etiqueta: 'ABURRIDO',     defaultCategoria: 'Emociones',   esPersonalizado: false),
+  PictoEntry(id: 'e10', svgPath: 'assets/images/pictogramas/Frustrado.png',       etiqueta: 'FRUSTRADO',    defaultCategoria: 'Emociones',   esPersonalizado: false),
+  PictoEntry(id: 'e11', svgPath: 'assets/images/pictogramas/Ansioso.png',         etiqueta: 'ANSIOSO',      defaultCategoria: 'Emociones',   esPersonalizado: false),
+  PictoEntry(id: 'e12', svgPath: 'assets/images/pictogramas/Solo.png',               etiqueta: 'SOLO/A',   defaultCategoria: 'Emociones',   esPersonalizado: false),
+  // --- Necesidades (imágenes propias) ---
+  PictoEntry(id: 'nec1', svgPath: 'assets/images/pictogramas/Tengo Dolor.png',    etiqueta: 'TENGO DOLOR',  defaultCategoria: 'Necesidades', esPersonalizado: false),
+  PictoEntry(id: 'nec2', svgPath: 'assets/images/pictogramas/Tengo Frío.jpg',     etiqueta: 'TENGO FRÍO',   defaultCategoria: 'Necesidades', esPersonalizado: false),
+  PictoEntry(id: 'nec3', svgPath: 'assets/images/pictogramas/Tengo Calor.png',    etiqueta: 'TENGO CALOR',  defaultCategoria: 'Necesidades', esPersonalizado: false),
+  PictoEntry(id: 'nec4', svgPath: 'assets/images/pictogramas/Estoy Enfermo.jpg',  etiqueta: 'ESTOY ENFERMO',defaultCategoria: 'Necesidades', esPersonalizado: false),
+  PictoEntry(id: 'nec5', svgPath: 'assets/images/pictogramas/Mucho Ruido.png',    etiqueta: 'MUCHO RUIDO',  defaultCategoria: 'Necesidades', esPersonalizado: false),
+  PictoEntry(id: 'nec6', svgPath: 'assets/images/pictogramas/Mucha Luz.jpg',      etiqueta: 'MUCHA LUZ',    defaultCategoria: 'Necesidades', esPersonalizado: false),
+  PictoEntry(id: 'nec7', svgPath: 'assets/images/pictogramas/Descansar.png',      etiqueta: 'DESCANSO',     defaultCategoria: 'Necesidades', esPersonalizado: false),
+  // --- Familia (imágenes propias) ---
+  PictoEntry(id: 'per1', svgPath: 'assets/images/pictogramas/Mamá.png',           etiqueta: 'MAMÁ',         defaultCategoria: 'Familia',     esPersonalizado: false),
+  PictoEntry(id: 'per2', svgPath: 'assets/images/pictogramas/Papá.png',           etiqueta: 'PAPÁ',         defaultCategoria: 'Familia',     esPersonalizado: false),
+  PictoEntry(id: 'per3', svgPath: 'assets/images/pictogramas/Amigo.png',          etiqueta: 'AMIGO/A',      defaultCategoria: 'Familia',     esPersonalizado: false),
+  // --- Saludos (imágenes propias) ---
+  PictoEntry(id: 'sal1', svgPath: 'assets/images/pictogramas/Hola.png',           etiqueta: 'HOLA',         defaultCategoria: 'Acciones',    esPersonalizado: false),
+  PictoEntry(id: 'sal2', svgPath: 'assets/images/pictogramas/Adiós.png',          etiqueta: 'ADIÓS',        defaultCategoria: 'Acciones',    esPersonalizado: false),
+  PictoEntry(id: 'sal3', svgPath: 'assets/images/pictogramas/Gracias.png',        etiqueta: 'GRACIAS',      defaultCategoria: 'Acciones',    esPersonalizado: false),
+  PictoEntry(id: 'sal4', svgPath: 'assets/images/pictogramas/Por Favor.png',      etiqueta: 'POR FAVOR',    defaultCategoria: 'Acciones',    esPersonalizado: false),
+  PictoEntry(id: 'sal5', svgPath: 'assets/images/pictogramas/Lo Siento.png',      etiqueta: 'LO SIENTO',    defaultCategoria: 'Acciones',    esPersonalizado: false),
 ];
 
 // ─── Modelo unificado PictoEntry ──────────────────────────────────────────────
@@ -119,8 +140,10 @@ const List<PictoEntry> kBancoBuiltins = [
 /// con el mismo widget y lógica de renderizado.
 class PictoEntry {
   final String id;              // Identificador único: 'm1', 'custom_abc123'
-  final String? svgPath;        // Path de asset SVG (solo predefinidos)
+  final String? svgPath;        // Path de asset SVG (solo predefinidos con imagen)
   final String? imageUrl;       // URL de Storage o asset (personalizados)
+  final IconData? iconData;     // Icono Material (vocabulario extendido sin SVG)
+  final Color? iconColor;       // Color del icono
   final String etiqueta;        // Texto visible bajo el pictograma
   final String defaultCategoria;// Categoría original del pictograma (sin overrides)
   final bool esPersonalizado;   // true = subido por el usuario, false = banco predefinido
@@ -129,6 +152,8 @@ class PictoEntry {
     required this.id,
     this.svgPath,
     this.imageUrl,
+    this.iconData,
+    this.iconColor,
     required this.etiqueta,
     required this.defaultCategoria,
     required this.esPersonalizado,
@@ -807,25 +832,36 @@ class _PictoManagerCard extends StatelessWidget {
     );
   }
 
-  /// Construye el widget de imagen según el tipo de pictograma.
-  ///
-  /// Prioridad:
-  /// 1. [entry.svgPath] → SvgPicture.asset (pictogramas del banco predefinido).
-  /// 2. [entry.imageUrl] que empieza con 'assets/' → asset local (SVG o raster).
-  /// 3. [entry.imageUrl] con URL HTTP → Image.network (pictogramas subidos a Storage).
-  /// 4. Sin imagen → ícono de placeholder.
   Widget _buildImage() {
-    // Caso 1: pictograma del banco predefinido con SVG local
-    if (entry.svgPath != null) {
-      return SvgPicture.asset(entry.svgPath!, fit: BoxFit.contain);
+    // Caso 1: pictograma basado en icono Material (vocabulario extendido)
+    if (entry.iconData != null) {
+      final c = entry.iconColor ?? Colors.blueGrey;
+      return Container(
+        decoration: BoxDecoration(
+          color: c.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Center(
+          child: Icon(entry.iconData, size: 32, color: c),
+        ),
+      );
     }
 
-    // Caso 2 y 3: pictograma personalizado con URL o path de asset
+    // Caso 2: pictograma del banco predefinido con SVG o PNG local
+    if (entry.svgPath != null) {
+      final path = entry.svgPath!;
+      if (path.endsWith('.png') || path.endsWith('.jpg')) {
+        return Image.asset(path, fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => const Icon(Icons.image, color: Colors.grey));
+      }
+      return SvgPicture.asset(path, fit: BoxFit.contain);
+    }
+
+    // Caso 3 y 4: pictograma personalizado con URL o path de asset
     if (entry.imageUrl != null && entry.imageUrl!.isNotEmpty) {
       final url = entry.imageUrl!;
 
       if (url.startsWith('assets/')) {
-        // Sub-caso: asset local (puede ser SVG o imagen raster)
         return url.endsWith('.svg')
             ? SvgPicture.asset(url, fit: BoxFit.contain)
             : Image.asset(
@@ -835,7 +871,6 @@ class _PictoManagerCard extends StatelessWidget {
               );
       }
 
-      // Sub-caso: URL de Firebase Storage
       return Image.network(
         url,
         fit: BoxFit.contain,
@@ -843,7 +878,6 @@ class _PictoManagerCard extends StatelessWidget {
       );
     }
 
-    // Caso 4: sin imagen → placeholder genérico
     return const Icon(Icons.image, color: Colors.grey);
   }
 }

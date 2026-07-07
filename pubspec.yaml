@@ -63,6 +63,9 @@ dependencies:
   # IA — Gemini vía Cloud Functions (API Key protegida)
   flutter_tts: ^4.2.5
 
+  # Tour de bienvenida interactivo (spotlight + tooltips)
+  tutorial_coach_mark: ^1.2.8
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

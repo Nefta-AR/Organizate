@@ -44,6 +44,10 @@ import 'package:simple/core/services/pictogram_service.dart';
 import 'package:simple/core/utils/emergency_contact_helper.dart';
 import 'package:simple/core/widgets/custom_nav_bar.dart';
 import 'package:simple/features/tutor_dashboard/screens/settings_screen.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
+
+import 'package:simple/core/services/tour_service.dart';
+import 'package:simple/core/widgets/tour_step_card.dart';
 import 'crear_pictograma_sheet.dart';
 import 'pictogram_manager_screen.dart';
 
@@ -52,6 +56,8 @@ class PictogramaDisplay {
   final String id;
   final String? rutaSvg;
   final String? imageUrl;
+  final IconData? iconData;
+  final Color? iconColor;
   final String etiqueta;
   final String textoTts;
   final String categoria;
@@ -61,11 +67,47 @@ class PictogramaDisplay {
     required this.id,
     this.rutaSvg,
     this.imageUrl,
+    this.iconData,
+    this.iconColor,
     required this.etiqueta,
     required this.textoTts,
     required this.categoria,
     required this.esPersonalizado,
   });
+
+  // Constructor para vocabulario extendido basado en iconos de Material (sin imagen).
+  const PictogramaDisplay.icon({
+    required String id,
+    required String etiqueta,
+    required String textoTts,
+    required String categoria,
+    required IconData iconData,
+    required Color iconColor,
+  }) : this._(
+          id: id,
+          etiqueta: etiqueta,
+          textoTts: textoTts,
+          categoria: categoria,
+          esPersonalizado: false,
+          iconData: iconData,
+          iconColor: iconColor,
+        );
+
+  // Constructor para pictogramas con imagen local (PNG, JPG o SVG en assets/).
+  const PictogramaDisplay.asset({
+    required String id,
+    required String etiqueta,
+    required String textoTts,
+    required String categoria,
+    required String rutaSvg,
+  }) : this._(
+          id: id,
+          etiqueta: etiqueta,
+          textoTts: textoTts,
+          categoria: categoria,
+          esPersonalizado: false,
+          rutaSvg: rutaSvg,
+        );
 
   factory PictogramaDisplay.fromLocal(Pictograma p) {
     return PictogramaDisplay._(
@@ -108,210 +150,89 @@ class Pictograma {
 }
 
 // ─── Banco de pictogramas ─────────────────────────────────────────────────────
+// TTS cortos: las rutinas y acciones dicen solo la etiqueta para que el usuario
+// pueda componer "YO + QUIERO + [acción]" usando el strip de vocabulario core.
+// Emociones/necesidades/saludos conservan frases completas (son mensajes en sí).
 const List<Pictograma> _banco = [
-  Pictograma(
-    id: 'm1',
-    rutaSvg: 'assets/images/pictogramas/ducha.svg',
-    etiqueta: 'DESPERTAR',
-    textoTts: 'Es hora de despertar',
-    categoria: 'Mañana',
-  ),
-  Pictograma(
-    id: 'm2',
-    rutaSvg: 'assets/images/pictogramas/lavar-manos.svg',
-    etiqueta: 'LAVAR CARA',
-    textoTts: 'Voy a lavarme la cara',
-    categoria: 'Mañana',
-  ),
-  Pictograma(
-    id: 'm3',
-    rutaSvg: 'assets/images/pictogramas/cepillar-dientes.svg',
-    etiqueta: 'DIENTES',
-    textoTts: 'Debo lavarme los dientes',
-    categoria: 'Mañana',
-  ),
-  Pictograma(
-    id: 'm4',
-    rutaSvg: 'assets/images/pictogramas/colegio.svg',
-    etiqueta: 'COLEGIO',
-    textoTts: 'Es hora de ir al colegio',
-    categoria: 'Mañana',
-  ),
-  Pictograma(
-    id: 't1',
-    rutaSvg: 'assets/images/pictogramas/almuerzo.svg',
-    etiqueta: 'ALMORZAR',
-    textoTts: 'Tengo hambre, quiero almorzar',
-    categoria: 'Tarde',
-  ),
-  Pictograma(
-    id: 't2',
-    rutaSvg: 'assets/images/pictogramas/computador.svg',
-    etiqueta: 'TAREAS TECH',
-    textoTts: 'Es hora de hacer mis tareas de Tecnología',
-    categoria: 'Tarde',
-  ),
-  Pictograma(
-    id: 't3',
-    rutaSvg: 'assets/images/pictogramas/once.svg',
-    etiqueta: 'MERIENDA',
-    textoTts: 'Quiero merendar algo rico',
-    categoria: 'Tarde',
-  ),
-  Pictograma(
-    id: 't4',
-    rutaSvg: 'assets/images/pictogramas/pasear.svg',
-    etiqueta: 'JUGAR',
-    textoTts: 'Quiero salir a jugar',
-    categoria: 'Tarde',
-  ),
-  Pictograma(
-    id: 'n1',
-    rutaSvg: 'assets/images/pictogramas/desayuno.svg',
-    etiqueta: 'CENA',
-    textoTts: 'Es hora de cenar',
-    categoria: 'Noche',
-  ),
-  Pictograma(
-    id: 'n2',
-    rutaSvg: 'assets/images/pictogramas/baño.svg',
-    etiqueta: 'BAÑO',
-    textoTts: 'Quiero ir al baño',
-    categoria: 'Noche',
-  ),
-  Pictograma(
-    id: 'n3',
-    rutaSvg: 'assets/images/pictogramas/vestir.svg',
-    etiqueta: 'PIJAMA',
-    textoTts: 'Voy a ponerme el pijama',
-    categoria: 'Noche',
-  ),
-  Pictograma(
-    id: 'n4',
-    rutaSvg: 'assets/images/pictogramas/casa.svg',
-    etiqueta: 'DORMIR',
-    textoTts: 'Es hora de dormir, buenas noches',
-    categoria: 'Noche',
-  ),
-  Pictograma(
-    id: 'c1',
-    rutaSvg: 'assets/images/pictogramas/beber.svg',
-    etiqueta: 'AGUA',
-    textoTts: 'Tengo sed, quiero agua',
-    categoria: 'Comida',
-  ),
-  Pictograma(
-    id: 'c2',
-    rutaSvg: 'assets/images/pictogramas/mochila.svg',
-    etiqueta: 'LONCHERA',
-    textoTts: 'Quiero preparar mi lonchera',
-    categoria: 'Comida',
-  ),
-  Pictograma(
-    id: 'c3',
-    rutaSvg: 'assets/images/pictogramas/comprar.svg',
-    etiqueta: 'COMPRAR',
-    textoTts: 'Quiero comprar comida',
-    categoria: 'Comida',
-  ),
-  Pictograma(
-    id: 'e1',
-    rutaSvg: 'assets/images/pictogramas/feliz.svg',
-    etiqueta: 'FELIZ',
-    textoTts: 'Me siento feliz',
-    categoria: 'Emociones',
-  ),
-  Pictograma(
-    id: 'e2',
-    rutaSvg: 'assets/images/pictogramas/cansado.svg',
-    etiqueta: 'CANSADO',
-    textoTts: 'Estoy cansado',
-    categoria: 'Emociones',
-  ),
-  Pictograma(
-    id: 'e3',
-    rutaSvg: 'assets/images/pictogramas/estoy-bien.svg',
-    etiqueta: 'BIEN',
-    textoTts: 'Me siento bien',
-    categoria: 'Emociones',
-  ),
-  Pictograma(
-    id: 'e4',
-    rutaSvg: 'assets/images/pictogramas/ayuda.svg',
-    etiqueta: 'AYUDA',
-    textoTts: 'Necesito ayuda',
-    categoria: 'Emociones',
-  ),
-  Pictograma(
-    id: 'e5',
-    rutaSvg: 'assets/images/pictogramas/alto.svg',
-    etiqueta: 'NO',
-    textoTts: 'Quiero que pares, no me gusta esto',
-    categoria: 'Emociones',
-  ),
-  Pictograma(
-    id: 'a1',
-    rutaSvg: 'assets/images/pictogramas/calle.svg',
-    etiqueta: 'SALIR',
-    textoTts: 'Quiero salir a la calle',
-    categoria: 'Acciones',
-  ),
-  Pictograma(
-    id: 'a2',
-    rutaSvg: 'assets/images/pictogramas/limpiar.svg',
-    etiqueta: 'LIMPIAR',
-    textoTts: 'Voy a limpiar mi cuarto',
-    categoria: 'Acciones',
-  ),
-  Pictograma(
-    id: 'a3',
-    rutaSvg: 'assets/images/pictogramas/doctor.svg',
-    etiqueta: 'DOCTOR',
-    textoTts: 'Quiero ir al doctor',
-    categoria: 'Acciones',
-  ),
-  Pictograma(
-    id: 'a4',
-    rutaSvg: 'assets/images/pictogramas/estudiar.svg',
-    etiqueta: 'ESTUDIAR',
-    textoTts: 'Quiero estudiar',
-    categoria: 'Acciones',
-  ),
-  Pictograma(
-    id: 'a5',
-    rutaSvg: 'assets/images/pictogramas/libro.svg',
-    etiqueta: 'LEER',
-    textoTts: 'Quiero leer un libro',
-    categoria: 'Acciones',
-  ),
-  Pictograma(
-    id: 'a6',
-    rutaSvg: 'assets/images/pictogramas/detente.svg',
-    etiqueta: 'DETENTE',
-    textoTts: 'Por favor, detente',
-    categoria: 'Acciones',
-  ),
-  Pictograma(
-    id: 'a7',
-    rutaSvg: 'assets/images/pictogramas/hospital.svg',
-    etiqueta: 'HOSPITAL',
-    textoTts: 'Quiero ir al hospital',
-    categoria: 'Acciones',
-  ),
-  Pictograma(
-    id: 'a8',
-    rutaSvg: 'assets/images/pictogramas/perro.svg',
-    etiqueta: 'PERRO',
-    textoTts: 'Quiero ver al perro',
-    categoria: 'Acciones',
-  ),
-  Pictograma(
-    id: 'a9',
-    rutaSvg: 'assets/images/pictogramas/compras.svg',
-    etiqueta: 'COMPRAS',
-    textoTts: 'Quiero ir de compras',
-    categoria: 'Acciones',
-  ),
+  Pictograma(id: 'm1', rutaSvg: 'assets/images/pictogramas/Ducha.svg',             etiqueta: 'DESPERTAR',   textoTts: 'Despertar',           categoria: 'Mañana'),
+  Pictograma(id: 'm2', rutaSvg: 'assets/images/pictogramas/Lavar Manos.svg',       etiqueta: 'LAVAR CARA',  textoTts: 'Lavar la cara',       categoria: 'Mañana'),
+  Pictograma(id: 'm3', rutaSvg: 'assets/images/pictogramas/Cepillar Dientes.svg',      etiqueta: 'DIENTES',     textoTts: 'Cepillar los dientes', categoria: 'Mañana'),
+  Pictograma(id: 'm4', rutaSvg: 'assets/images/pictogramas/Colegio.svg',           etiqueta: 'COLEGIO',     textoTts: 'Colegio',             categoria: 'Mañana'),
+  Pictograma(id: 't1', rutaSvg: 'assets/images/pictogramas/Almuerzo.svg',          etiqueta: 'ALMORZAR',    textoTts: 'Almorzar',            categoria: 'Tarde'),
+  Pictograma(id: 't2', rutaSvg: 'assets/images/pictogramas/Computador.svg',        etiqueta: 'COMPUTADOR',  textoTts: 'Usar el computador',  categoria: 'Tarde'),
+  Pictograma(id: 't3', rutaSvg: 'assets/images/pictogramas/Once.svg',              etiqueta: 'MERIENDA',    textoTts: 'Merienda',            categoria: 'Tarde'),
+  Pictograma(id: 't4', rutaSvg: 'assets/images/pictogramas/Pasear.svg',            etiqueta: 'JUGAR',       textoTts: 'Jugar',               categoria: 'Tarde'),
+  Pictograma(id: 'n1', rutaSvg: 'assets/images/pictogramas/Desayuno.svg',          etiqueta: 'CENA',        textoTts: 'Cenar',               categoria: 'Noche'),
+  Pictograma(id: 'n2', rutaSvg: 'assets/images/pictogramas/Baño.svg',              etiqueta: 'BAÑO',        textoTts: 'Ir al baño',          categoria: 'Necesidades'),
+  Pictograma(id: 'n3', rutaSvg: 'assets/images/pictogramas/Vestir.svg',            etiqueta: 'PIJAMA',      textoTts: 'Ponerme el pijama',   categoria: 'Noche'),
+  Pictograma(id: 'n4', rutaSvg: 'assets/images/pictogramas/Casa.svg',              etiqueta: 'DORMIR',      textoTts: 'Dormir',              categoria: 'Noche'),
+  Pictograma(id: 'c1', rutaSvg: 'assets/images/pictogramas/Beber.svg',             etiqueta: 'AGUA',        textoTts: 'Agua',                categoria: 'Comida'),
+  Pictograma(id: 'c2', rutaSvg: 'assets/images/pictogramas/Mochila.svg',           etiqueta: 'LONCHERA',    textoTts: 'Lonchera',            categoria: 'Comida'),
+  // Emociones: frases completas (reportes de estado, no solicitudes)
+  Pictograma(id: 'e1', rutaSvg: 'assets/images/pictogramas/Feliz.svg',             etiqueta: 'FELIZ',       textoTts: 'Me siento feliz',     categoria: 'Emociones'),
+  Pictograma(id: 'e2', rutaSvg: 'assets/images/pictogramas/Cansado.svg',           etiqueta: 'CANSADO',     textoTts: 'Estoy cansado',       categoria: 'Emociones'),
+  Pictograma(id: 'e3', rutaSvg: 'assets/images/pictogramas/Estoy Bien.svg',        etiqueta: 'BIEN',        textoTts: 'Me siento bien',      categoria: 'Emociones'),
+  Pictograma(id: 'e4', rutaSvg: 'assets/images/pictogramas/Ayuda.svg',             etiqueta: 'AYUDA',       textoTts: 'Necesito ayuda',      categoria: 'Emociones'),
+  Pictograma(id: 'e5', rutaSvg: 'assets/images/pictogramas/Alto.svg',              etiqueta: 'STOP',        textoTts: 'No, detente por favor', categoria: 'Emociones'),
+  // Acciones: TTS cortos para componer con el strip (YO + QUIERO + acción)
+  Pictograma(id: 'a1', rutaSvg: 'assets/images/pictogramas/Calle.svg',             etiqueta: 'SALIR',       textoTts: 'Salir',               categoria: 'Acciones'),
+  Pictograma(id: 'a2', rutaSvg: 'assets/images/pictogramas/Limpiar.svg',           etiqueta: 'LIMPIAR',     textoTts: 'Limpiar',             categoria: 'Acciones'),
+  Pictograma(id: 'a3', rutaSvg: 'assets/images/pictogramas/Doctor.svg',            etiqueta: 'DOCTOR',      textoTts: 'Doctor',              categoria: 'Acciones'),
+  Pictograma(id: 'a4', rutaSvg: 'assets/images/pictogramas/Estudiar.svg',          etiqueta: 'ESTUDIAR',    textoTts: 'Estudiar',            categoria: 'Acciones'),
+  Pictograma(id: 'a5', rutaSvg: 'assets/images/pictogramas/Libro.svg',             etiqueta: 'LEER',        textoTts: 'Leer',                categoria: 'Acciones'),
+  Pictograma(id: 'a6', rutaSvg: 'assets/images/pictogramas/Detente.svg',           etiqueta: 'DETENTE',     textoTts: 'Por favor, detente',  categoria: 'Acciones'),
+  Pictograma(id: 'a7', rutaSvg: 'assets/images/pictogramas/Hospital.svg',          etiqueta: 'HOSPITAL',    textoTts: 'Hospital',            categoria: 'Acciones'),
+  Pictograma(id: 'a8', rutaSvg: 'assets/images/pictogramas/Perro.svg',             etiqueta: 'PERRO',       textoTts: 'Perro',               categoria: 'Acciones'),
+  Pictograma(id: 'a9', rutaSvg: 'assets/images/pictogramas/Compras.svg',           etiqueta: 'COMPRAS',     textoTts: 'Compras',             categoria: 'Acciones'),
+];
+
+// ─── Vocabulario core permanente (siempre visible en el strip superior) ───────
+class _CoreVocab {
+  final String etiqueta;
+  final String textoTts;
+  final IconData icono;
+  final Color color;
+  const _CoreVocab(this.etiqueta, this.textoTts, this.icono, this.color);
+}
+
+const List<_CoreVocab> _coreVocabItems = [
+  _CoreVocab('YO',      'Yo',     Icons.person_rounded,       Color(0xFF9B89C4)), // lavanda suave
+  _CoreVocab('QUIERO',  'Quiero', Icons.favorite_border,      Color(0xFFD97070)), // soft pink (paleta app)
+  _CoreVocab('SÍ',      'Sí',     Icons.check_circle_outline, Color(0xFF8FAF8C)), // sage green (paleta app)
+  _CoreVocab('NO',      'No',     Icons.cancel_rounded,       Color(0xFF9E8080)), // rosa apagado
+  _CoreVocab('MÁS',     'Más',    Icons.add_circle_outline,   Color(0xFF7B9EC8)), // azul suave
+  _CoreVocab('BASTA',   'Basta',  Icons.pan_tool_rounded,     Color(0xFFD4A853)), // ámbar cálido (paleta app)
+  _CoreVocab('ESPERAR', 'Espera', Icons.hourglass_empty,      Color(0xFFB8A070)), // arena dorada
+];
+
+// ─── Banco extendido con imágenes propias (vocabulario AAC ampliado) ───────────
+const List<PictogramaDisplay> _bancoExtendido = [
+  // Emociones adicionales
+  PictogramaDisplay.asset(id: 'e6',  etiqueta: 'TRISTE',    textoTts: 'Estoy triste',                           categoria: 'Emociones',   rutaSvg: 'assets/images/pictogramas/Triste.png'),
+  PictogramaDisplay.asset(id: 'e7',  etiqueta: 'ENOJADO',   textoTts: 'Estoy enojado',                          categoria: 'Emociones',   rutaSvg: 'assets/images/pictogramas/Enojado.jpg'),
+  PictogramaDisplay.asset(id: 'e8',  etiqueta: 'ASUSTADO',  textoTts: 'Tengo miedo, estoy asustado',            categoria: 'Emociones',   rutaSvg: 'assets/images/pictogramas/Asustado.jpg'),
+  PictogramaDisplay.asset(id: 'e9',  etiqueta: 'ABURRIDO',  textoTts: 'Estoy aburrido',                         categoria: 'Emociones',   rutaSvg: 'assets/images/pictogramas/Aburrido.png'),
+  PictogramaDisplay.asset(id: 'e10', etiqueta: 'FRUSTRADO', textoTts: 'Estoy frustrado',                        categoria: 'Emociones',   rutaSvg: 'assets/images/pictogramas/Frustrado.png'),
+  PictogramaDisplay.asset(id: 'e11', etiqueta: 'ANSIOSO',   textoTts: 'Estoy ansioso, necesito calmarme',       categoria: 'Emociones',   rutaSvg: 'assets/images/pictogramas/Ansioso.png'),
+  PictogramaDisplay.asset(id: 'e12', etiqueta: 'SOLO/A',    textoTts: 'Me siento solo',                         categoria: 'Emociones',   rutaSvg: 'assets/images/pictogramas/Solo.png'),
+  // Necesidades — autorregulación sensorial y seguridad
+  PictogramaDisplay.asset(id: 'nec1', etiqueta: 'TENGO DOLOR',   textoTts: 'Tengo dolor',                             categoria: 'Necesidades', rutaSvg: 'assets/images/pictogramas/Tengo Dolor.png'),
+  PictogramaDisplay.asset(id: 'nec2', etiqueta: 'TENGO FRÍO',    textoTts: 'Tengo frío',                              categoria: 'Necesidades', rutaSvg: 'assets/images/pictogramas/Tengo Frío.jpg'),
+  PictogramaDisplay.asset(id: 'nec3', etiqueta: 'TENGO CALOR',   textoTts: 'Tengo calor',                             categoria: 'Necesidades', rutaSvg: 'assets/images/pictogramas/Tengo Calor.png'),
+  PictogramaDisplay.asset(id: 'nec4', etiqueta: 'ESTOY ENFERMO', textoTts: 'Estoy enfermo, necesito ayuda',           categoria: 'Necesidades', rutaSvg: 'assets/images/pictogramas/Estoy Enfermo.jpg'),
+  PictogramaDisplay.asset(id: 'nec5', etiqueta: 'MUCHO RUIDO',   textoTts: 'Hay demasiado ruido, necesito silencio',  categoria: 'Necesidades', rutaSvg: 'assets/images/pictogramas/Mucho Ruido.png'),
+  PictogramaDisplay.asset(id: 'nec6', etiqueta: 'MUCHA LUZ',     textoTts: 'Hay demasiada luz',                       categoria: 'Necesidades', rutaSvg: 'assets/images/pictogramas/Mucha Luz.jpg'),
+  PictogramaDisplay.asset(id: 'nec7', etiqueta: 'DESCANSO',      textoTts: 'Necesito un momento de descanso',         categoria: 'Necesidades', rutaSvg: 'assets/images/pictogramas/Descansar.png'),
+  // Familia: TTS corto para componer con strip (YO + QUIERO + MAMÁ)
+  PictogramaDisplay.asset(id: 'per1', etiqueta: 'MAMÁ',    textoTts: 'Mamá',  categoria: 'Familia', rutaSvg: 'assets/images/pictogramas/Mamá.png'),
+  PictogramaDisplay.asset(id: 'per2', etiqueta: 'PAPÁ',    textoTts: 'Papá',  categoria: 'Familia', rutaSvg: 'assets/images/pictogramas/Papá.png'),
+  PictogramaDisplay.asset(id: 'per3', etiqueta: 'AMIGO/A', textoTts: 'Amigo', categoria: 'Familia', rutaSvg: 'assets/images/pictogramas/Amigo.png'),
+  // Saludos sociales
+  PictogramaDisplay.asset(id: 'sal1', etiqueta: 'HOLA',      textoTts: 'Hola',             categoria: 'Acciones', rutaSvg: 'assets/images/pictogramas/Hola.png'),
+  PictogramaDisplay.asset(id: 'sal2', etiqueta: 'ADIÓS',     textoTts: 'Adiós, hasta luego', categoria: 'Acciones', rutaSvg: 'assets/images/pictogramas/Adiós.png'),
+  PictogramaDisplay.asset(id: 'sal3', etiqueta: 'GRACIAS',   textoTts: 'Gracias',           categoria: 'Acciones', rutaSvg: 'assets/images/pictogramas/Gracias.png'),
+  PictogramaDisplay.asset(id: 'sal4', etiqueta: 'POR FAVOR', textoTts: 'Por favor',         categoria: 'Acciones', rutaSvg: 'assets/images/pictogramas/Por Favor.png'),
+  PictogramaDisplay.asset(id: 'sal5', etiqueta: 'LO SIENTO', textoTts: 'Lo siento mucho',  categoria: 'Acciones', rutaSvg: 'assets/images/pictogramas/Lo Siento.png'),
 ];
 
 // ─── Widget principal ─────────────────────────────────────────────────────────
@@ -339,6 +260,11 @@ class _PantallaUsuarioTEAState extends State<PantallaUsuarioTEA>
 
   Stream<List<PictogramaDisplay>>? _pictogramasStream;
 
+  final _stripTourKey = GlobalKey();
+  final _tabBarTourKey = GlobalKey();
+  final _gridTourKey  = GlobalKey();
+  final _ayudaTourKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -363,6 +289,7 @@ class _PantallaUsuarioTEAState extends State<PantallaUsuarioTEA>
         });
       });
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) => _initTourIfNeeded());
   }
 
   Future<void> _initTts() async {
@@ -370,6 +297,9 @@ class _PantallaUsuarioTEAState extends State<PantallaUsuarioTEA>
     await _tts.setSpeechRate(0.42);
     await _tts.setPitch(0.92);
     await _tts.setLanguage('es-ES');
+    // Silencia los SpeechSynthesisErrorEvent del navegador (ej: "interrupted"
+    // al llamar stop() antes de speak()) para no contaminar la consola.
+    _tts.setErrorHandler((_) {});
 
     // Intentar seleccionar la mejor voz española disponible (neural/enhanced)
     try {
@@ -407,7 +337,10 @@ class _PantallaUsuarioTEAState extends State<PantallaUsuarioTEA>
   Stream<List<PictogramaDisplay>> _buildPictogramasStream() {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      return Stream.value(_banco.map(PictogramaDisplay.fromLocal).toList());
+      return Stream.value([
+        ..._banco.map(PictogramaDisplay.fromLocal),
+        ..._bancoExtendido,
+      ]);
     }
 
     final customStream = PictogramService.getCustomPictogramsStream();
@@ -415,7 +348,7 @@ class _PantallaUsuarioTEAState extends State<PantallaUsuarioTEA>
     return customStream.map((customList) {
       final all = _banco.map(PictogramaDisplay.fromLocal).toList();
       final customs = customList.map(PictogramaDisplay.fromCustom).toList();
-      return [...all, ...customs];
+      return [...all, ..._bancoExtendido, ...customs];
     });
   }
 
@@ -463,14 +396,22 @@ class _PantallaUsuarioTEAState extends State<PantallaUsuarioTEA>
   }
 
   Future<void> _hablar(String texto) async {
-    await _tts.stop();
-    await _tts.speak(texto);
+    try { await _tts.stop(); } catch (_) {}
+    try { await _tts.speak(texto); } catch (_) {}
+  }
+
+  // stop() no bloqueante: la cancelación JS es síncrona → limpia la cola
+  // inmediatamente sin agregar latencia de await. El SpeechSynthesisErrorEvent
+  // que genera queda silenciado por platformDispatcher.onError en main.dart.
+  Future<void> _hablarRapido(String texto) async {
+    unawaited(_tts.stop());
+    try { await _tts.speak(texto); } catch (_) {}
   }
 
   void _hablarPictograma(PictogramaDisplay picto) {
     HapticFeedback.lightImpact();
     final texto = _localOverrides[picto.id] ?? picto.textoTts;
-    if (!_silentMode) _hablar(texto);
+    if (!_silentMode) _hablarRapido(texto);
     ActivityLogService.log(
       type: ActivityType.pictogramUsed,
       description: 'Pictograma usado: "${picto.etiqueta}"',
@@ -523,6 +464,105 @@ class _PantallaUsuarioTEAState extends State<PantallaUsuarioTEA>
     } else {
       if (mounted) setState(() => _localOverrides[picto.id] = newText);
     }
+  }
+
+  Future<void> _initTourIfNeeded() async {
+    if (!mounted) return;
+    final needed = await TourService.needsUserTour();
+    if (needed && mounted) {
+      await Future.delayed(const Duration(milliseconds: 700));
+      if (mounted) _startUserTour();
+    }
+  }
+
+  void _startUserTour() {
+    final colors = Theme.of(context).colorScheme;
+
+    final targets = [
+      TargetFocus(
+        identify: 'strip',
+        keyTarget: _stripTourKey,
+        shape: ShapeLightFocus.RRect,
+        radius: 12,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            child: TourStepCard(
+              icon: Icons.record_voice_over_rounded,
+              iconColor: colors.primary,
+              title: 'Vocabulario Clave',
+              body: 'Toca cualquier palabra para escucharla en voz alta. Arma frases rápidas presionando una tras otra: YO → QUIERO → AGUA.',
+            ),
+          ),
+        ],
+      ),
+      TargetFocus(
+        identify: 'tabs',
+        keyTarget: _tabBarTourKey,
+        shape: ShapeLightFocus.RRect,
+        radius: 8,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            child: const TourStepCard(
+              icon: Icons.tab_rounded,
+              iconColor: Colors.teal,
+              title: 'Categorías',
+              body: 'Desliza entre las pestañas para cambiar de categoría: Rutina, Comida, Emociones, Acciones, Necesidades y Familia.',
+            ),
+          ),
+        ],
+      ),
+      TargetFocus(
+        identify: 'grid',
+        keyTarget: _gridTourKey,
+        shape: ShapeLightFocus.RRect,
+        radius: 16,
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            child: const TourStepCard(
+              icon: Icons.grid_view_rounded,
+              iconColor: Colors.deepPurple,
+              title: 'Pictogramas',
+              body: 'Toca una imagen para escucharla. Mantén presionado para personalizar el texto que se lee en voz alta.',
+            ),
+          ),
+        ],
+      ),
+      TargetFocus(
+        identify: 'ayuda',
+        keyTarget: _ayudaTourKey,
+        shape: ShapeLightFocus.RRect,
+        radius: 14,
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            child: const TourStepCard(
+              icon: Icons.warning_rounded,
+              iconColor: Colors.red,
+              title: 'Botón de Ayuda',
+              body: 'Presiona aquí cuando necesites ayuda urgente. La App dirá "Necesito ayuda, por favor" en voz alta.',
+            ),
+          ),
+        ],
+      ),
+    ];
+
+    TutorialCoachMark(
+      targets: targets,
+      colorShadow: Colors.black,
+      opacityShadow: 0.85,
+      hideSkip: false,
+      textSkip: 'SALTAR',
+      textStyleSkip: const TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.w700,
+        fontSize: 14,
+      ),
+      onFinish: () => TourService.markUserTourDone(),
+      onSkip: () { TourService.markUserTourDone(); return true; },
+    ).show(context: context);
   }
 
   @override
@@ -618,7 +658,7 @@ class _PantallaUsuarioTEAState extends State<PantallaUsuarioTEA>
     final colors = Theme.of(context).colorScheme;
 
     return DefaultTabController(
-      length: 4,
+      length: 6,
       child: Scaffold(
         backgroundColor: colors.surface,
         appBar: AppBar(
@@ -689,11 +729,14 @@ class _PantallaUsuarioTEAState extends State<PantallaUsuarioTEA>
             ),
           ],
           bottom: TabBar(
+            key: _tabBarTourKey,
             indicatorColor: colors.primary,
             indicatorWeight: 3,
             indicatorSize: TabBarIndicatorSize.label,
             labelColor: colors.primary,
             unselectedLabelColor: colors.onSurfaceVariant,
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
             labelStyle: const TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: 11,
@@ -704,12 +747,16 @@ class _PantallaUsuarioTEAState extends State<PantallaUsuarioTEA>
               Tab(text: 'COMIDA'),
               Tab(text: 'EMOCIONES'),
               Tab(text: 'ACCIONES'),
+              Tab(text: 'NECESIDADES'),
+              Tab(text: 'FAMILIA'),
             ],
           ),
         ),
         body: Column(
           children: [
+            _buildCoreStrip(colors),
             Expanded(
+              key: _gridTourKey,
               child: StreamBuilder<List<PictogramaDisplay>>(
                 stream: _pictogramasStream,
                 builder: (context, snapshot) {
@@ -743,6 +790,18 @@ class _PantallaUsuarioTEAState extends State<PantallaUsuarioTEA>
                         onTap: _hablarPictograma,
                         onLongPress: _editarTexto,
                       ),
+                      _GridCategoriaDisplay(
+                        key: const PageStorageKey('tab_necesidades'),
+                        pictogramas: _filtrarPorCategoria(todos, 'Necesidades'),
+                        onTap: _hablarPictograma,
+                        onLongPress: _editarTexto,
+                      ),
+                      _GridCategoriaDisplay(
+                        key: const PageStorageKey('tab_familia'),
+                        pictogramas: _filtrarPorCategoria(todos, 'Familia'),
+                        onTap: _hablarPictograma,
+                        onLongPress: _editarTexto,
+                      ),
                     ],
                   );
                 },
@@ -756,8 +815,60 @@ class _PantallaUsuarioTEAState extends State<PantallaUsuarioTEA>
     );
   }
 
+  // Tira horizontal siempre visible con vocabulario CORE (YO, QUIERO, SÍ, NO…).
+  // Aparece encima del TabBarView independientemente del tab activo.
+  Widget _buildCoreStrip(ColorScheme colors) {
+    return Container(
+      key: _stripTourKey,
+      decoration: BoxDecoration(
+        color: colors.primaryContainer.withValues(alpha: 0.07),
+        border: Border(
+          bottom: BorderSide(
+            color: colors.outlineVariant.withValues(alpha: 0.35),
+          ),
+        ),
+      ),
+      padding: const EdgeInsets.only(top: 6, bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 0, 0, 4),
+            child: Text(
+              'VOCABULARIO CLAVE',
+              style: TextStyle(
+                fontSize: 8,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.9,
+                color: colors.onSurfaceVariant.withValues(alpha: 0.45),
+              ),
+            ),
+          ),
+          SizedBox(
+            height: 58,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemCount: _coreVocabItems.length,
+              itemBuilder: (_, i) {
+                final item = _coreVocabItems[i];
+                return _CoreVocabTile(
+                  item: item,
+                  onPressed: () { if (!_silentMode) _hablarRapido(item.textoTts); },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildAyudaRow(ColorScheme colors) {
     return Padding(
+      key: _ayudaTourKey,
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
       child: SizedBox(
         width: double.infinity,
@@ -1258,6 +1369,20 @@ class _TarjetaPictogramaDisplayState extends State<_TarjetaPictogramaDisplay>
   }
 
   Widget _buildImagen(ColorScheme colors) {
+    // Pictograma basado en icono Material (vocabulario core/extendido sin SVG)
+    if (widget.pictograma.iconData != null) {
+      final c = widget.pictograma.iconColor ?? colors.primary;
+      return Container(
+        decoration: BoxDecoration(
+          color: c.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Center(
+          child: Icon(widget.pictograma.iconData, size: 44, color: c),
+        ),
+      );
+    }
+
     if (widget.pictograma.esPersonalizado &&
         widget.pictograma.imageUrl != null) {
       return ClipRRect(
@@ -1293,8 +1418,28 @@ class _TarjetaPictogramaDisplayState extends State<_TarjetaPictogramaDisplay>
       );
     }
 
+    final ruta = widget.pictograma.rutaSvg ?? '';
+    final esPng = ruta.endsWith('.png') || ruta.endsWith('.jpg');
+
+    if (esPng) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.asset(
+          ruta,
+          fit: BoxFit.contain,
+          errorBuilder: (_, __, ___) => Center(
+            child: Icon(
+              Icons.image_not_supported_rounded,
+              color: colors.outlineVariant,
+              size: 32,
+            ),
+          ),
+        ),
+      );
+    }
+
     return SvgPicture.asset(
-      widget.pictograma.rutaSvg ?? '',
+      ruta,
       fit: BoxFit.contain,
       placeholderBuilder: (_) => Center(
         child: Icon(
@@ -1311,11 +1456,11 @@ class _TarjetaPictogramaDisplayState extends State<_TarjetaPictogramaDisplay>
     final colors = Theme.of(context).colorScheme;
 
     return GestureDetector(
-      onTapDown: (_) => _pressController.forward(),
-      onTap: () {
-        _pressController.reverse();
-        widget.onTap?.call();
+      onTapDown: (_) {
+        _pressController.forward();
+        widget.onTap?.call(); // TTS en primer contacto, sin esperar onTap
       },
+      onTap: () => _pressController.reverse(),
       onTapCancel: () => _pressController.reverse(),
       onLongPressStart: _startLongPress,
       onLongPressEnd: (_) => _cancelLongPress(),
@@ -1409,6 +1554,98 @@ class _TarjetaPictogramaDisplayState extends State<_TarjetaPictogramaDisplay>
                   ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Tile animado para el strip de vocabulario core ───────────────────────────
+// Usa onTapDown para feedback háptico + escala inmediata (igual que la grilla),
+// eliminando el retraso de ~150 ms que tenía el GestureDetector simple anterior.
+class _CoreVocabTile extends StatefulWidget {
+  final _CoreVocab item;
+  final VoidCallback onPressed;
+
+  const _CoreVocabTile({
+    required this.item,
+    required this.onPressed,
+  });
+
+  @override
+  State<_CoreVocabTile> createState() => _CoreVocabTileState();
+}
+
+class _CoreVocabTileState extends State<_CoreVocabTile>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      duration: const Duration(milliseconds: 80),
+      reverseDuration: const Duration(milliseconds: 130),
+      vsync: this,
+    );
+    _scale = Tween<double>(begin: 1.0, end: 0.88).animate(
+      CurvedAnimation(
+        parent: _ctrl,
+        curve: Curves.easeOut,
+        reverseCurve: Curves.easeOutBack,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+    return GestureDetector(
+      onTapDown: (_) {
+        HapticFeedback.lightImpact();
+        _ctrl.forward();
+        widget.onPressed(); // TTS en primer contacto, sin esperar onTap
+      },
+      onTap: () => _ctrl.reverse(),
+      onTapCancel: () => _ctrl.reverse(),
+      child: ScaleTransition(
+        scale: _scale,
+        child: Container(
+          width: 58,
+          decoration: BoxDecoration(
+            color: item.color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: item.color.withValues(alpha: 0.45),
+              width: 1.5,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(item.icono, size: 20, color: item.color),
+              const SizedBox(height: 2),
+              Text(
+                item.etiqueta,
+                style: TextStyle(
+                  fontSize: 8,
+                  fontWeight: FontWeight.w900,
+                  color: item.color,
+                  letterSpacing: 0.1,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
       ),

@@ -1,0 +1,547 @@
+<mxfile host="app.diagrams.net" modified="2026-07-05T00:00:00.000Z" agent="OpenCode-Agent" version="24.0.0" etag="anexod-organizate" type="device">
+  <diagram name="D1 - Clases" id="d1-clases">
+    <mxGraphModel dx="1434" dy="780" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- TITULO -->
+        <mxCell id="t1" value="&lt;b&gt;D.1 Diagrama de Clases - Organízate (Simple)&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontColor=#1565C0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="500" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- PAQUETE: DOMINIO / MODELOS -->
+        <mxCell id="dom-container" value="&lt;b&gt;📦 Dominio / Modelos&lt;/b&gt;" style="swimlane;whiteSpace=wrap;html=1;fillColor=#E1F5FE;strokeColor=#01579B;strokeWidth=2;fontColor=#01579B;startSize=30;" vertex="1" parent="1">
+          <mxGeometry x="40" y="70" width="360" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="dom-1" value="PictogramaPersonalizado&lt;br&gt;&lt;font size=&quot;10&quot;&gt;+id, +imageUrl, +etiqueta, +textoTts&lt;br&gt;+categoria, +createdAt&lt;br&gt;+fromFirestore(), +toMap()&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#01579B;strokeWidth=1.5;" vertex="1" parent="dom-container">
+          <mxGeometry x="15" y="45" width="150" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="dom-2" value="PictoEntry&lt;br&gt;&lt;font size=&quot;10&quot;&gt;+id, +svgPath, +imageUrl&lt;br&gt;+etiqueta, +defaultCategoria&lt;br&gt;+esPersonalizado&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#01579B;strokeWidth=1.5;" vertex="1" parent="dom-container">
+          <mxGeometry x="190" y="45" width="150" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="dom-3" value="AvatarOption&lt;br&gt;&lt;font size=&quot;10&quot;&gt;+name, +imagePath, +color&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#01579B;strokeWidth=1.5;" vertex="1" parent="dom-container">
+          <mxGeometry x="15" y="140" width="150" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="dom-4" value="&lt;i&gt;Enums&lt;/i&gt;&lt;br&gt;&lt;font size=&quot;10&quot;&gt;UserRole {tutor, usuario}&lt;br&gt;PomodoroStatus {idle, running, paused, finished}&lt;br&gt;NavScreen {inicio, tareas, pictogramas, foco, perfil}&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#01579B;strokeWidth=1.5;dashed=1;" vertex="1" parent="dom-container">
+          <mxGeometry x="15" y="200" width="325" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- PAQUETE: SERVICIOS -->
+        <mxCell id="svc-container" value="&lt;b&gt;⚙️ Servicios (Capa de Negocio)&lt;/b&gt;" style="swimlane;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;strokeWidth=2;fontColor=#2E7D32;startSize=30;" vertex="1" parent="1">
+          <mxGeometry x="420" y="70" width="720" height="440" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-1" value="AuthService&lt;br&gt;&lt;font size=&quot;10&quot;&gt;+registerWithEmail() +loginWithGoogle()&lt;br&gt;+getUserRoleStream() +generateInvitationCode()&lt;br&gt;+validateInvitationCode() +logout()&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2E7D32;strokeWidth=1.5;" vertex="1" parent="svc-container">
+          <mxGeometry x="15" y="45" width="200" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-2" value="PictogramService&lt;br&gt;&lt;font size=&quot;10&quot;&gt;+getCustomPictogramsStream() +createPictogram()&lt;br&gt;+pickImageFromCamera() +cropImage()&lt;br&gt;+uploadImage() +captureAndCreate()&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2E7D32;strokeWidth=1.5;" vertex="1" parent="svc-container">
+          <mxGeometry x="235" y="45" width="200" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-3" value="NotificationService&lt;br&gt;&lt;font size=&quot;10&quot;&gt;+init() +showInstantNotification()&lt;br&gt;+scheduleReminderIfNeeded()&lt;br&gt;+cancelTaskNotification()&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2E7D32;strokeWidth=1.5;" vertex="1" parent="svc-container">
+          <mxGeometry x="455" y="45" width="200" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-4" value="AudioService&lt;br&gt;&lt;font size=&quot;10&quot;&gt;Singleton | +playText() +stop()&lt;br&gt;+clearCache() +getCacheSize()&lt;br&gt;+dispose()&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2E7D32;strokeWidth=1.5;" vertex="1" parent="svc-container">
+          <mxGeometry x="15" y="140" width="200" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-5" value="PomodoroService&lt;br&gt;&lt;font size=&quot;10&quot;&gt;extends ChangeNotifier&lt;br&gt;+start() +pause() +resume() +cancel()&lt;br&gt;+status: PomodoroStatus&lt;br&gt;+remaining, +totalDuration&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2E7D32;strokeWidth=1.5;" vertex="1" parent="svc-container">
+          <mxGeometry x="235" y="140" width="200" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-6" value="IAService&lt;br&gt;&lt;font size=&quot;10&quot;&gt;+desglosarEnPasos({tarea, tiempo})&lt;br&gt;→ Cloud Function 'desglosarTarea'&lt;br&gt;→ Gemini AI&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2E7D32;strokeWidth=1.5;" vertex="1" parent="svc-container">
+          <mxGeometry x="455" y="140" width="200" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-7" value="StreakService&lt;br&gt;&lt;font size=&quot;10&quot;&gt;+updateStreakOnTaskCompletion()&lt;br&gt;→ Firestore Transaction&lt;br&gt;+_computeNewStreak()&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2E7D32;strokeWidth=1.5;" vertex="1" parent="svc-container">
+          <mxGeometry x="15" y="230" width="200" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-8" value="GoogleDriveService&lt;br&gt;&lt;font size=&quot;10&quot;&gt;Singleton | +backupToDrive()&lt;br&gt;+restoreFromDrive() +signOut()&lt;br&gt;→ Google Drive API (v3)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2E7D32;strokeWidth=1.5;" vertex="1" parent="svc-container">
+          <mxGeometry x="235" y="230" width="200" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-9" value="ActivityLogService&lt;br&gt;&lt;font size=&quot;10&quot;&gt;+log({type, description, metadata})&lt;br&gt;+getStream(userId)&lt;br&gt;→ users/{uid}/activityLog&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2E7D32;strokeWidth=1.5;" vertex="1" parent="svc-container">
+          <mxGeometry x="455" y="230" width="200" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-10" value="ReminderDispatcher&lt;br&gt;&lt;font size=&quot;10&quot;&gt;+scheduleTaskReminder()&lt;br&gt;+cancelTaskReminder()&lt;br&gt;→ NotificationService + PushNotificationService&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2E7D32;strokeWidth=1.5;" vertex="1" parent="svc-container">
+          <mxGeometry x="15" y="315" width="200" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-11" value="UserPrefs&lt;br&gt;&lt;font size=&quot;10&quot;&gt;Wrapper SharedPreferences&lt;br&gt;+setName() +getName() +clearName()&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2E7D32;strokeWidth=1.5;" vertex="1" parent="svc-container">
+          <mxGeometry x="235" y="315" width="200" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-12" value="PushNotificationService&lt;br&gt;&lt;font size=&quot;10&quot;&gt;+queueRemoteReminder()&lt;br&gt;+cancelRemoteReminder()&lt;br&gt;→ notificationQueue&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2E7D32;strokeWidth=1.5;" vertex="1" parent="svc-container">
+          <mxGeometry x="455" y="315" width="200" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- PAQUETE: PRESENTACION -->
+        <mxCell id="ui-container" value="&lt;b&gt;🎨 Presentación (Screens &amp;amp; Widgets)&lt;/b&gt;" style="swimlane;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E65100;strokeWidth=2;fontColor=#E65100;startSize=30;" vertex="1" parent="1">
+          <mxGeometry x="40" y="530" width="1100" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="ui-1" value="AuthGate&lt;br&gt;&lt;font size=&quot;10&quot;&gt;StatelessWidget | StreamBuilder&amp;lt;User?&amp;gt;&lt;br&gt;→ RoleDispatcher&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#E65100;strokeWidth=1.5;" vertex="1" parent="ui-container">
+          <mxGeometry x="15" y="45" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ui-2" value="LoginScreen&lt;br&gt;&lt;font size=&quot;10&quot;&gt;StatefulWidget | Email + Google&lt;br&gt;+_handleLogin() +_handleGoogleLogin()&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#E65100;strokeWidth=1.5;" vertex="1" parent="ui-container">
+          <mxGeometry x="180" y="45" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ui-3" value="HomeScreen&lt;br&gt;&lt;font size=&quot;10&quot;&gt;StatefulWidget | Dashboard principal&lt;br&gt;Tareas, racha, acceso rápido&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#E65100;strokeWidth=1.5;" vertex="1" parent="ui-container">
+          <mxGeometry x="345" y="45" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ui-4" value="PantallaUsuarioTEA&lt;br&gt;&lt;font size=&quot;10&quot;&gt;Tablero AAC (pictogramas)&lt;br&gt;TTS, categorías, SOS&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#E65100;strokeWidth=1.5;" vertex="1" parent="ui-container">
+          <mxGeometry x="510" y="45" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ui-5" value="TutorSupervisarScreen&lt;br&gt;&lt;font size=&quot;10&quot;&gt;IndexedStack 5 tabs&lt;br&gt;Tareas, Pictos, Progreso, Historial, Ajustes&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#E65100;strokeWidth=1.5;" vertex="1" parent="ui-container">
+          <mxGeometry x="675" y="45" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ui-6" value="SuperExpertoSheet&lt;br&gt;&lt;font size=&quot;10&quot;&gt;BottomSheet IA&lt;br&gt;+_generarPlan() +_guardarSubtareas()&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#E65100;strokeWidth=1.5;" vertex="1" parent="ui-container">
+          <mxGeometry x="850" y="45" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ui-7" value="FocoScreen&lt;br&gt;&lt;font size=&quot;10&quot;&gt;Pomodoro Timer&lt;br&gt;Provider&amp;lt;PomodoroService&amp;gt;&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#E65100;strokeWidth=1.5;" vertex="1" parent="ui-container">
+          <mxGeometry x="15" y="120" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ui-8" value="TareasScreen&lt;br&gt;&lt;font size=&quot;10&quot;&gt;CRUD Tareas con categorías&lt;br&gt;StreamBuilder&amp;lt;QuerySnapshot&amp;gt;&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#E65100;strokeWidth=1.5;" vertex="1" parent="ui-container">
+          <mxGeometry x="180" y="120" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ui-9" value="SettingsScreen&lt;br&gt;&lt;font size=&quot;10&quot;&gt;Perfil, notificaciones, backup&lt;br&gt;Vinculación tutor&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#E65100;strokeWidth=1.5;" vertex="1" parent="ui-container">
+          <mxGeometry x="345" y="120" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ui-10" value="CustomNavBar&lt;br&gt;&lt;font size=&quot;10&quot;&gt;Feature-flag driven&lt;br&gt;BottomNavigationBar dinámico&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#E65100;strokeWidth=1.5;" vertex="1" parent="ui-container">
+          <mxGeometry x="510" y="120" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ui-11" value="PictogramManagerScreen&lt;br&gt;&lt;font size=&quot;10&quot;&gt;Organizar banco predefinido&lt;br&gt;Categorías y visibilidad&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#E65100;strokeWidth=1.5;" vertex="1" parent="ui-container">
+          <mxGeometry x="675" y="120" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ui-12" value="ContadorTransicion&lt;br&gt;&lt;font size=&quot;10&quot;&gt;Widget de transición TEA&lt;br&gt;Arco circular con cuenta regresiva&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#E65100;strokeWidth=1.5;" vertex="1" parent="ui-container">
+          <mxGeometry x="850" y="120" width="150" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- RELACIONES -->
+        <mxCell id="rel-1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endFill=0;strokeColor=#666666;dashed=1;" edge="1" parent="1" source="dom-1" target="svc-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-2" value="&lt;font size=&quot;9&quot;&gt;observa / usa&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endFill=0;strokeColor=#666666;dashed=1;" edge="1" parent="1" source="ui-1" target="svc-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-3" value="&lt;font size=&quot;9&quot;&gt;escucha&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endFill=0;strokeColor=#666666;dashed=1;" edge="1" parent="1" source="ui-4" target="svc-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-4" value="&lt;font size=&quot;9&quot;&gt;escucha&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endFill=0;strokeColor=#666666;dashed=1;" edge="1" parent="1" source="ui-7" target="svc-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-5" value="&lt;font size=&quot;9&quot;&gt;invoca&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endFill=0;strokeColor=#666666;dashed=1;" edge="1" parent="1" source="ui-6" target="svc-6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel-6" value="&lt;font size=&quot;9&quot;&gt;lee / modifica&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endFill=0;strokeColor=#666666;dashed=1;" edge="1" parent="1" source="ui-5" target="svc-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- NOTA -->
+        <mxCell id="note1" value="&lt;b&gt;Nota:&lt;/b&gt; Para el diagrama completo con &lt;i&gt;todas&lt;/i&gt; las clases,&lt;br&gt;ver el archivo D1_Diagrama_Clases.md (PlantUML)." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFFDE7;strokeColor=#F9A825;fontColor=#F57F17;size=15;" vertex="1" parent="1">
+          <mxGeometry x="40" y="350" width="260" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram name="D2 - Firestore" id="d2-firestore">
+    <mxGraphModel dx="1434" dy="780" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="d2-0" />
+        <mxCell id="d2-1" parent="d2-0" />
+
+        <mxCell id="d2-t" value="&lt;b&gt;D.2 Estructura Firestore - Organízate&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontColor=#6A1B9A;" vertex="1" parent="d2-1">
+          <mxGeometry x="40" y="20" width="400" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- COLECCION RAIZ: users -->
+        <mxCell id="d2-users" value="&lt;b&gt;users / {userId}&lt;/b&gt;&lt;br&gt;&lt;font size=&quot;10&quot;&gt;name: String | role: String | avatar: String&lt;br&gt;points: int | streak: int | email: String&lt;br&gt;emergencyName: String? | emergencyPhone: String?&lt;br&gt;notiTaskEnabled: bool | pomodoroSoundEnabled: bool&lt;br&gt;focusSessionsCompleted: int | totalFocusMinutes: int&lt;br&gt;kioskModeEnabled: bool&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#6A1B9A;strokeWidth=2;" vertex="1" parent="d2-1">
+          <mxGeometry x="480" y="80" width="360" height="140" as="geometry" />
+        </mxCell>
+
+        <!-- SUBCOLECCIONES -->
+        <mxCell id="d2-tasks" value="&lt;b&gt;tasks / {taskId}&lt;/b&gt;&lt;br&gt;&lt;font size=&quot;9&quot;&gt;text, category, iconName, colorName&lt;br&gt;done: bool | deletedByUser: bool&lt;br&gt;dueDate: Timestamp? | reminderMinutes: int?&lt;br&gt;parentTaskId: String? | generadoPorIA: bool&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;strokeWidth=1.5;" vertex="1" parent="d2-1">
+          <mxGeometry x="40" y="300" width="220" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="d2-pictos" value="&lt;b&gt;pictograms / {id}&lt;/b&gt;&lt;br&gt;&lt;font size=&quot;9&quot;&gt;imageUrl, etiqueta, textoTts&lt;br&gt;categoria, createdAt&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;strokeWidth=1.5;" vertex="1" parent="d2-1">
+          <mxGeometry x="280" y="300" width="180" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="d2-settings" value="&lt;b&gt;pictogramSettings&lt;/b&gt;&lt;br&gt;&lt;font size=&quot;9&quot;&gt;/{pictoId}: categoria, visible&lt;br&gt;/_features: featureInicio..Perfil&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;strokeWidth=1.5;" vertex="1" parent="d2-1">
+          <mxGeometry x="480" y="300" width="200" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="d2-log" value="&lt;b&gt;activityLog / {logId}&lt;/b&gt;&lt;br&gt;&lt;font size=&quot;9&quot;&gt;type, description&lt;br&gt;timestamp, metadata?&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;strokeWidth=1.5;" vertex="1" parent="d2-1">
+          <mxGeometry x="700" y="300" width="160" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="d2-linked" value="&lt;b&gt;linkedTutors / {tutorId}&lt;/b&gt;&lt;br&gt;&lt;font size=&quot;9&quot;&gt;tutorId, linkedAt&lt;br&gt;status: active/inactive&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;strokeWidth=1.5;" vertex="1" parent="d2-1">
+          <mxGeometry x="880" y="300" width="180" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="d2-linkedp" value="&lt;b&gt;linkedPatients / {id}&lt;/b&gt;&lt;br&gt;&lt;font size=&quot;9&quot;&gt;patientId, linkedAt, status&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;strokeWidth=1.5;" vertex="1" parent="d2-1">
+          <mxGeometry x="1080" y="300" width="160" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- FLECHAS SUBCOLECCIONES -->
+        <mxCell id="d2-e1" value="subcolección" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#6A1B9A;" edge="1" parent="d2-1" source="d2-users" target="d2-tasks">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d2-e2" value="subcolección" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#6A1B9A;" edge="1" parent="d2-1" source="d2-users" target="d2-pictos">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d2-e3" value="subcolección" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#6A1B9A;" edge="1" parent="d2-1" source="d2-users" target="d2-settings">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d2-e4" value="subcolección" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#6A1B9A;" edge="1" parent="d2-1" source="d2-users" target="d2-log">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d2-e5" value="subcolección" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#6A1B9A;" edge="1" parent="d2-1" source="d2-users" target="d2-linked">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d2-e6" value="subcolección" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#6A1B9A;" edge="1" parent="d2-1" source="d2-users" target="d2-linkedp">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- COLECCIONES RAIZ HERMANAS -->
+        <mxCell id="d2-inv" value="&lt;b&gt;invitationCodes / {code}&lt;/b&gt;&lt;br&gt;&lt;font size=&quot;9&quot;&gt;tutorId, tutorName, status&lt;br&gt;usedBy?, usedAt?, expiresAt&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E65100;strokeWidth=1.5;" vertex="1" parent="d2-1">
+          <mxGeometry x="40" y="500" width="200" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="d2-queue" value="&lt;b&gt;notificationQueue / {id}&lt;/b&gt;&lt;br&gt;&lt;font size=&quot;9&quot;&gt;userId, taskId, taskTitle&lt;br&gt;scheduledAt, status&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E65100;strokeWidth=1.5;" vertex="1" parent="d2-1">
+          <mxGeometry x="280" y="500" width="200" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="d2-tmpl" value="&lt;b&gt;pictogramTemplates / {id}&lt;/b&gt;&lt;br&gt;&lt;font size=&quot;9&quot;&gt;svgPath, etiqueta, textoTts&lt;br&gt;defaultCategoria&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E65100;strokeWidth=1.5;" vertex="1" parent="d2-1">
+          <mxGeometry x="520" y="500" width="200" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- NOTA INDICES -->
+        <mxCell id="d2-note" value="&lt;b&gt;Índices compuestos:&lt;/b&gt;&lt;br&gt;• users/{uid}/tasks: done + deletedByUser&lt;br&gt;• users/{uid}/activityLog: timestamp DESC&lt;br&gt;• invitationCodes: tutorId + status&lt;br&gt;• Reglas RBAC: isOwner() OR isLinkedTutor()" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFFDE7;strokeColor=#F9A825;fontColor=#F57F17;size=15;" vertex="1" parent="d2-1">
+          <mxGeometry x="820" y="460" width="280" height="100" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram name="D3 - Secuencia Tutor-Usuario" id="d3-secuencia">
+    <mxGraphModel dx="1434" dy="780" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="d3-0" />
+        <mxCell id="d3-1" parent="d3-0" />
+
+        <mxCell id="d3-t" value="&lt;b&gt;D.3 Secuencia: Vinculación Tutor-Usuario&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontColor=#1565C0;" vertex="1" parent="d3-1">
+          <mxGeometry x="40" y="20" width="450" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- ACTORES / LIFELINES -->
+        <mxCell id="d3-tutor" value="&lt;b&gt;Tutor&lt;br&gt;(Persona)&lt;/b&gt;" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#FFEBEE;strokeColor=#C62828;" vertex="1" parent="d3-1">
+          <mxGeometry x="80" y="80" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="d3-tutor-line" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#C62828;dashed=1;" vertex="1" parent="d3-1">
+          <mxGeometry x="95" y="150" width="10" height="650" as="geometry" />
+        </mxCell>
+
+        <mxCell id="d3-app" value="&lt;b&gt;Flutter App&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;strokeWidth=2;" vertex="1" parent="d3-1">
+          <mxGeometry x="280" y="80" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="d3-app-line" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#1565C0;dashed=1;" vertex="1" parent="d3-1">
+          <mxGeometry x="335" y="150" width="10" height="650" as="geometry" />
+        </mxCell>
+
+        <mxCell id="d3-auth" value="&lt;b&gt;Firebase Auth&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E65100;strokeWidth=2;" vertex="1" parent="d3-1">
+          <mxGeometry x="500" y="80" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="d3-auth-line" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#E65100;dashed=1;" vertex="1" parent="d3-1">
+          <mxGeometry x="555" y="150" width="10" height="650" as="geometry" />
+        </mxCell>
+
+        <mxCell id="d3-fs" value="&lt;b&gt;Cloud Firestore&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;strokeWidth=2;" vertex="1" parent="d3-1">
+          <mxGeometry x="720" y="80" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="d3-fs-line" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#2E7D32;dashed=1;" vertex="1" parent="d3-1">
+          <mxGeometry x="780" y="150" width="10" height="650" as="geometry" />
+        </mxCell>
+
+        <mxCell id="d3-user" value="&lt;b&gt;Usuario&lt;br&gt;(Persona)&lt;/b&gt;" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#E0F2F1;strokeColor=#00695C;" vertex="1" parent="d3-1">
+          <mxGeometry x="1050" y="80" width="30" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="d3-user-line" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=#00695C;dashed=1;" vertex="1" parent="d3-1">
+          <mxGeometry x="1065" y="150" width="10" height="650" as="geometry" />
+        </mxCell>
+
+        <!-- FASE 1: GENERACION CODIGO -->
+        <mxCell id="d3-f1-box" value="&lt;b&gt;Fase 1: Generación del código&lt;/b&gt;" style="fillColor=#E3F2FD;strokeColor=#1565C0;rounded=1;arcSize=5;verticalAlign=top;spacingTop=5;" vertex="1" parent="d3-1">
+          <mxGeometry x="60" y="160" width="1260" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="d3-m1" value="Generar código" style="html=1;verticalAlign=bottom;endArrow=block;strokeColor=#333333;fontSize=10;" edge="1" parent="d3-1" source="d3-tutor-line" target="d3-app-line">
+          <mxGeometry width="80" relative="1" as="geometry"><mxPoint x="360" y="180" as="sourcePoint"/><mxPoint x="440" y="180" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="d3-m2" value="Verificar sesión + rol" style="html=1;verticalAlign=bottom;endArrow=block;strokeColor=#333333;fontSize=10;dashed=1;" edge="1" parent="d3-1" source="d3-app-line" target="d3-auth-line">
+          <mxGeometry width="80" relative="1" as="geometry"><mxPoint x="580" y="200" as="sourcePoint"/><mxPoint x="660" y="200" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="d3-m3" value="rol=tutor" style="html=1;verticalAlign=bottom;endArrow=open;strokeColor=#333333;fontSize=10;dashed=1;" edge="1" parent="d3-1" source="d3-auth-line" target="d3-app-line">
+          <mxGeometry width="80" relative="1" as="geometry"><mxPoint x="580" y="220" as="sourcePoint"/><mxPoint x="500" y="220" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="d3-m4" value="Crear invitationCodes/{code}&lt;br&gt;status='active', TTL=7d" style="html=1;verticalAlign=bottom;endArrow=block;strokeColor=#333333;fontSize=10;" edge="1" parent="d3-1" source="d3-app-line" target="d3-fs-line">
+          <mxGeometry width="80" relative="1" as="geometry"><mxPoint x="800" y="240" as="sourcePoint"/><mxPoint x="880" y="240" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- FASE 2: COMPARTIR -->
+        <mxCell id="d3-f2-box" value="&lt;b&gt;Fase 2: Compartir código (out-of-band)&lt;/b&gt;" style="fillColor=#FFF8E1;strokeColor=#F9A825;rounded=1;arcSize=5;verticalAlign=top;spacingTop=5;" vertex="1" parent="d3-1">
+          <mxGeometry x="60" y="260" width="1260" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="d3-m5" value="Comparte por WhatsApp/email/verbal" style="html=1;verticalAlign=bottom;endArrow=block;strokeColor=#333333;fontSize=10;" edge="1" parent="d3-1" source="d3-tutor-line" target="d3-user-line">
+          <mxGeometry width="80" relative="1" as="geometry"><mxPoint x="1120" y="280" as="sourcePoint"/><mxPoint x="1200" y="280" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- FASE 3: VALIDACION -->
+        <mxCell id="d3-f3-box" value="&lt;b&gt;Fase 3: Validación del código&lt;/b&gt;" style="fillColor=#E8F5E9;strokeColor=#2E7D32;rounded=1;arcSize=5;verticalAlign=top;spacingTop=5;" vertex="1" parent="d3-1">
+          <mxGeometry x="60" y="320" width="1260" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="d3-m6" value="Ingresar código" style="html=1;verticalAlign=bottom;endArrow=block;strokeColor=#333333;fontSize=10;" edge="1" parent="d3-1" source="d3-user-line" target="d3-app-line">
+          <mxGeometry width="80" relative="1" as="geometry"><mxPoint x="700" y="340" as="sourcePoint"/><mxPoint x="780" y="340" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="d3-m7" value="GET invitationCodes/{code}" style="html=1;verticalAlign=bottom;endArrow=block;strokeColor=#333333;fontSize=10;" edge="1" parent="d3-1" source="d3-app-line" target="d3-fs-line">
+          <mxGeometry width="80" relative="1" as="geometry"><mxPoint x="800" y="360" as="sourcePoint"/><mxPoint x="880" y="360" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="d3-m8" value="Doc existe, status='active'" style="html=1;verticalAlign=bottom;endArrow=open;strokeColor=#333333;fontSize=10;dashed=1;" edge="1" parent="d3-1" source="d3-fs-line" target="d3-app-line">
+          <mxGeometry width="80" relative="1" as="geometry"><mxPoint x="880" y="380" as="sourcePoint"/><mxPoint x="800" y="380" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="d3-m9" value="Card verde: 'Código válido'" style="html=1;verticalAlign=bottom;endArrow=open;strokeColor=#333333;fontSize=10;dashed=1;" edge="1" parent="d3-1" source="d3-app-line" target="d3-user-line">
+          <mxGeometry width="80" relative="1" as="geometry"><mxPoint x="780" y="400" as="sourcePoint"/><mxPoint x="700" y="400" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- FASE 4: VINCULACION -->
+        <mxCell id="d3-f4-box" value="&lt;b&gt;Fase 4: Vinculación atómica (WriteBatch)&lt;/b&gt;" style="fillColor=#FFEBEE;strokeColor=#C62828;rounded=1;arcSize=5;verticalAlign=top;spacingTop=5;" vertex="1" parent="d3-1">
+          <mxGeometry x="60" y="420" width="1260" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="d3-m10" value="'Aceptar y vincularme'" style="html=1;verticalAlign=bottom;endArrow=block;strokeColor=#333333;fontSize=10;" edge="1" parent="d3-1" source="d3-user-line" target="d3-app-line">
+          <mxGeometry width="80" relative="1" as="geometry"><mxPoint x="700" y="440" as="sourcePoint"/><mxPoint x="780" y="440" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="d3-m11" value="WriteBatch:&lt;br&gt;1. Update invitationCodes → status='used'&lt;br&gt;2. Set linkedTutors/{tid}&lt;br&gt;3. Set acceptedInvitationCode" style="html=1;verticalAlign=bottom;endArrow=block;strokeColor=#C62828;fontSize=10;" edge="1" parent="d3-1" source="d3-app-line" target="d3-fs-line">
+          <mxGeometry width="80" relative="1" as="geometry"><mxPoint x="800" y="470" as="sourcePoint"/><mxPoint x="880" y="470" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="d3-m12" value="Batch commit OK" style="html=1;verticalAlign=bottom;endArrow=open;strokeColor=#333333;fontSize=10;dashed=1;" edge="1" parent="d3-1" source="d3-fs-line" target="d3-app-line">
+          <mxGeometry width="80" relative="1" as="geometry"><mxPoint x="880" y="500" as="sourcePoint"/><mxPoint x="800" y="500" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="d3-m13" value="Snackbar: '¡Vinculado!'" style="html=1;verticalAlign=bottom;endArrow=open;strokeColor=#333333;fontSize=10;dashed=1;" edge="1" parent="d3-1" source="d3-app-line" target="d3-user-line">
+          <mxGeometry width="80" relative="1" as="geometry"><mxPoint x="780" y="510" as="sourcePoint"/><mxPoint x="700" y="510" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- FASE 5: SYNC -->
+        <mxCell id="d3-f5-box" value="&lt;b&gt;Fase 5: Sincronización en tiempo real (Streams)&lt;/b&gt;" style="fillColor=#F3E5F5;strokeColor=#7B1FA2;rounded=1;arcSize=5;verticalAlign=top;spacingTop=5;" vertex="1" parent="d3-1">
+          <mxGeometry x="60" y="530" width="1260" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="d3-m14" value="Snapshot → linkedPatients" style="html=1;verticalAlign=bottom;endArrow=open;strokeColor=#7B1FA2;fontSize=10;dashed=1;" edge="1" parent="d3-1" source="d3-fs-line" target="d3-app-line">
+          <mxGeometry width="80" relative="1" as="geometry"><mxPoint x="880" y="550" as="sourcePoint"/><mxPoint x="440" y="550" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="d3-m15" value="StreamBuilder actualiza UI" style="html=1;verticalAlign=bottom;endArrow=open;strokeColor=#333333;fontSize=10;dashed=1;" edge="1" parent="d3-1" source="d3-app-line" target="d3-tutor-line">
+          <mxGeometry width="80" relative="1" as="geometry"><mxPoint x="360" y="570" as="sourcePoint"/><mxPoint x="200" y="570" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="d3-m16" value="StreamBuilder actualiza UI" style="html=1;verticalAlign=bottom;endArrow=open;strokeColor=#333333;fontSize=10;dashed=1;" edge="1" parent="d3-1" source="d3-app-line" target="d3-user-line">
+          <mxGeometry width="80" relative="1" as="geometry"><mxPoint x="700" y="580" as="sourcePoint"/><mxPoint x="1200" y="580" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- FASE 6: SUPERVISION -->
+        <mxCell id="d3-f6-box" value="&lt;b&gt;Fase 6: Supervisión post-vinculación&lt;/b&gt;" style="fillColor=#E0F2F1;strokeColor=#00695C;rounded=1;arcSize=5;verticalAlign=top;spacingTop=5;" vertex="1" parent="d3-1">
+          <mxGeometry x="60" y="610" width="1260" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="d3-m17" value="Abrir panel de tutor" style="html=1;verticalAlign=bottom;endArrow=block;strokeColor=#333333;fontSize=10;" edge="1" parent="d3-1" source="d3-tutor-line" target="d3-app-line">
+          <mxGeometry width="80" relative="1" as="geometry"><mxPoint x="200" y="630" as="sourcePoint"/><mxPoint x="360" y="630" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="d3-m18" value="GET linkedTutors/{tid} (RBAC)" style="html=1;verticalAlign=bottom;endArrow=block;strokeColor=#333333;fontSize=10;" edge="1" parent="d3-1" source="d3-app-line" target="d3-fs-line">
+          <mxGeometry width="80" relative="1" as="geometry"><mxPoint x="800" y="650" as="sourcePoint"/><mxPoint x="880" y="650" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="d3-m19" value="Datos en tiempo real" style="html=1;verticalAlign=bottom;endArrow=open;strokeColor=#333333;fontSize=10;dashed=1;" edge="1" parent="d3-1" source="d3-fs-line" target="d3-app-line">
+          <mxGeometry width="80" relative="1" as="geometry"><mxPoint x="880" y="670" as="sourcePoint"/><mxPoint x="800" y="670" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="d3-m20" value="Tabs: Tareas, Pictos, Progreso, Historial, Ajustes" style="html=1;verticalAlign=bottom;endArrow=open;strokeColor=#333333;fontSize=10;dashed=1;" edge="1" parent="d3-1" source="d3-app-line" target="d3-tutor-line">
+          <mxGeometry width="80" relative="1" as="geometry"><mxPoint x="360" y="680" as="sourcePoint"/><mxPoint x="200" y="680" as="targetPoint"/></mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram name="D4 - Despliegue" id="d4-despliegue">
+    <mxGraphModel dx="1434" dy="780" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="d4-0" />
+        <mxCell id="d4-1" parent="d4-0" />
+
+        <mxCell id="d4-t" value="&lt;b&gt;D.4 Diagrama de Despliegue - Infraestructura Firebase&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontColor=#2E7D32;" vertex="1" parent="d4-1">
+          <mxGeometry x="40" y="20" width="550" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- CLIENTE -->
+        <mxCell id="d4-client-box" value="&lt;b&gt;📱 Dispositivo Móvil&lt;/b&gt;" style="swimlane;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;strokeWidth=2;fontColor=#1565C0;startSize=30;" vertex="1" parent="d4-1">
+          <mxGeometry x="40" y="80" width="320" height="280" as="geometry" />
+        </mxCell>
+        <mxCell id="d4-flutter" value="&lt;b&gt;Flutter App&lt;/b&gt;&lt;br&gt;&lt;font size=&quot;10&quot;&gt;Android / iOS&lt;br&gt;&lt;br&gt;• Auth SDK&lt;br&gt;• Firestore SDK&lt;br&gt;• Storage SDK&lt;br&gt;• Cloud Functions (HTTPS Callable)&lt;br&gt;&lt;br&gt;Capa UI (Screens, Widgets)&lt;br&gt;Servicios (Auth, Pictogram, Notification)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1565C0;strokeWidth=1.5;" vertex="1" parent="d4-client-box">
+          <mxGeometry x="20" y="45" width="280" height="220" as="geometry" />
+        </mxCell>
+
+        <!-- FIREBASE BACKEND -->
+        <mxCell id="d4-fb-box" value="&lt;b&gt;☁️ Backend Firebase&lt;/b&gt;" style="swimlane;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;strokeWidth=2;fontColor=#2E7D32;startSize=30;" vertex="1" parent="d4-1">
+          <mxGeometry x="400" y="80" width="620" height="520" as="geometry" />
+        </mxCell>
+
+        <mxCell id="d4-auth" value="&lt;b&gt;🔐 Firebase Authentication&lt;/b&gt;&lt;br&gt;&lt;font size=&quot;9&quot;&gt;Email/Password | Google Sign-In (OAuth 2.0)&lt;br&gt;Custom Claims: role=tutor|usuario&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2E7D32;strokeWidth=1.5;" vertex="1" parent="d4-fb-box">
+          <mxGeometry x="20" y="45" width="280" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="d4-firestore" value="&lt;b&gt;🗄️ Cloud Firestore&lt;/b&gt;&lt;br&gt;&lt;font size=&quot;9&quot;&gt;Native mode | Region: us-central1&lt;br&gt;Colecciones: users, invitationCodes, notificationQueue&lt;br&gt;Subcolecciones: tasks, pictograms, activityLog, linkedTutors&lt;br&gt;Índices compuestos | Reglas RBAC&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2E7D32;strokeWidth=1.5;" vertex="1" parent="d4-fb-box">
+          <mxGeometry x="20" y="130" width="280" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="d4-storage" value="&lt;b&gt;📦 Firebase Storage&lt;/b&gt;&lt;br&gt;&lt;font size=&quot;9&quot;&gt;Bucket: organizate-26065.appspot.com&lt;br&gt;Path: users/{uid}/pictograms/{file}.jpg&lt;br&gt;Rules: owner or linkedTutor&lt;br&gt;Metadata: uploadedBy, createdAt&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2E7D32;strokeWidth=1.5;" vertex="1" parent="d4-fb-box">
+          <mxGeometry x="20" y="235" width="280" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="d4-functions" value="&lt;b&gt;⚡ Cloud Functions (Node.js 18)&lt;/b&gt;&lt;br&gt;&lt;font size=&quot;9&quot;&gt;• desglosarTarea → Gemini AI (256MB, 10s)&lt;br&gt;• sintetizarVoz → Google TTS (Neural2)&lt;br&gt;• processDueNotifications → FCM (cron 1min)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2E7D32;strokeWidth=1.5;" vertex="1" parent="d4-fb-box">
+          <mxGeometry x="320" y="45" width="280" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="d4-fcm" value="&lt;b&gt;📲 Firebase Cloud Messaging&lt;/b&gt;&lt;br&gt;&lt;font size=&quot;9&quot;&gt;notificationQueue → Cloud Fn → FCM → Device&lt;br&gt;Mensajes directos por token (no topics)&lt;br&gt;Payload: taskTitle, dueDate, reminderMinutes&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2E7D32;strokeWidth=1.5;" vertex="1" parent="d4-fb-box">
+          <mxGeometry x="320" y="150" width="280" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- APIS EXTERNAS -->
+        <mxCell id="d4-ext-box" value="&lt;b&gt;🌐 Google Cloud APIs&lt;/b&gt;" style="swimlane;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E65100;strokeWidth=2;fontColor=#E65100;startSize=30;" vertex="1" parent="d4-1">
+          <mxGeometry x="1060" y="80" width="300" height="280" as="geometry" />
+        </mxCell>
+        <mxCell id="d4-gemini" value="&lt;b&gt;🤖 Google Generative AI&lt;/b&gt;&lt;br&gt;&lt;font size=&quot;9&quot;&gt;Gemini 2.0 / 2.5 Flash&lt;br&gt;Input: {tarea, tiempoDisponible}&lt;br&gt;Output: [{titulo, tiempo_estimado}]&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#E65100;strokeWidth=1.5;" vertex="1" parent="d4-ext-box">
+          <mxGeometry x="20" y="45" width="260" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="d4-tts" value="&lt;b&gt;🔊 Cloud Text-to-Speech&lt;/b&gt;&lt;br&gt;&lt;font size=&quot;9&quot;&gt;Neural2 (es-ES) | Voz: neural2-f&lt;br&gt;Input: {texto, vozId}&lt;br&gt;Output: {audioContent: base64}&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#E65100;strokeWidth=1.5;" vertex="1" parent="d4-ext-box">
+          <mxGeometry x="20" y="130" width="260" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="d4-drive" value="&lt;b&gt;📂 Google Drive API v3&lt;/b&gt;&lt;br&gt;&lt;font size=&quot;9&quot;&gt;Scope: drive.file&lt;br&gt;Backup/Restore JSON + imágenes&lt;br&gt;Carpeta: Simple_App_Backup&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#E65100;strokeWidth=1.5;" vertex="1" parent="d4-ext-box">
+          <mxGeometry x="20" y="215" width="260" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- CI/CD -->
+        <mxCell id="d4-cicd-box" value="&lt;b&gt;🛠️ CI/CD &amp;amp; Desarrollo&lt;/b&gt;" style="swimlane;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#7B1FA2;strokeWidth=2;fontColor=#7B1FA2;startSize=30;" vertex="1" parent="d4-1">
+          <mxGeometry x="40" y="400" width="320" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="d4-github" value="&lt;b&gt;GitHub&lt;/b&gt;&lt;br&gt;Repositorio: Organizate/simple" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#7B1FA2;strokeWidth=1.5;" vertex="1" parent="d4-cicd-box">
+          <mxGeometry x="20" y="45" width="130" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="d4-actions" value="&lt;b&gt;GitHub Actions&lt;/b&gt;&lt;br&gt;flutter test | flutter build | firebase deploy" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#7B1FA2;strokeWidth=1.5;" vertex="1" parent="d4-cicd-box">
+          <mxGeometry x="170" y="45" width="130" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="d4-emulator" value="&lt;b&gt;Firebase Emulator Suite&lt;/b&gt;&lt;br&gt;Firestore + Auth + Functions (pruebas locales)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#7B1FA2;strokeWidth=1.5;" vertex="1" parent="d4-cicd-box">
+          <mxGeometry x="20" y="120" width="280" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- FLECHAS CONEXION -->
+        <mxCell id="d4-c1" value="HTTPS / gRPC" style="html=1;verticalAlign=bottom;endArrow=block;strokeColor=#1565C0;fontSize=10;" edge="1" parent="d4-1" source="d4-client-box" target="d4-fb-box">
+          <mxGeometry width="80" relative="1" as="geometry"><mxPoint x="400" y="200" as="sourcePoint"/><mxPoint x="480" y="200" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="d4-c2" value="HTTPS Callable" style="html=1;verticalAlign=bottom;endArrow=block;strokeColor=#1565C0;fontSize=10;" edge="1" parent="d4-1" source="d4-client-box" target="d4-functions">
+          <mxGeometry width="80" relative="1" as="geometry"><mxPoint x="400" y="250" as="sourcePoint"/><mxPoint x="600" y="250" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="d4-c3" value="OAuth 2.0" style="html=1;verticalAlign=bottom;endArrow=block;strokeColor=#E65100;fontSize=10;" edge="1" parent="d4-1" source="d4-client-box" target="d4-drive">
+          <mxGeometry width="80" relative="1" as="geometry"><mxPoint x="400" y="300" as="sourcePoint"/><mxPoint x="1100" y="300" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="d4-c4" value="REST API" style="html=1;verticalAlign=bottom;endArrow=block;strokeColor=#E65100;fontSize=10;dashed=1;" edge="1" parent="d4-1" source="d4-functions" target="d4-gemini">
+          <mxGeometry width="80" relative="1" as="geometry"><mxPoint x="700" y="120" as="sourcePoint"/><mxPoint x="1100" y="120" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="d4-c5" value="REST API" style="html=1;verticalAlign=bottom;endArrow=block;strokeColor=#E65100;fontSize=10;dashed=1;" edge="1" parent="d4-1" source="d4-functions" target="d4-tts">
+          <mxGeometry width="80" relative="1" as="geometry"><mxPoint x="700" y="160" as="sourcePoint"/><mxPoint x="1100" y="160" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="d4-c6" value="Admin SDK" style="html=1;verticalAlign=bottom;endArrow=block;strokeColor=#2E7D32;fontSize=10;dashed=1;" edge="1" parent="d4-1" source="d4-functions" target="d4-fcm">
+          <mxGeometry width="80" relative="1" as="geometry"><mxPoint x="700" y="200" as="sourcePoint"/><mxPoint x="700" y="200" as="targetPoint"/></mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram name="D5 - Mockups UI" id="d5-mockups">
+    <mxGraphModel dx="1434" dy="780" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="d5-0" />
+        <mxCell id="d5-1" parent="d5-0" />
+
+        <mxCell id="d5-t" value="&lt;b&gt;D.5 Mockups de Interfaz de Usuario&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontColor=#E65100;" vertex="1" parent="d5-1">
+          <mxGeometry x="40" y="20" width="400" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- MOCKUP 1: PICTOGRAMAS (TEA) -->
+        <mxCell id="d5-m1-frame" value="&lt;b&gt;PantallaUsuarioTEA&lt;/b&gt; (Tablero AAC)" style="swimlane;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;strokeWidth=2;fontColor=#1565C0;startSize=30;" vertex="1" parent="d5-1">
+          <mxGeometry x="40" y="70" width="360" height="520" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-m1-appbar" value="[SOS]  MI DÍA  [⚙️][➕][⏱️]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1565C0;strokeColor=#0D47A1;fontColor=#ffffff;align=center;" vertex="1" parent="d5-m1-frame">
+          <mxGeometry x="10" y="40" width="340" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-m1-tabs" value="MI RUTINA | COMIDA | EMOCIONES | ACCIONES" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#BBDEFB;strokeColor=#1565C0;fontColor=#1565C0;align=center;fontSize=10;" vertex="1" parent="d5-m1-frame">
+          <mxGeometry x="10" y="85" width="340" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-m1-rutina" value="☀️ RUTINA DE MAÑANA" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;fontColor=#2E7D32;align=center;fontSize=10;" vertex="1" parent="d5-m1-frame">
+          <mxGeometry x="10" y="118" width="340" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-m1-p1" value="🚿&lt;br&gt;DESPERTAR" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#90CAF9;align=center;fontSize=9;" vertex="1" parent="d5-m1-frame">
+          <mxGeometry x="15" y="148" width="100" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-m1-p2" value="🎒&lt;br&gt;COLEGIO" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#90CAF9;align=center;fontSize=9;" vertex="1" parent="d5-m1-frame">
+          <mxGeometry x="130" y="148" width="100" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-m1-p3" value="🪥&lt;br&gt;DIENTES" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#90CAF9;align=center;fontSize=9;" vertex="1" parent="d5-m1-frame">
+          <mxGeometry x="245" y="148" width="100" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-m1-p4" value="🚽&lt;br&gt;BAÑO" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#90CAF9;align=center;fontSize=9;" vertex="1" parent="d5-m1-frame">
+          <mxGeometry x="15" y="228" width="100" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-m1-p5" value="👕&lt;br&gt;VESTIR" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#90CAF9;align=center;fontSize=9;" vertex="1" parent="d5-m1-frame">
+          <mxGeometry x="130" y="228" width="100" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-m1-p6" value="🍽️&lt;br&gt;DESAYUNO" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#90CAF9;align=center;fontSize=9;" vertex="1" parent="d5-m1-frame">
+          <mxGeometry x="245" y="228" width="100" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-m1-ayuda" value="🔔 AYUDA" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFEBEE;strokeColor=#C62828;fontColor=#C62828;align=center;fontWeight=bold;" vertex="1" parent="d5-m1-frame">
+          <mxGeometry x="10" y="440" width="340" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-m1-nav" value="🏠  📋  🖼️  ⏱️  👤" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#BDBDBD;align=center;fontSize=12;" vertex="1" parent="d5-m1-frame">
+          <mxGeometry x="10" y="480" width="340" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- MOCKUP 2: PANEL TUTOR -->
+        <mxCell id="d5-m2-frame" value="&lt;b&gt;TutorSupervisarScreen&lt;/b&gt; (Panel Tutor)" style="swimlane;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E65100;strokeWidth=2;fontColor=#E65100;startSize=30;" vertex="1" parent="d5-1">
+          <mxGeometry x="440" y="70" width="360" height="520" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-m2-appbar" value="[👤] María González ▼       [⚙️]" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#E0E0E0;fontColor=#333333;align=left;spacingLeft=10;" vertex="1" parent="d5-m2-frame">
+          <mxGeometry x="10" y="40" width="340" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-m2-tasks" value="📋 TAREAS                    [+] Agregar" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#E0E0E0;fontColor=#333333;align=left;spacingLeft=10;" vertex="1" parent="d5-m2-frame">
+          <mxGeometry x="10" y="90" width="340" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-m2-t1" value="[⚪] Estudiar matemáticas&lt;br&gt;&lt;font size=&quot;9&quot;&gt;📚 Estudios · Hoy 15:00&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#90CAF9;align=left;spacingLeft=10;" vertex="1" parent="d5-m2-frame">
+          <mxGeometry x="15" y="128" width="330" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-m2-t2" value="[✅] Lavar los platos&lt;br&gt;&lt;font size=&quot;9&quot;&gt;🏠 Hogar · Completada&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#A5D6A7;align=left;spacingLeft=10;" vertex="1" parent="d5-m2-frame">
+          <mxGeometry x="15" y="188" width="330" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-m2-t3" value="[🗑️] Hacer la cama&lt;br&gt;&lt;font size=&quot;9&quot;&gt;🏠 Hogar · Eliminada&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#E0E0E0;align=left;spacingLeft=10;fontColor=#9E9E9E;" vertex="1" parent="d5-m2-frame">
+          <mxGeometry x="15" y="248" width="330" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-m2-fab" value="[➕ Agregar tarea]" style="ellipse;whiteSpace=wrap;html=1;fillColor=#E65100;strokeColor=#BF360C;fontColor=#ffffff;align=center;" vertex="1" parent="d5-m2-frame">
+          <mxGeometry x="240" y="310" width="100" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-m2-nav" value="Tareas  🖼️  Progreso  📜  Ajustes" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#BDBDBD;align=center;fontSize=11;" vertex="1" parent="d5-m2-frame">
+          <mxGeometry x="10" y="480" width="340" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- MOCKUP 3: POMODORO -->
+        <mxCell id="d5-m3-frame" value="&lt;b&gt;FocoScreen&lt;/b&gt; (Temporizador Pomodoro)" style="swimlane;whiteSpace=wrap;html=1;fillColor=#FFEBEE;strokeColor=#C62828;strokeWidth=2;fontColor=#C62828;startSize=30;" vertex="1" parent="d5-1">
+          <mxGeometry x="840" y="70" width="360" height="520" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-m3-appbar" value="⬅️  Modo Foco" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#E0E0E0;fontColor=#333333;align=left;spacingLeft=10;" vertex="1" parent="d5-m3-frame">
+          <mxGeometry x="10" y="40" width="340" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-m3-timer" value="🍅&lt;br&gt;&lt;font size=&quot;20&quot;&gt;25:00&lt;/font&gt;" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#C62828;strokeWidth=3;align=center;" vertex="1" parent="d5-m3-frame">
+          <mxGeometry x="80" y="100" width="200" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-m3-progress" value="[══════════════════════]  100%" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFCDD2;strokeColor=#EF9A9A;align=center;fontSize=10;" vertex="1" parent="d5-m3-frame">
+          <mxGeometry x="30" y="320" width="300" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-m3-btn" value="[ ▶️  INICIAR ]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C62828;strokeColor=#B71C1C;fontColor=#ffffff;align=center;fontWeight=bold;" vertex="1" parent="d5-m3-frame">
+          <mxGeometry x="50" y="360" width="260" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-m3-controls" value="⏸️ Pausa    ⏹️ Detener    ⏭️ Saltar" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=none;align=center;fontSize=11;" vertex="1" parent="d5-m3-frame">
+          <mxGeometry x="20" y="415" width="320" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="d5-m3-settings" value="🔊 Sonido: Campanilla clásica&lt;br&gt;📳 Vibración: Desactivada&lt;br&gt;&lt;br&gt;Sesiones: 12 | Minutos: 300" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=none;align=left;spacingLeft=10;fontSize=10;fontColor=#666666;" vertex="1" parent="d5-m3-frame">
+          <mxGeometry x="20" y="455" width="320" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- LEYENDA -->
+        <mxCell id="d5-legend" value="&lt;b&gt;Leyenda:&lt;/b&gt;&lt;br&gt;• Pictogramas TEA: Grid 3x3, tarjetas cuadradas, TTS por tap&lt;br&gt;• Panel Tutor: IndexedStack 5 tabs, FAB extendido, streams en tiempo real&lt;br&gt;• Pomodoro: Timer circular con progreso, ChangeNotifier, persistencia SP" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#FFFDE7;strokeColor=#F9A825;fontColor=#F57F17;size=15;" vertex="1" parent="d5-1">
+          <mxGeometry x="40" y="610" width="520" height="80" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

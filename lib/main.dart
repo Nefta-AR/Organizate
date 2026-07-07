@@ -13,6 +13,7 @@
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -28,6 +29,16 @@ Future<void> main() async {
   // Garantiza que los bindings de Flutter estén listos antes de cualquier
   // llamada nativa (Firebase, plugins). Siempre debe ser la primera línea.
   WidgetsFlutterBinding.ensureInitialized();
+
+  // flutter_tts en web lanza SpeechSynthesisErrorEvent ("interrupted") como
+  // excepción no manejada cuando se interrumpe el audio al presionar rápido.
+  // Lo interceptamos aquí antes de que llegue a la consola.
+  if (kIsWeb) {
+    WidgetsBinding.instance.platformDispatcher.onError = (error, stack) {
+      if (error.toString().contains('SpeechSynthesisErrorEvent')) return true;
+      return false;
+    };
+  }
 
   // Inicializa Firebase con las opciones generadas por flutterfire configure.
   // DefaultFirebaseOptions selecciona automáticamente la configuración

@@ -58,6 +58,7 @@ import 'package:simple/core/services/google_drive_service.dart';
 import 'package:simple/core/utils/reminder_options.dart';
 import 'package:simple/core/widgets/custom_nav_bar.dart';
 import 'package:simple/features/tutor_dashboard/screens/pantallas_config_screen.dart';
+import 'package:simple/core/services/tour_service.dart';
 
 // ── Paleta de colores interna ─────────────────────────────────────────────────
 // Tonos blue-grey para distinguir esta pantalla de las de flujo principal.
@@ -621,6 +622,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 // Backup y restauración (disponible para todos los roles)
                 _buildBackupCard(),
+                const SizedBox(height: 16),
+
+                // Repetir tour de bienvenida
+                _buildTourCard(),
                 const SizedBox(height: 16),
 
                 // Botón de cerrar sesión (disponible para todos los roles)
@@ -1520,6 +1525,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   fontWeight: FontWeight.w600,
                   color: _Palette.textDark)),
         ],
+      ),
+    );
+  }
+
+  // ── Card de tour de bienvenida ────────────────────────────────────────────────
+
+  Widget _buildTourCard() {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: ListTile(
+        leading: const Icon(Icons.tour_rounded, color: _Palette.accent),
+        title: const Text(
+          'Ver tour de bienvenida',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        subtitle: const Text('Repasa el recorrido interactivo de la App'),
+        onTap: () async {
+          await TourService.resetAll();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Tour reiniciado — vuelve a la pantalla principal'),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+            Navigator.of(context).pop();
+          }
+        },
       ),
     );
   }
