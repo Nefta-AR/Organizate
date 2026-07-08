@@ -1,3 +1,7 @@
 {
-    "codium.codeCompletion.enable": false
+    "codium.codeCompletion.enable": false,
+    "java.import.exclusions": [
+        "**/packages/flutter_native_timezone/android/**",
+        "**/packages/flutter_native_timezone/example/android/**"
+    ]
 }

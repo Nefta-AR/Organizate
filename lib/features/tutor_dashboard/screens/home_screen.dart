@@ -86,6 +86,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ── FAB arrastrable ───────────────────────────────────────────────────────
+  static const double _fabSize = 60.0;
+  static const double _fabEdgeMargin = 16.0;
+  static const double _fabBottomClearance = 40.0;
   Offset _fabOffset = Offset.zero;
   bool _fabReady = false;       // true después de calcular posición inicial
   Offset? _dragOrigin;          // posición del FAB cuando inicia el drag
@@ -116,9 +119,14 @@ class _HomeScreenState extends State<HomeScreen> {
         final dy = prefs.getDouble('fab_dy');
         if (!mounted) return;
 
-        final maxLeft = size.width - 64;
-        final maxTop = size.height - safeBottom - navBarHeight - 64;
         final minTop = mq.padding.top + 16;
+        final maxLeft = size.width - _fabSize - _fabEdgeMargin;
+        final computedMaxTop = size.height -
+            safeBottom -
+            navBarHeight -
+            _fabSize -
+            _fabBottomClearance;
+        final maxTop = computedMaxTop < minTop ? minTop : computedMaxTop;
 
         if (dx != null && dy != null) {
           // Validamos que la posición guardada siga dentro de la pantalla visible
@@ -138,7 +146,7 @@ class _HomeScreenState extends State<HomeScreen> {
         } else {
           // Primera vez: posición fija arriba de la nav bar, a la derecha
           setState(() {
-            _fabOffset = Offset(size.width - 80, size.height - safeBottom - navBarHeight - 80);
+            _fabOffset = Offset(maxLeft, maxTop);
             _fabReady = true;
           });
         }
@@ -860,14 +868,24 @@ class _HomeScreenState extends State<HomeScreen> {
           if (_dragOrigin == null) return;
           final safeBottom = MediaQuery.of(context).padding.bottom +
               MediaQuery.of(context).viewInsets.bottom;
-          const fabSize = 96.0; // FloatingActionButton.large
           const navBarHeight = 80.0;
+          final computedMaxTop = size.height -
+              safeBottom -
+              navBarHeight -
+              _fabSize -
+              _fabBottomClearance;
+          final maxTop = computedMaxTop < _fabEdgeMargin
+              ? _fabEdgeMargin
+              : computedMaxTop;
           setState(() {
             _fabOffset = Offset(
               (_dragOrigin!.dx + details.offsetFromOrigin.dx)
-                  .clamp(8.0, size.width - fabSize - 8.0),
+                  .clamp(
+                    _fabEdgeMargin,
+                    size.width - _fabSize - _fabEdgeMargin,
+                  ),
               (_dragOrigin!.dy + details.offsetFromOrigin.dy)
-                  .clamp(8.0, size.height - safeBottom - navBarHeight - fabSize - 8.0),
+                  .clamp(_fabEdgeMargin, maxTop),
             );
           });
         },
@@ -879,13 +897,16 @@ class _HomeScreenState extends State<HomeScreen> {
         child: AnimatedScale(
           scale: _dragOrigin != null ? 1.15 : 1.0,
           duration: const Duration(milliseconds: 180),
-          child: FloatingActionButton.large(
-            onPressed: null, // manejado por GestureDetector
-            backgroundColor: const Color(0xFF7C5CBF),
-            foregroundColor: Colors.white,
-            tooltip: 'Súper Experto\n(mantén presionado para mover)',
-            elevation: _dragOrigin != null ? 12 : 8,
-            child: const Icon(Icons.auto_fix_high, size: 28),
+          child: SizedBox.square(
+            dimension: _fabSize,
+            child: FloatingActionButton(
+              onPressed: null, // manejado por GestureDetector
+              backgroundColor: const Color(0xFF7C5CBF),
+              foregroundColor: Colors.white,
+              tooltip: 'Súper Experto\n(mantén presionado para mover)',
+              elevation: _dragOrigin != null ? 12 : 8,
+              child: const Icon(Icons.auto_fix_high, size: 20),
+            ),
           ),
         ),
       ),
