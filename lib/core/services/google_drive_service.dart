@@ -389,11 +389,6 @@ class GoogleDriveService {
       final settings = await _collectSettings();
       final settingsBytes = utf8.encode(jsonEncode(settings)); // bytes del JSON
 
-      // Paso 4: preparar el archivo de configuración
-      final settingsFile = drive.File()
-        ..name = _settingsFileName
-        ..parents = [folderId];
-
       // Verificamos si ya existe para usar update vs create
       final existingSettingsId =
           await _findFileInFolder(folderId, _settingsFileName);
@@ -401,7 +396,7 @@ class GoogleDriveService {
       if (existingSettingsId != null) {
         // Actualizamos el archivo existente (no cambiamos el ID)
         await _driveApi!.files.update(
-          settingsFile,
+          drive.File()..name = _settingsFileName,
           existingSettingsId,
           uploadMedia: drive.Media(
             http.ByteStream.fromBytes(settingsBytes),
@@ -411,7 +406,9 @@ class GoogleDriveService {
       } else {
         // Creamos un nuevo archivo
         await _driveApi!.files.create(
-          settingsFile,
+          drive.File()
+            ..name = _settingsFileName
+            ..parents = [folderId],
           uploadMedia: drive.Media(
             http.ByteStream.fromBytes(settingsBytes),
             settingsBytes.length,
@@ -431,18 +428,15 @@ class GoogleDriveService {
         // Usamos el nombre del archivo local como nombre en Drive
         final fileName = path.basename(pictoFile.path);
 
-        final driveFile = drive.File()
-          ..name = fileName
-          ..parents = [pictogramFolderId]
-          ..mimeType = 'image/jpeg'; // Tipo MIME explícito para imágenes
-
         // Misma lógica update/create para cada pictograma
         final existingId =
             await _findFileInFolder(pictogramFolderId, fileName);
 
         if (existingId != null) {
           await _driveApi!.files.update(
-            driveFile,
+            drive.File()
+              ..name = fileName
+              ..mimeType = 'image/jpeg',
             existingId,
             uploadMedia: drive.Media(
               http.ByteStream.fromBytes(bytes),
@@ -451,7 +445,10 @@ class GoogleDriveService {
           );
         } else {
           await _driveApi!.files.create(
-            driveFile,
+            drive.File()
+              ..name = fileName
+              ..parents = [pictogramFolderId]
+              ..mimeType = 'image/jpeg',
             uploadMedia: drive.Media(
               http.ByteStream.fromBytes(bytes),
               bytes.length,

@@ -834,7 +834,7 @@ class _HomeScreenState extends State<HomeScreen> {
         shape: ShapeLightFocus.Circle,
         contents: [
           TargetContent(
-            align: ContentAlign.left,
+            align: ContentAlign.top,
             child: const TourStepCard(
               icon: Icons.open_with_rounded,
               iconColor: Color(0xFF7C5CBF),
