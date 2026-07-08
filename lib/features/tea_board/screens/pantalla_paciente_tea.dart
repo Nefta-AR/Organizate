@@ -154,9 +154,9 @@ class Pictograma {
 // pueda componer "YO + QUIERO + [acción]" usando el strip de vocabulario core.
 // Emociones/necesidades/saludos conservan frases completas (son mensajes en sí).
 const List<Pictograma> _banco = [
-  Pictograma(id: 'm1', rutaSvg: 'assets/images/pictogramas/Ducha.svg',             etiqueta: 'DESPERTAR',   textoTts: 'Despertar',           categoria: 'Mañana'),
+  Pictograma(id: 'm1', rutaSvg: 'assets/images/pictogramas/Ducha.svg',             etiqueta: 'DUCHA',       textoTts: 'DUCHARME',                categoria: 'Mañana'),
   Pictograma(id: 'm2', rutaSvg: 'assets/images/pictogramas/Lavar Manos.svg',       etiqueta: 'LAVAR CARA',  textoTts: 'Lavar la cara',       categoria: 'Mañana'),
-  Pictograma(id: 'm3', rutaSvg: 'assets/images/pictogramas/Cepillar Dientes.svg',      etiqueta: 'DIENTES',     textoTts: 'Cepillar los dientes', categoria: 'Mañana'),
+  Pictograma(id: 'm3', rutaSvg: 'assets/images/pictogramas/Cepillar Dientes.svg',  etiqueta: 'DIENTES',     textoTts: 'Cepillar los dientes', categoria: 'Mañana'),
   Pictograma(id: 'm4', rutaSvg: 'assets/images/pictogramas/Colegio.svg',           etiqueta: 'COLEGIO',     textoTts: 'Colegio',             categoria: 'Mañana'),
   Pictograma(id: 't1', rutaSvg: 'assets/images/pictogramas/Almuerzo.svg',          etiqueta: 'ALMORZAR',    textoTts: 'Almorzar',            categoria: 'Tarde'),
   Pictograma(id: 't2', rutaSvg: 'assets/images/pictogramas/Computador.svg',        etiqueta: 'COMPUTADOR',  textoTts: 'Usar el computador',  categoria: 'Tarde'),

@@ -87,6 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ── FAB arrastrable ───────────────────────────────────────────────────────
   static const double _fabSize = 56.0;
+  static const double _fabTouchSize = 104.0;
   static const double _fabEdgeMargin = 16.0;
   static const double _fabBottomClearance = 40.0;
   static const String _fabDxKey = 'fab_dx_v2';
@@ -94,11 +95,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Offset _fabOffset = Offset.zero;
   bool _fabReady = false;       // true después de calcular posición inicial
   Offset? _dragOrigin;          // posición del FAB cuando inicia el drag
+  Offset? _fabPointerStart;     // punto inicial del dedo/mouse
+  bool _fabWasDragged = false;  // diferencia tap vs arrastre real
 
   final _greetingTourKey    = GlobalKey();
   final _taskCardTourKey    = GlobalKey();
   final _superExpertoTourKey = GlobalKey();
   final _fabTourKey         = GlobalKey();
+  final _fabStackKey        = GlobalKey();
   final _navTourKey         = GlobalKey();
 
   @override
@@ -179,6 +183,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       appBar: _buildAppBar(),
       body: Stack(
+        key: _fabStackKey,
         children: [
           _buildBody(),
           if (_fabReady) _buildDraggableFab(),
@@ -876,21 +881,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildDraggableFab() {
     final size = MediaQuery.of(context).size;
+    const hitSlop = (_fabTouchSize - _fabSize) / 2;
     return Positioned(
-      left: _fabOffset.dx,
-      top: _fabOffset.dy,
-      child: GestureDetector(
+      left: _fabOffset.dx - hitSlop,
+      top: _fabOffset.dy - hitSlop,
+      child: Listener(
         key: _fabTourKey,
-        // Tap normal → abre Súper Experto
-        onTap: () => SuperExpertoSheet.show(context),
-        // Long press → activa modo arrastre con feedback háptico
-        onLongPressStart: (_) {
-          HapticFeedback.mediumImpact();
+        behavior: HitTestBehavior.opaque,
+        onPointerDown: (event) {
           _dragOrigin = _fabOffset;
+          _fabPointerStart = event.position;
+          _fabWasDragged = false;
         },
-        // Actualiza posición mientras se arrastra (limitada a bordes de pantalla)
-        onLongPressMoveUpdate: (details) {
-          if (_dragOrigin == null) return;
+        onPointerMove: (event) {
+          if (_dragOrigin == null || _fabPointerStart == null) return;
+          final delta = event.position - _fabPointerStart!;
+          if (!_fabWasDragged && delta.distance <= 4) return;
+          if (!_fabWasDragged) {
+            _fabWasDragged = true;
+            HapticFeedback.mediumImpact();
+          }
           final safeBottom = MediaQuery.of(context).padding.bottom +
               MediaQuery.of(context).viewInsets.bottom;
           const navBarHeight = 80.0;
@@ -904,33 +914,53 @@ class _HomeScreenState extends State<HomeScreen> {
               : computedMaxTop;
           setState(() {
             _fabOffset = Offset(
-              (_dragOrigin!.dx + details.offsetFromOrigin.dx)
+              (_dragOrigin!.dx + delta.dx)
                   .clamp(
                     _fabEdgeMargin,
                     size.width - _fabSize - _fabEdgeMargin,
                   ),
-              (_dragOrigin!.dy + details.offsetFromOrigin.dy)
+              (_dragOrigin!.dy + delta.dy)
                   .clamp(_fabEdgeMargin, maxTop),
             );
           });
         },
-        // Al soltar: limpia el origen y guarda la posición
-        onLongPressEnd: (_) {
-          _dragOrigin = null;
-          _saveFabPosition();
+        onPointerUp: (_) {
+          final shouldOpen = !_fabWasDragged;
+          setState(() {
+            _dragOrigin = null;
+            _fabPointerStart = null;
+            _fabWasDragged = false;
+          });
+          if (shouldOpen) {
+            SuperExpertoSheet.show(context);
+          } else {
+            _saveFabPosition();
+          }
         },
-        child: AnimatedScale(
-          scale: _dragOrigin != null ? 1.15 : 1.0,
-          duration: const Duration(milliseconds: 180),
-          child: SizedBox.square(
-            dimension: _fabSize,
-            child: FloatingActionButton(
-              onPressed: null, // manejado por GestureDetector
-              backgroundColor: const Color(0xFF7C5CBF),
-              foregroundColor: Colors.white,
-              tooltip: 'Súper Experto\n(mantén presionado para mover)',
-              elevation: _dragOrigin != null ? 12 : 8,
-              child: const Icon(Icons.auto_fix_high, size: 20),
+        onPointerCancel: (_) {
+          setState(() {
+            _dragOrigin = null;
+            _fabPointerStart = null;
+            _fabWasDragged = false;
+          });
+        },
+        child: SizedBox.square(
+          dimension: _fabTouchSize,
+          child: Center(
+            child: AnimatedScale(
+              scale: _dragOrigin != null ? 1.15 : 1.0,
+              duration: const Duration(milliseconds: 180),
+              child: SizedBox.square(
+                dimension: _fabSize,
+                child: FloatingActionButton(
+                  onPressed: null, // manejado por GestureDetector
+                  backgroundColor: const Color(0xFF7C5CBF),
+                  foregroundColor: Colors.white,
+                  tooltip: 'Súper Experto\n(arrastra para mover)',
+                  elevation: _dragOrigin != null ? 12 : 8,
+                  child: const Icon(Icons.auto_fix_high, size: 20),
+                ),
+              ),
             ),
           ),
         ),
