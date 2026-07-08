@@ -477,7 +477,7 @@ class _PantallaUsuarioTEAState extends State<PantallaUsuarioTEA>
 
   void _startUserTour() {
     final colors = Theme.of(context).colorScheme;
-    final safeTopPadding = MediaQuery.of(context).padding.top + 12;
+    final pictogramTourTop = MediaQuery.of(context).padding.top + 56;
 
     final targets = [
       TargetFocus(
@@ -521,15 +521,18 @@ class _PantallaUsuarioTEAState extends State<PantallaUsuarioTEA>
         radius: 16,
         contents: [
           TargetContent(
-            align: ContentAlign.top,
-            child: Padding(
-              padding: EdgeInsets.only(top: safeTopPadding),
-              child: const TourStepCard(
-                icon: Icons.grid_view_rounded,
-                iconColor: Colors.deepPurple,
-                title: 'Pictogramas',
-                body: 'Toca una imagen para escucharla. Mantén presionado para personalizar el texto que se lee en voz alta.',
-              ),
+            align: ContentAlign.custom,
+            customPosition: CustomTargetContentPosition(
+              top: pictogramTourTop,
+              left: 0,
+              right: 0,
+            ),
+            padding: EdgeInsets.zero,
+            child: const TourStepCard(
+              icon: Icons.grid_view_rounded,
+              iconColor: Colors.deepPurple,
+              title: 'Pictogramas',
+              body: 'Toca una imagen para escucharla. Mantén presionado para personalizar el texto que se lee en voz alta.',
             ),
           ),
         ],
