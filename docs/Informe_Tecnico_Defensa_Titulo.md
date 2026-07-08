@@ -290,8 +290,10 @@ Se adoptó una metodología **ágil adaptada**, basada en **Scrum** con sprints 
 | RF-10 | El tutor debe supervisar tareas, pictogramas, progreso y historial de actividad del usuario vinculado | Alta | Supervisión |
 | RF-11 | El tutor debe poder configurar qué pestañas son visibles para el usuario | Media | Supervisión |
 | RF-12 | El sistema debe registrar un log de actividad (tareas completadas, pictogramas usados, sesiones Pomodoro) | Media | Historial |
+| RF-13 | El sistema debe ofrecer un tour de bienvenida diferenciado para tutores, acorde al panel de supervisión | Media | Onboarding |
 | RF-14 | El usuario debe poder respaldar su configuración a Google Drive | Baja | Backup |
 | RF-15 | El sistema debe soportar contacto de emergencia con botón SOS | Media | Seguridad |
+| RF-16 | El sistema debe explicar al usuario el menú inferior y el acceso a Perfil/Configuración durante el tour de bienvenida | Media | Onboarding |
 
 ### 10.2 Requerimientos no funcionales
 
@@ -540,9 +542,11 @@ Usuario     Flutter App    PictogramService    TTS Engine    Firestore
 #### Módulo 1: Autenticación y Roles (Auth)
 
 **Arquitectura:** El sistema implementa un **RoleDispatcher** en el `AuthGate` que, tras la autenticación, lee el campo `role` del documento Firestore del usuario y redirige a:
-- `PantallaUsuarioTEA` (anteriormente `PantallaPacienteTEA`) si el rol es `usuario`.
-- `HomeScreen` (dashboard completo) si el rol es `tutor`.
+- `HomeScreen` (dashboard del usuario) si el rol es `usuario`.
+- `TutorSupervisarScreen` (panel de supervisión) si el rol es `tutor`.
 - `RoleSelectionScreen` si el rol es `null` o no está definido.
+
+**Tour de bienvenida del usuario:** `HomeScreen` usa `TutorialCoachMark` para explicar el saludo inicial, la tarea prioritaria, Súper Experto, el botón flotante y el menú inferior. El paso de navegación indica que Perfil concentra Configuración, respaldo, cierre de sesión y repetición del tour.
 
 **Patrón aplicado:** **Strategy Pattern** (selector de pantalla según rol) + **Stream-based reactivity** (el `AuthGate` se reconstruye automáticamente cuando el stream de autenticación o el stream del rol emiten nuevos valores).
 
@@ -605,6 +609,8 @@ class RoleDispatcher extends StatelessWidget {
 #### Módulo 6: Supervisión del Tutor
 
 **Arquitectura:** El panel de supervisión (`TutorSupervisarScreen`) utiliza un `IndexedStack` con `ValueKey(patientId)` para forzar reconstrucción completa al cambiar de usuario activo. Los tabs incluyen: Tareas, Pictogramas, Progreso, Historial, Ajustes.
+
+**Tour de bienvenida del tutor:** `TutorSupervisarScreen` incluye un tour propio persistido mediante `TourService`, con focos sobre selector de usuario, configuración, panel de supervisión, creación de tareas, navegación inferior y estado inicial sin usuarios vinculados. Este flujo es independiente del tour del usuario.
 
 **Configuración de pestañas:** El tutor puede habilitar/deshabilitar pestañas mediante flags en `users/{uid}/pictogramSettings/_features`. El `CustomNavBar` lee estos flags en tiempo real y calcula el índice dinámicamente, siendo robusto ante cambios en el número de tabs.
 
@@ -722,8 +728,10 @@ class RoleDispatcher extends StatelessWidget {
 | RF-10: Supervisión tutor | ✅ Cumplido | 5 tabs: Tareas, Pictogramas, Progreso, Historial, Ajustes |
 | RF-11: Configuración de pestañas | ✅ Cumplido | `_features` doc con flags booleanos |
 | RF-12: Historial de actividad | ✅ Cumplido | `activityLog` con 7 tipos de eventos |
+| RF-13: Tour de bienvenida tutor | ✅ Cumplido | `TutorialCoachMark` + `TourService` con flujo independiente |
 | RF-14: Respaldo Google Drive | ✅ Cumplido | `GoogleDriveService` con backup/restore |
 | RF-15: Contacto de emergencia | ✅ Cumplido | Botón SOS + `tel:` launcher |
+| RF-16: Tour de bienvenida usuario | ✅ Cumplido | Menú inferior y Perfil/Configuración explicados en `HomeScreen` |
 
 ---
 

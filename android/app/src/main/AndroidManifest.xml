@@ -14,7 +14,8 @@
     <application
         android:label="Simple"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/simple"
+        android:roundIcon="@mipmap/simple">
         <receiver
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"
             android:exported="false" />

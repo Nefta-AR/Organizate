@@ -86,9 +86,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ── FAB arrastrable ───────────────────────────────────────────────────────
-  static const double _fabSize = 60.0;
+  static const double _fabSize = 56.0;
   static const double _fabEdgeMargin = 16.0;
   static const double _fabBottomClearance = 40.0;
+  static const String _fabDxKey = 'fab_dx_v2';
+  static const String _fabDyKey = 'fab_dy_v2';
   Offset _fabOffset = Offset.zero;
   bool _fabReady = false;       // true después de calcular posición inicial
   Offset? _dragOrigin;          // posición del FAB cuando inicia el drag
@@ -97,6 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final _taskCardTourKey    = GlobalKey();
   final _superExpertoTourKey = GlobalKey();
   final _fabTourKey         = GlobalKey();
+  final _navTourKey         = GlobalKey();
 
   @override
   void initState() {
@@ -115,8 +118,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
       Future<void> applySaved() async {
         final prefs = await SharedPreferences.getInstance();
-        final dx = prefs.getDouble('fab_dx');
-        final dy = prefs.getDouble('fab_dy');
+        final dx = prefs.getDouble(_fabDxKey);
+        final dy = prefs.getDouble(_fabDyKey);
         if (!mounted) return;
 
         final minTop = mq.padding.top + 16;
@@ -127,6 +130,8 @@ class _HomeScreenState extends State<HomeScreen> {
             _fabSize -
             _fabBottomClearance;
         final maxTop = computedMaxTop < minTop ? minTop : computedMaxTop;
+        final defaultTop =
+            (size.height * 0.70).clamp(minTop, maxTop).toDouble();
 
         if (dx != null && dy != null) {
           // Validamos que la posición guardada siga dentro de la pantalla visible
@@ -140,13 +145,13 @@ class _HomeScreenState extends State<HomeScreen> {
           });
           // Si la posición estaba fuera de límites, guardamos la corregida
           if (clamped.dx != dx || clamped.dy != dy) {
-            await prefs.setDouble('fab_dx', clamped.dx);
-            await prefs.setDouble('fab_dy', clamped.dy);
+            await prefs.setDouble(_fabDxKey, clamped.dx);
+            await prefs.setDouble(_fabDyKey, clamped.dy);
           }
         } else {
-          // Primera vez: posición fija arriba de la nav bar, a la derecha
+          // Primera vez: espacio blanco bajo accesos rápidos, alineado a la derecha.
           setState(() {
-            _fabOffset = Offset(maxLeft, maxTop);
+            _fabOffset = Offset(maxLeft, defaultTop);
             _fabReady = true;
           });
         }
@@ -158,8 +163,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _saveFabPosition() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble('fab_dx', _fabOffset.dx);
-    await prefs.setDouble('fab_dy', _fabOffset.dy);
+    await prefs.setDouble(_fabDxKey, _fabOffset.dx);
+    await prefs.setDouble(_fabDyKey, _fabOffset.dy);
   }
 
   @override
@@ -168,7 +173,10 @@ class _HomeScreenState extends State<HomeScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     return Scaffold(
-      bottomNavigationBar: const CustomNavBar(screen: NavScreen.inicio),
+      bottomNavigationBar: KeyedSubtree(
+        key: _navTourKey,
+        child: const CustomNavBar(screen: NavScreen.inicio),
+      ),
       appBar: _buildAppBar(),
       body: Stack(
         children: [
@@ -775,8 +783,8 @@ class _HomeScreenState extends State<HomeScreen> {
             child: const TourStepCard(
               icon: Icons.waving_hand_rounded,
               iconColor: Color(0xFFBFA67A),
-              title: 'Bienvenido/a',
-              body: 'Aquí ves tu saludo personalizado y una frase motivacional que cambia cada día para inspirarte.',
+              title: 'Inicio',
+              body: 'Esta es tu pantalla principal. Aquí ves tu saludo, puntos, racha y un resumen rápido para saber por dónde empezar.',
             ),
           ),
         ],
@@ -792,8 +800,8 @@ class _HomeScreenState extends State<HomeScreen> {
             child: const TourStepCard(
               icon: Icons.task_alt_rounded,
               iconColor: Color(0xFF7DA88A),
-              title: 'Tarea Prioritaria',
-              body: 'Tu tarea más urgente aparece aquí. Tócala para marcarla como hecha. Mantén presionado para editarla o eliminarla.',
+              title: 'Tarea prioritaria',
+              body: 'Aquí aparece la tarea más importante o urgente. Puedes marcarla como hecha, revisar todas tus tareas o crear una nueva cuando lo necesites.',
             ),
           ),
         ],
@@ -809,8 +817,8 @@ class _HomeScreenState extends State<HomeScreen> {
             child: const TourStepCard(
               icon: Icons.auto_fix_high_rounded,
               iconColor: Color(0xFF7C5CBF),
-              title: 'Súper Experto (IA)',
-              body: 'Toca aquí o el botón flotante para activar el asistente de inteligencia artificial. Divide tareas grandes en pasos simples.',
+              title: 'Súper Experto',
+              body: 'Si una tarea se siente muy grande, entra aquí para dividirla en pasos simples y fáciles de seguir.',
             ),
           ),
         ],
@@ -825,8 +833,25 @@ class _HomeScreenState extends State<HomeScreen> {
             child: const TourStepCard(
               icon: Icons.open_with_rounded,
               iconColor: Color(0xFF7C5CBF),
-              title: 'Botón Mágico',
-              body: 'Toca para agregar tareas con IA. Mantén presionado y arrastra para mover el botón a donde te resulte más cómodo.',
+              title: 'Botón mágico',
+              body: 'Tócalo para abrir Súper Experto desde cualquier parte de Inicio. Mantén presionado y arrastra para dejarlo en un lugar cómodo.',
+            ),
+          ),
+        ],
+      ),
+      TargetFocus(
+        identify: 'navigation',
+        keyTarget: _navTourKey,
+        shape: ShapeLightFocus.RRect,
+        radius: 16,
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            child: const TourStepCard(
+              icon: Icons.menu_rounded,
+              iconColor: Color(0xFF4F7CAC),
+              title: 'Menú inferior',
+              body: 'Usa esta barra para moverte por la App: Inicio, Tareas, Pictogramas, Foco y Perfil. En Perfil encuentras Configuración, respaldo, cerrar sesión y la opción para repetir este tour.',
             ),
           ),
         ],

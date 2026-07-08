@@ -390,6 +390,8 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
 | 02 Jul | Limpieza de análisis estático | Se reemplazan llamadas deprecadas `withOpacity` por `withValues(alpha:)` y se ajustan constructores `const`; `flutter analyze` pasa a 0 issues | Fase 6 |
 | 02 Jul | FAB de Súper Experto más visible en HomeScreen | Se cambia a `FloatingActionButton.large` con color púrpura de alto contraste, se valida la posición guardada contra los límites de pantalla y se reposiciona por encima de la nav bar | Fase 6 |
 | 02 Jul | Botón "Agregar" redundante eliminado del tab Pictogramas del tutor | Se elimina el FAB extendido "+ Agregar" y su bottom sheet asociado; el tutor accede a la creación de pictogramas desde "Organizar pictogramas" → "Nuevo" | Fase 6 |
+| 08 Jul | Tour de bienvenida del tutor | `TutorSupervisarScreen` incorpora un tour propio con pasos para usuario supervisado, configuración, panel, agregar tareas, navegación inferior y estado sin usuarios vinculados | Fase 6 |
+| 08 Jul | Tour de bienvenida del usuario reforzado | `HomeScreen` explica Inicio, tarea prioritaria, Súper Experto, botón flotante, menú inferior y acceso a Perfil/Configuración; se versiona la clave local del tour | Fase 6 |
 
 ---
 

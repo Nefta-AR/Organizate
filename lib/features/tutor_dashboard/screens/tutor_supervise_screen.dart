@@ -40,9 +40,12 @@ import 'package:intl/intl.dart';
 import 'package:simple/core/services/activity_log_service.dart';
 import 'package:simple/core/services/auth_service.dart';
 import 'package:simple/core/services/pictogram_service.dart';
+import 'package:simple/core/services/tour_service.dart';
+import 'package:simple/core/widgets/tour_step_card.dart';
 import 'package:simple/features/tea_board/screens/pictogram_manager_screen.dart';
 import 'package:simple/features/tda_focus/screens/progreso_screen.dart';
 import 'package:simple/features/tutor_dashboard/screens/settings_screen.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
 // ─── Pantalla principal del tutor ─────────────────────────────────────────────
 
@@ -58,7 +61,17 @@ class _TutorSupervisarScreenState extends State<TutorSupervisarScreen> {
   List<Map<String, dynamic>> _patients = [];
   Map<String, dynamic>? _selectedPatient;
   bool _loading = true;
+  bool _tourCheckScheduled = false;
   late final StreamSubscription<List<Map<String, dynamic>>> _patientsSub;
+
+  final _patientSelectorTourKey = GlobalKey();
+  final _settingsTourKey = GlobalKey();
+  final _mainPanelTourKey = GlobalKey();
+  final _tasksOverviewTourKey = GlobalKey();
+  final _addTaskTourKey = GlobalKey();
+  final _navTourKey = GlobalKey();
+  final _emptyStateTourKey = GlobalKey();
+  final _linkPatientTourKey = GlobalKey();
 
   @override
   void initState() {
@@ -78,6 +91,7 @@ class _TutorSupervisarScreenState extends State<TutorSupervisarScreen> {
           }
         }
       });
+      _scheduleTutorTourIfNeeded();
     });
   }
 
@@ -97,6 +111,186 @@ class _TutorSupervisarScreenState extends State<TutorSupervisarScreen> {
       _selectedPatient = patient;
       _currentIndex = 0;
     });
+  }
+
+  void _scheduleTutorTourIfNeeded() {
+    if (_tourCheckScheduled) return;
+    _tourCheckScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      _tourCheckScheduled = false;
+      if (!mounted || _loading) return;
+      if (_patients.isEmpty) {
+        final shouldShow = await TourService.needsTutorEmptyTour();
+        if (mounted && shouldShow) _startEmptyTutorTour();
+      } else {
+        final shouldShow = await TourService.needsTutorTour();
+        if (mounted && shouldShow) _startTutorTour();
+      }
+    });
+  }
+
+  TargetFocus? _buildTarget({
+    required String identify,
+    required GlobalKey key,
+    required ShapeLightFocus shape,
+    required Widget child,
+    ContentAlign align = ContentAlign.bottom,
+    double radius = 12,
+  }) {
+    if (key.currentContext == null) return null;
+    return TargetFocus(
+      identify: identify,
+      keyTarget: key,
+      shape: shape,
+      radius: radius,
+      contents: [
+        TargetContent(
+          align: align,
+          child: child,
+        ),
+      ],
+    );
+  }
+
+  void _showTutorTour(
+    List<TargetFocus> targets,
+    Future<void> Function() markDone,
+  ) {
+    if (targets.isEmpty) return;
+    TutorialCoachMark(
+      targets: targets,
+      colorShadow: Colors.black,
+      opacityShadow: 0.82,
+      hideSkip: false,
+      textSkip: 'SALTAR',
+      textStyleSkip: const TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.w700,
+        fontSize: 14,
+      ),
+      onFinish: () {
+        markDone();
+      },
+      onSkip: () {
+        markDone();
+        return true;
+      },
+    ).show(context: context);
+  }
+
+  void _startTutorTour() {
+    final targets = [
+      _buildTarget(
+        identify: 'tutor_patient_selector',
+        key: _patientSelectorTourKey,
+        shape: ShapeLightFocus.RRect,
+        align: ContentAlign.bottom,
+        child: const TourStepCard(
+          icon: Icons.supervised_user_circle_rounded,
+          iconColor: Color(0xFF607D8B),
+          title: 'Usuario supervisado',
+          body: 'Desde aquí ves qué usuario estás acompañando. Si tienes más de uno vinculado, toca el nombre para cambiar entre perfiles.',
+        ),
+      ),
+      _buildTarget(
+        identify: 'tutor_settings',
+        key: _settingsTourKey,
+        shape: ShapeLightFocus.Circle,
+        align: ContentAlign.bottom,
+        child: const TourStepCard(
+          icon: Icons.settings_rounded,
+          iconColor: Color(0xFF7B6F9F),
+          title: 'Acceso a configuración',
+          body: 'Este botón abre la configuración del tutor. Desde ahí puedes administrar tu cuenta y vincular usuarios cuando lo necesites.',
+        ),
+      ),
+      _buildTarget(
+        identify: 'tutor_tasks_overview',
+        key: _tasksOverviewTourKey,
+        shape: ShapeLightFocus.RRect,
+        radius: 16,
+        align: ContentAlign.bottom,
+        child: const TourStepCard(
+          icon: Icons.fact_check_rounded,
+          iconColor: Color(0xFF4F8A8B),
+          title: 'Tareas del usuario',
+          body: 'En esta sección ves todas las tareas del usuario: pendientes, completadas y eliminadas. Pueden ser de Estudios, Hogar, Medicamentos, Foco u otra categoría.',
+        ),
+      ),
+      _buildTarget(
+        identify: 'tutor_add_task',
+        key: _addTaskTourKey,
+        shape: ShapeLightFocus.RRect,
+        radius: 18,
+        align: ContentAlign.top,
+        child: const TourStepCard(
+          icon: Icons.add_task_rounded,
+          iconColor: Color(0xFF7DA88A),
+          title: 'Agregar tareas',
+          body: 'Usa este botón para crear tareas para el usuario. Puedes elegir categoría, añadir una nota y dejar marcada la tarea como agregada por tutor.',
+        ),
+      ),
+      _buildTarget(
+        identify: 'tutor_navigation',
+        key: _navTourKey,
+        shape: ShapeLightFocus.RRect,
+        radius: 16,
+        align: ContentAlign.top,
+        child: const TourStepCard(
+          icon: Icons.view_week_rounded,
+          iconColor: Color(0xFFD08B5B),
+          title: 'Secciones del tutor',
+          body: 'La barra inferior reúne Tareas, Pictogramas, Progreso, Historial y Ajustes. Cada sección controla una parte distinta del acompañamiento.',
+        ),
+      ),
+    ].whereType<TargetFocus>().toList();
+
+    _showTutorTour(targets, TourService.markTutorTourDone);
+  }
+
+  void _startEmptyTutorTour() {
+    final targets = [
+      _buildTarget(
+        identify: 'tutor_empty_state',
+        key: _emptyStateTourKey,
+        shape: ShapeLightFocus.RRect,
+        radius: 16,
+        align: ContentAlign.top,
+        child: const TourStepCard(
+          icon: Icons.people_outline_rounded,
+          iconColor: Color(0xFF607D8B),
+          title: 'Primero vincula un usuario',
+          body: 'El panel de tutor se activa cuando hay al menos un usuario vinculado. Después podrás supervisar tareas, pictogramas, progreso, historial y ajustes.',
+        ),
+      ),
+      _buildTarget(
+        identify: 'tutor_link_patient',
+        key: _linkPatientTourKey,
+        shape: ShapeLightFocus.RRect,
+        radius: 18,
+        align: ContentAlign.top,
+        child: const TourStepCard(
+          icon: Icons.link_rounded,
+          iconColor: Color(0xFF7DA88A),
+          title: 'Generar invitación',
+          body: 'Toca este botón para ir a Configuración y crear un código de invitación. El usuario lo usa para quedar vinculado contigo.',
+        ),
+      ),
+      _buildTarget(
+        identify: 'tutor_empty_settings',
+        key: _settingsTourKey,
+        shape: ShapeLightFocus.Circle,
+        align: ContentAlign.bottom,
+        child: const TourStepCard(
+          icon: Icons.settings_rounded,
+          iconColor: Color(0xFF7B6F9F),
+          title: 'Acceso rápido a ajustes',
+          body: 'También puedes entrar desde aquí para revisar configuración del tutor y opciones de vinculación.',
+        ),
+      ),
+    ].whereType<TargetFocus>().toList();
+
+    _showTutorTour(targets, TourService.markTutorEmptyTourDone);
   }
 
   void _showPatientPicker() {
@@ -181,63 +375,71 @@ class _TutorSupervisarScreenState extends State<TutorSupervisarScreen> {
 
     return Scaffold(
       appBar: _buildAppBar(),
-      body: IndexedStack(
-        index: _currentIndex,
-        children: [
-          _TutorTasksTab(
-            key: ValueKey('tasks_$pk'),
-            patientId: pk,
-            patientName: _patientName,
-          ),
-          _TutorPictogramsTab(
-            key: ValueKey('pictos_$pk'),
-            patientId: pk,
-            patientName: _patientName,
-          ),
-          ProgresoScreen(
-            key: ValueKey('progreso_$pk'),
-            userId: pk,
-          ),
-          _TutorHistorialTab(
-            key: ValueKey('history_$pk'),
-            patientId: pk,
-          ),
-          _TutorConfigTab(
-            key: ValueKey('config_$pk'),
-            patientId: pk,
-            patientName: _patientName,
-          ),
-        ],
+      body: KeyedSubtree(
+        key: _mainPanelTourKey,
+        child: IndexedStack(
+          index: _currentIndex,
+          children: [
+            _TutorTasksTab(
+              key: ValueKey('tasks_$pk'),
+              patientId: pk,
+              patientName: _patientName,
+              tasksOverviewTourKey: _tasksOverviewTourKey,
+              addTaskTourKey: _addTaskTourKey,
+            ),
+            _TutorPictogramsTab(
+              key: ValueKey('pictos_$pk'),
+              patientId: pk,
+              patientName: _patientName,
+            ),
+            ProgresoScreen(
+              key: ValueKey('progreso_$pk'),
+              userId: pk,
+            ),
+            _TutorHistorialTab(
+              key: ValueKey('history_$pk'),
+              patientId: pk,
+            ),
+            _TutorConfigTab(
+              key: ValueKey('config_$pk'),
+              patientId: pk,
+              patientName: _patientName,
+            ),
+          ],
+        ),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (i) => setState(() => _currentIndex = i),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.task_alt_outlined),
-            selectedIcon: Icon(Icons.task_alt),
-            label: 'Tareas',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.image_outlined),
-            selectedIcon: Icon(Icons.image_rounded),
-            label: 'Pictogramas',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.bar_chart_outlined),
-            selectedIcon: Icon(Icons.bar_chart_rounded),
-            label: 'Progreso',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.history),
-            label: 'Historial',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.tune_outlined),
-            selectedIcon: Icon(Icons.tune_rounded),
-            label: 'Ajustes',
-          ),
-        ],
+      bottomNavigationBar: KeyedSubtree(
+        key: _navTourKey,
+        child: NavigationBar(
+          selectedIndex: _currentIndex,
+          onDestinationSelected: (i) => setState(() => _currentIndex = i),
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.task_alt_outlined),
+              selectedIcon: Icon(Icons.task_alt),
+              label: 'Tareas',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.image_outlined),
+              selectedIcon: Icon(Icons.image_rounded),
+              label: 'Pictogramas',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.bar_chart_outlined),
+              selectedIcon: Icon(Icons.bar_chart_rounded),
+              label: 'Progreso',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.history),
+              label: 'Historial',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.tune_outlined),
+              selectedIcon: Icon(Icons.tune_rounded),
+              label: 'Ajustes',
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -260,31 +462,37 @@ class _TutorSupervisarScreenState extends State<TutorSupervisarScreen> {
               : null,
         ),
       ),
-      title: _patients.length > 1
-          ? GestureDetector(
-              onTap: _showPatientPicker,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _patientName,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  const Icon(Icons.arrow_drop_down),
-                ],
+      title: KeyedSubtree(
+        key: _patientSelectorTourKey,
+        child: _patients.length > 1
+            ? GestureDetector(
+                onTap: _showPatientPicker,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _patientName,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const Icon(Icons.arrow_drop_down),
+                  ],
+                ),
+              )
+            : Text(
+                _patientName,
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
-            )
-          : Text(
-              _patientName,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
+      ),
       actions: [
         IconButton(
+          key: _settingsTourKey,
           icon: const Icon(Icons.settings_outlined),
           tooltip: 'Configuración',
           onPressed: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const SettingsScreen(showNavBar: false)),
+            MaterialPageRoute(
+              builder: (_) => const SettingsScreen(showNavBar: false),
+            ),
           ),
         ),
       ],
@@ -299,10 +507,13 @@ class _TutorSupervisarScreenState extends State<TutorSupervisarScreen> {
         elevation: 0,
         actions: [
           IconButton(
+            key: _settingsTourKey,
             icon: const Icon(Icons.settings_outlined),
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const SettingsScreen(showNavBar: false)),
+              MaterialPageRoute(
+                builder: (_) => const SettingsScreen(showNavBar: false),
+              ),
             ),
           ),
         ],
@@ -310,38 +521,45 @@ class _TutorSupervisarScreenState extends State<TutorSupervisarScreen> {
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.people_outline,
-                  size: 80, color: Colors.grey.shade300),
-              const SizedBox(height: 20),
-              const Text(
-                'Sin usuarios vinculados',
-                style:
-                    TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Ve a Configuración y genera un código de invitación para vincular un usuario.',
-                style: TextStyle(color: Colors.grey.shade600),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 28),
-              ElevatedButton.icon(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const SettingsScreen()),
+          child: KeyedSubtree(
+            key: _emptyStateTourKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.people_outline,
+                  size: 80,
+                  color: Colors.grey.shade300,
                 ),
-                icon: const Icon(Icons.settings),
-                label: const Text('Ir a Configuración'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 24, vertical: 12),
+                const SizedBox(height: 20),
+                const Text(
+                  'Sin usuarios vinculados',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                Text(
+                  'Ve a Configuración y genera un código de invitación para vincular un usuario.',
+                  style: TextStyle(color: Colors.grey.shade600),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 28),
+                ElevatedButton.icon(
+                  key: _linkPatientTourKey,
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                  ),
+                  icon: const Icon(Icons.settings),
+                  label: const Text('Ir a Configuración'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -354,11 +572,15 @@ class _TutorSupervisarScreenState extends State<TutorSupervisarScreen> {
 class _TutorTasksTab extends StatefulWidget {
   final String patientId;
   final String patientName;
+  final GlobalKey? tasksOverviewTourKey;
+  final GlobalKey? addTaskTourKey;
 
   const _TutorTasksTab({
     super.key,
     required this.patientId,
     required this.patientName,
+    this.tasksOverviewTourKey,
+    this.addTaskTourKey,
   });
 
   @override
@@ -513,84 +735,106 @@ class _TutorTasksTabState extends State<_TutorTasksTab> {
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
+        key: widget.addTaskTourKey,
         onPressed: _addTask,
         icon: const Icon(Icons.add),
         label: const Text('Agregar tarea'),
       ),
-      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream:
-            _tasksRef.orderBy('createdAt', descending: true).snapshots(),
-        builder: (context, snap) {
-          if (snap.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final docs = snap.data?.docs ?? [];
-          if (docs.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+      body: Stack(
+        children: [
+          StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+            stream:
+                _tasksRef.orderBy('createdAt', descending: true).snapshots(),
+            builder: (context, snap) {
+              if (snap.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final docs = snap.data?.docs ?? [];
+              if (docs.isEmpty) {
+                return const Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.task_alt, size: 64, color: Colors.grey),
+                      SizedBox(height: 12),
+                      Text(
+                        'Sin tareas. Agrega una con el botón +.',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              final pending = docs
+                  .where((d) =>
+                      d.data()['done'] != true &&
+                      d.data()['deletedByUser'] != true)
+                  .toList();
+              final done = docs
+                  .where((d) =>
+                      d.data()['done'] == true &&
+                      d.data()['deletedByUser'] != true)
+                  .toList();
+              final deleted = docs
+                  .where((d) => d.data()['deletedByUser'] == true)
+                  .toList();
+
+              return ListView(
+                padding:
+                    const EdgeInsets.fromLTRB(16, 16, 16, 100),
                 children: [
-                  Icon(Icons.task_alt, size: 64, color: Colors.grey),
-                  SizedBox(height: 12),
-                  Text('Sin tareas. Agrega una con el botón +.',
-                      style: TextStyle(color: Colors.grey)),
+                  if (pending.isNotEmpty) ...[
+                    _sectionHeader(
+                      'Pendientes (${pending.length})',
+                      Colors.blueAccent,
+                    ),
+                    ...pending.map((d) => _SupervisionTaskTile(
+                          doc: d,
+                          onToggle: () =>
+                              _toggleDone(d.id, d.data()['done'] == true),
+                          onDelete: () => _deleteTask(d.id),
+                        )),
+                    const SizedBox(height: 16),
+                  ],
+                  if (done.isNotEmpty) ...[
+                    _sectionHeader(
+                      'Completadas (${done.length})',
+                      Colors.green,
+                    ),
+                    ...done.map((d) => _SupervisionTaskTile(
+                          doc: d,
+                          onToggle: () =>
+                              _toggleDone(d.id, d.data()['done'] == true),
+                          onDelete: () => _deleteTask(d.id),
+                        )),
+                    const SizedBox(height: 16),
+                  ],
+                  if (deleted.isNotEmpty) ...[
+                    _sectionHeader(
+                      'Eliminadas por el usuario (${deleted.length})',
+                      Colors.grey,
+                    ),
+                    ...deleted.map((d) => _DeletedTaskTile(
+                          doc: d,
+                          onDelete: () => _deleteTask(d.id),
+                        )),
+                  ],
                 ],
+              );
+            },
+          ),
+          if (widget.tasksOverviewTourKey != null)
+            Positioned(
+              left: 16,
+              top: 16,
+              right: 16,
+              height: 112,
+              child: IgnorePointer(
+                child: SizedBox(key: widget.tasksOverviewTourKey),
               ),
-            );
-          }
-
-          final pending = docs
-              .where((d) =>
-                  d.data()['done'] != true &&
-                  d.data()['deletedByUser'] != true)
-              .toList();
-          final done = docs
-              .where((d) =>
-                  d.data()['done'] == true &&
-                  d.data()['deletedByUser'] != true)
-              .toList();
-          final deleted = docs
-              .where((d) => d.data()['deletedByUser'] == true)
-              .toList();
-
-          return ListView(
-            padding:
-                const EdgeInsets.fromLTRB(16, 16, 16, 100),
-            children: [
-              if (pending.isNotEmpty) ...[
-                _sectionHeader(
-                    'Pendientes (${pending.length})', Colors.blueAccent),
-                ...pending.map((d) => _SupervisionTaskTile(
-                      doc: d,
-                      onToggle: () =>
-                          _toggleDone(d.id, d.data()['done'] == true),
-                      onDelete: () => _deleteTask(d.id),
-                    )),
-                const SizedBox(height: 16),
-              ],
-              if (done.isNotEmpty) ...[
-                _sectionHeader(
-                    'Completadas (${done.length})', Colors.green),
-                ...done.map((d) => _SupervisionTaskTile(
-                      doc: d,
-                      onToggle: () =>
-                          _toggleDone(d.id, d.data()['done'] == true),
-                      onDelete: () => _deleteTask(d.id),
-                    )),
-                const SizedBox(height: 16),
-              ],
-              if (deleted.isNotEmpty) ...[
-                _sectionHeader(
-                    'Eliminadas por el usuario (${deleted.length})',
-                    Colors.grey),
-                ...deleted.map((d) => _DeletedTaskTile(
-                      doc: d,
-                      onDelete: () => _deleteTask(d.id),
-                    )),
-              ],
-            ],
-          );
-        },
+            ),
+        ],
       ),
     );
   }

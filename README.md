@@ -8,6 +8,8 @@ Simple es una aplicación móvil inclusiva diseñada específicamente para apoya
 
 ### 📝 Registro de Cambios Recientes
 
+- ✅ **Tour de bienvenida del tutor** agregado en `TutorSupervisarScreen`, con pasos específicos para usuario supervisado, configuración, panel, tareas y navegación.
+- ✅ **Tour de bienvenida del usuario** reforzado en `HomeScreen`, incluyendo menú inferior y acceso a Perfil/Configuración.
 - ✅ **Botón "Agregar" redundante eliminado** del tab Pictogramas del tutor; ahora solo queda el botón naranja "Organizar".
 - ✅ **FAB de Súper Experto más visible** en HomeScreen: color púrpura de alto contraste, tamaño grande y posición validada para no quedar fuera de pantalla.
 - ✅ **Análisis estático limpio**: `flutter analyze` reporta 0 issues tras corregir `pictogram_service.dart` y advertencias de deprecación.
@@ -49,10 +51,12 @@ El enrutamiento basado en roles (`RoleDispatcher`) garantiza que cada usuario ll
 - **Lista de tareas** con creación, completado y eliminación, registrando cada acción en el historial de actividad.
 - Rutinas de **respiración guiada** para gestión de la ansiedad.
 - **Asistente IA** impulsado por Gemini para el desglose automático de tareas complejas en pasos simples.
+- **Tour de bienvenida guiado** en Inicio, con explicación de tareas, Súper Experto, menú inferior y acceso a configuración.
 
 ### Panel del Tutor
 - Vinculación con pacientes mediante **código de invitación** generado desde la app.
 - **Cambio de paciente activo** con un selector de fondo cuando el tutor tiene más de un paciente vinculado.
+- **Tour de bienvenida propio para tutor**, distinto al del usuario, que explica el panel de supervisión, el selector de usuario, la creación de tareas y las pestañas inferiores.
 - Supervisión de **tareas**: consulta y creación de tareas para el paciente desde el panel del tutor.
 - Gestión de **pictogramas**: agregar pictogramas personalizados al paciente y organizar su visibilidad y categoría por horario desde la misma interfaz del gestor.
 - **Historial de actividad**: línea de tiempo con las acciones completadas por el paciente (tareas, pictogramas, sesiones).
@@ -138,6 +142,7 @@ El proyecto ha alcanzado hitos significativos desde su inicio el **27 de Abril 2
 - [x] Tutor puede crear pictogramas personalizados para el paciente
 - [x] Restricciones de personalización para usuarios con tutor
 - [x] Recorte de pictogramas responsive
+- [x] Tour de bienvenida específico para tutor
 - [ ] Pulir dashboard de progreso (gráficos fl_chart)
 - [ ] Notificaciones push FCM completas
 - [ ] Testing y correcciones de bugs menores

@@ -1540,17 +1540,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
           'Ver tour de bienvenida',
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
-        subtitle: const Text('Repasa el recorrido interactivo de la App'),
+        subtitle: const Text(
+          'Reinicia la guía de Inicio, Pictogramas y Tutor',
+        ),
         onTap: () async {
           await TourService.resetAll();
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Tour reiniciado — vuelve a la pantalla principal'),
-                behavior: SnackBarBehavior.floating,
+          if (!mounted) return;
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Tour reiniciado — vuelve a Inicio para verlo otra vez',
               ),
-            );
-            Navigator.of(context).pop();
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+
+          final navigator = Navigator.of(context);
+          if (navigator.canPop()) {
+            navigator.pop();
           }
         },
       ),

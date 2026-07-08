@@ -38,6 +38,7 @@ flutter run
 - `notification_service.dart` — Local notifications
 - `push_notification_service.dart` — FCM token sync
 - `activity_log_service.dart` — User activity tracking
+- `tour_service.dart` — Welcome tour state for usuario, home and tutor flows
 - `google_drive_service.dart` — Backup/restore
 - `reminder_dispatcher.dart` — Task reminders
 
@@ -96,6 +97,11 @@ flutter run
 - Tasks use `deletedByUser: true` flag instead of hard delete
 - Tutor retains history even after patient "deletes"
 
+### Welcome Tours
+- Usuario and tutor tours are separate flows; do not reuse user tour copy for tutor screens.
+- Home user tour is versioned in `TourService` and explains the bottom navigation plus Perfil/Configuración.
+- Tutor tour is anchored in `TutorSupervisarScreen` and persisted with `TourService`.
+
 ### Documentation Maintenance (REQUIRED)
 - **After every significant code change**, update the project records to keep them accurate:
   - `README.md` — overall status, feature checklist and progress
@@ -138,7 +144,7 @@ flutterfire configure --project=organizate-26065
 | Módulo TEA (Pictogramas) | ✅ Done | 100% |
 | Módulo TDAH (Tareas) | ✅ Done | 100% |
 | Integración y Correcciones | ✅ Done | 100% |
-| Pulido y Testing | 🔄 In Progress | 95% |
+| Pulido y Testing | 🔄 In Progress | 96% |
 | Documentación y Entrega | ⏳ Pending | 30% |
 
 **Next critical tasks:**

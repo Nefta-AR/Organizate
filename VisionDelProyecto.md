@@ -163,6 +163,8 @@ Nuestra meta inmediata es consolidar un **MVP funcional** que demuestre que la t
 - ✅ Módulo TDAH con tareas, Pomodoro y asistente IA
 - ✅ Panel del tutor con supervisión completa
 - ✅ Vinculación segura tutor-paciente
+- ✅ Tour de bienvenida del usuario con navegación y configuración explicadas
+- ✅ Tour de bienvenida específico para tutores, separado del flujo de usuario
 - ✅ Sincronización en tiempo real
 - ✅ Ícono de app generado
 - ✅ Código estable y análisis estático limpio
