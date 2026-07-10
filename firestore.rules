@@ -130,6 +130,14 @@ service cloud.firestore {
           (isTutor() && isLinkedPatient(request.auth.uid, userId));
       }
 
+      // Cola de recordatorios push remotos para tareas. El propietario y su
+      // tutor vinculado pueden gestionarla porque ambos pueden crear/editar
+      // tareas con recordatorio.
+      match /notificationQueue/{queueId} {
+        allow read, create, update, delete: if isOwner(userId) ||
+          (isTutor() && isLinkedPatient(request.auth.uid, userId));
+      }
+
       // ─── /users/{userId}/linkedPatients ───────────────────────
       // El tutor gestiona su lista de pacientes.
       // El usuario puede añadir su propia entrada al vincularse.
