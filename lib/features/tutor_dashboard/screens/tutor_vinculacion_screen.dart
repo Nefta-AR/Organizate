@@ -205,8 +205,9 @@ class _TutorVinculacionScreenState extends State<TutorVinculacionScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icono de QR como indicador visual del propósito
-          const Icon(Icons.qr_code_2, color: Colors.white, size: 32),
+          // MVP: la vinculación usa código manual. QR queda como mejora futura
+          // para no prometer una función de escaneo que aún no está implementada.
+          const Icon(Icons.vpn_key_rounded, color: Colors.white, size: 32),
           const SizedBox(height: 12),
 
           const Text(

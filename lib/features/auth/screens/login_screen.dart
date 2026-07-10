@@ -38,6 +38,9 @@ class _Palette {
 
 /// Radio de borde estándar para inputs y botones en esta pantalla.
 const double _kRadius = 14;
+const String _kPasswordRuleError =
+    'La contraseña debe contener mínimo 6 caracteres, incluyendo una letra '
+    'y un número. Ej.: Simple8';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -274,7 +277,7 @@ class _LoginScreenState extends State<LoginScreen> {
       case 'email-already-in-use':
         return 'Este correo ya está registrado. Inicia sesión.';
       case 'weak-password':
-        return 'La contraseña debe tener al menos 6 caracteres.';
+        return _kPasswordRuleError;
       case 'invalid-email':
         return 'El correo no tiene un formato válido.';
       case 'too-many-requests':
@@ -304,16 +307,34 @@ class _LoginScreenState extends State<LoginScreen> {
     TextInputType keyboardType = TextInputType.text,
     bool obscureText = false,
     Widget? suffixIcon,
+    bool centerError = false,
   }) {
     return TextFormField(
       controller: controller,
       validator: validator,
+      errorBuilder: centerError
+          ? (context, errorText) => SizedBox(
+                width: double.infinity,
+                child: Text(
+                  errorText,
+                  textAlign: TextAlign.center,
+                  maxLines: 3,
+                  overflow: TextOverflow.visible,
+                  style: const TextStyle(
+                    color: Color(0xFFE53E3E),
+                    fontSize: 12,
+                    height: 1.25,
+                  ),
+                ),
+              )
+          : null,
       keyboardType: keyboardType,
       obscureText: obscureText,
       style: const TextStyle(color: _Palette.textDark, fontSize: 15),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: _Palette.textMuted, fontSize: 14),
+        errorMaxLines: 3,
         filled: true,
         fillColor: _Palette.surface,
         contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
@@ -448,13 +469,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _passwordController,
                     label: 'Contraseña',
                     obscureText: _obscurePassword,
+                    centerError: true,
                     validator: (v) {
-                      if (v == null || v.length < 6) {
-                        return 'Debe contener al menos 6 caracteres, una letra y un número';
-                      }
-                      // Requiere al menos una mayúscula Y un dígito.
-                      if (!RegExp(r'^(?=.*[A-Z])(?=.*\d)').hasMatch(v)) {
-                        return 'Debe contener al menos 6 caracteres, una letra y un número';
+                      final password = v ?? '';
+                      final hasLetter =
+                          RegExp(r'[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]').hasMatch(password);
+                      final hasNumber = RegExp(r'\d').hasMatch(password);
+                      if (password.length < 6 || !hasLetter || !hasNumber) {
+                        return _kPasswordRuleError;
                       }
                       return null;
                     },
