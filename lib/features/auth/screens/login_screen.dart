@@ -110,7 +110,7 @@ class _LoginScreenState extends State<LoginScreen> {
     // Ejecuta todos los validators del Form antes de continuar.
     if (!_formKey.currentState!.validate()) return;
     if (!_isLogin && !_hasAcceptedPrivacyPolicy) {
-      _showError('Debes aceptar la Politica de Privacidad para crear tu cuenta.');
+      _showError('Debes aceptar la Política de Privacidad para crear tu cuenta.');
       return;
     }
     setState(() => _isLoading = true);
@@ -313,7 +313,7 @@ class _LoginScreenState extends State<LoginScreen> {
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Politica de Privacidad'),
+        title: const Text('Política de Privacidad'),
         content: const SizedBox(
           width: double.maxFinite,
           child: SingleChildScrollView(
@@ -363,7 +363,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       const Text(
-                        'Acepto la Politica de Privacidad de Simple. ',
+                        'Acepto la Política de Privacidad de Simple. ',
                         style: TextStyle(
                           color: _Palette.textDark,
                           fontSize: 12.5,
@@ -379,7 +379,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           padding: EdgeInsets.zero,
                         ),
                         child: const Text(
-                          'Ver politica',
+                          'Ver política',
                           style: TextStyle(fontSize: 12.5),
                         ),
                       ),

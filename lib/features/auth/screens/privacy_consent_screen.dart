@@ -16,7 +16,7 @@ class _PrivacyConsentScreenState extends State<PrivacyConsentScreen> {
 
   Future<void> _saveAcceptance() async {
     if (!_accepted) {
-      _showMessage('Debes aceptar la Politica de Privacidad para continuar.');
+      _showMessage('Debes aceptar la Política de Privacidad para continuar.');
       return;
     }
 
@@ -27,7 +27,7 @@ class _PrivacyConsentScreenState extends State<PrivacyConsentScreen> {
       );
     } catch (_) {
       if (mounted) {
-        _showMessage('No se pudo registrar la aceptacion. Intenta de nuevo.');
+        _showMessage('No se pudo registrar la aceptación. Intenta de nuevo.');
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
