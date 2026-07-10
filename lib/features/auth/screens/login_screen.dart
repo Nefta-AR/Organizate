@@ -24,6 +24,8 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:simple/core/services/privacy_policy_service.dart';
+
 /// Paleta de colores interna de la pantalla de login.
 /// Se define como clase privada para que no contamine el namespace global.
 class _Palette {
@@ -65,6 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isGoogleLoading  = false; // Login con Google
   // Controla si la contraseña es visible o está oculta con puntos.
   bool _obscurePassword  = true;
+  bool _hasAcceptedPrivacyPolicy = false;
 
   @override
   void initState() {
@@ -106,6 +109,10 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleLogin() async {
     // Ejecuta todos los validators del Form antes de continuar.
     if (!_formKey.currentState!.validate()) return;
+    if (!_isLogin && !_hasAcceptedPrivacyPolicy) {
+      _showError('Debes aceptar la Politica de Privacidad para crear tu cuenta.');
+      return;
+    }
     setState(() => _isLoading = true);
 
     final auth     = FirebaseAuth.instance;
@@ -145,6 +152,10 @@ class _LoginScreenState extends State<LoginScreen> {
             'hasCompletedOnboarding': false,           // AuthGate redirigirá a RoleSelectionScreen
             'createdAt':              FieldValue.serverTimestamp(),
           }, SetOptions(merge: true));
+          await PrivacyPolicyService.recordAcceptance(
+            source: 'login_email_register',
+            user: user,
+          );
           await _saveEmail(email);
         }
       }
@@ -296,6 +307,88 @@ class _LoginScreenState extends State<LoginScreen> {
       content: Text(message),
       behavior: SnackBarBehavior.floating,
     ));
+  }
+
+  Future<void> _showPrivacyPolicy() async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Politica de Privacidad'),
+        content: const SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Text(
+              PrivacyPolicyService.policyText,
+              style: TextStyle(fontSize: 13, height: 1.35),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cerrar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPrivacyPolicyAcceptance() {
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
+      child: _isLogin
+          ? const SizedBox.shrink()
+          : Padding(
+              padding: const EdgeInsets.only(top: 10, bottom: 4),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: _Palette.surface,
+                  borderRadius: BorderRadius.circular(_kRadius),
+                  border: Border.all(color: _Palette.border, width: 1.5),
+                ),
+                child: CheckboxListTile(
+                  value: _hasAcceptedPrivacyPolicy,
+                  onChanged: _isLoading
+                      ? null
+                      : (value) => setState(
+                            () => _hasAcceptedPrivacyPolicy = value ?? false,
+                          ),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  title: Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      const Text(
+                        'Acepto la Politica de Privacidad de Simple. ',
+                        style: TextStyle(
+                          color: _Palette.textDark,
+                          fontSize: 12.5,
+                          height: 1.25,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: _showPrivacyPolicy,
+                        style: TextButton.styleFrom(
+                          foregroundColor: _Palette.primary,
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: const Text(
+                          'Ver politica',
+                          style: TextStyle(fontSize: 12.5),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+    );
   }
 
   /// Construye un campo de texto con estilo unificado para toda la pantalla.
@@ -495,6 +588,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
 
                   // ── "¿Olvidaste tu contraseña?" (solo en modo LOGIN) ─
+                  _buildPrivacyPolicyAcceptance(),
+
                   if (_isLogin)
                     Align(
                       alignment: Alignment.centerRight,

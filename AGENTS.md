@@ -102,6 +102,11 @@ flutter run
 - Home user tour is versioned in `TourService` and explains the bottom navigation plus Perfil/Configuración.
 - Tutor tour is anchored in `TutorSupervisarScreen` and persisted with `TourService`.
 
+### Privacy Policy Consent
+- `PrivacyPolicyService` centralizes the current policy version (`2026-07-10`), policy text and consent metadata.
+- `AuthGate` blocks access until `privacyPolicyAccepted == true` and `privacyPolicyVersion` matches the current version.
+- Legal consent evidence is stored under `users/{uid}/legalConsents/{version}` and Firestore Rules allow create/read only for the owner, with no update/delete.
+
 ### Documentation Maintenance (REQUIRED)
 - **After every significant code change**, update the project records to keep them accurate:
   - `README.md` — overall status, feature checklist and progress
@@ -150,6 +155,7 @@ flutterfire configure --project=organizate-26065
 **Next critical tasks:**
 - Generate signed APK for delivery
 - Final user/manual testing
+- Verify Firebase Storage rules and App Check before broader real-user use
 - Complete technical report (Informe Técnico)
 - User manual
 

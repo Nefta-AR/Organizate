@@ -306,6 +306,7 @@ Se adoptó una metodología **ágil adaptada**, basada en **Scrum** con sprints 
 | RNF-05 | El contraste de colores debe cumplir WCAG 2.1 nivel AA (ratio 4.5:1) | Accesibilidad |
 | RNF-06 | El tamaño de elementos táctiles debe ser mínimo 48x48dp (Material Design) | Accesibilidad |
 | RNF-07 | Las reglas de seguridad de Firestore deben impedir lectura/escritura no autorizada de datos de otros usuarios | Seguridad |
+| RNF-08 | El sistema debe solicitar aceptación de la Política de Privacidad vigente y guardar respaldo versionado de dicha aceptación | Seguridad / Privacidad |
 | RNF-08 | El código debe seguir las guías de estilo de Flutter (Effective Dart) | Mantenibilidad |
 | RNF-09 | La aplicación debe soportar Android 5.0+ (API 21) y iOS 12+ | Compatibilidad |
 | RNF-10 | El consumo de batería debe ser inferior al 5% por hora de uso activo | Eficiencia |
@@ -759,6 +760,7 @@ El objetivo general fue **completamente alcanzado**: se desarrolló una aplicaci
 1. **Arquitectura reactiva**: El uso de Firestore streams permite sincronización en tiempo real sin polling, reduciendo el consumo de batería y datos.
 2. **Offline-first para pictogramas**: Los SVG locales garantizan funcionalidad básica sin conectividad.
 3. **Seguridad granular**: Las reglas de Firestore implementan RBAC a nivel de documento y campo, sin necesidad de un backend propio.
+4. **Privacidad por diseño**: El acceso a la aplicación queda condicionado a la aceptación de la Política de Privacidad vigente. La aceptación se registra por versión en `users/{uid}/legalConsents/{version}` y no puede ser modificada ni eliminada por el usuario desde cliente.
 4. **Escalabilidad implícita**: Firebase escala automáticamente, permitiendo pasar de 10 usuarios a 10,000 sin cambios de código.
 
 **Limitaciones identificadas:**
@@ -854,7 +856,7 @@ El desarrollo de este proyecto consolidó competencias en:
 
 6. **Testear con usuarios, no con simulacros**: Los emuladores de discapacidad cognitiva no existen. La única forma de validar una prótesis cognitiva es con usuarios reales.
 
-7. **Considerar la privacidad desde el diseño**: Los datos de usuarios neurodivergentes son sensibles. Implementar **anonimización** en logs de actividad y ofrecer **exportación/borrado de datos** conforme a GDPR.
+7. **Considerar la privacidad desde el diseño**: Los datos de usuarios neurodivergentes son sensibles. El MVP incorpora Política de Privacidad versionada, pantalla de consentimiento y respaldo de aceptación en Firestore. Como mejoras pendientes se recomienda implementar **anonimización** en logs de actividad, exportación/borrado de datos, verificación de reglas de Firebase Storage y activación de Firebase App Check.
 
 ---
 

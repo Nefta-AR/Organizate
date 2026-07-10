@@ -8,6 +8,7 @@ Simple es una aplicación móvil inclusiva diseñada específicamente para apoya
 
 ### 📝 Registro de Cambios Recientes
 
+- ✅ **Privacidad y consentimiento legal MVP**: Política de Privacidad versionada, pantalla obligatoria de aceptación y respaldo inmutable en `users/{uid}/legalConsents/{version}`.
 - ✅ **Tour de bienvenida del tutor** agregado en `TutorSupervisarScreen`, con pasos específicos para usuario supervisado, configuración, panel, tareas y navegación.
 - ✅ **Tour de bienvenida del usuario** reforzado en `HomeScreen`, incluyendo menú inferior y acceso a Perfil/Configuración.
 - ✅ **Botón "Agregar" redundante eliminado** del tab Pictogramas del tutor; ahora solo queda el botón naranja "Organizar".
@@ -86,6 +87,7 @@ Las reglas de Firestore implementan control de acceso granular:
 - Un **tutor** puede leer y gestionar datos de sus pacientes vinculados (verificado con la subcolección `linkedTutors` y estado `active`).
 - Los **pictogramas personalizados** y sus configuraciones (`pictogramSettings`) son accesibles para el propietario y su tutor vinculado.
 - El **historial de actividad** (`activityLog`) es de solo creación para el paciente y de solo lectura para el tutor.
+- La **aceptación de la Política de Privacidad** se exige antes de entrar a la app y queda registrada por versión en Firestore, con documento de respaldo no editable por el usuario.
 
 ---
 

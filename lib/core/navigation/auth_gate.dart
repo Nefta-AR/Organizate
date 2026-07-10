@@ -32,8 +32,10 @@ import 'package:flutter/material.dart';
 import 'package:simple/features/tutor_dashboard/screens/home_screen.dart';
 import 'package:simple/features/tutor_dashboard/screens/tutor_supervise_screen.dart';
 import 'package:simple/features/auth/screens/login_screen.dart';
+import 'package:simple/features/auth/screens/privacy_consent_screen.dart';
 import 'package:simple/features/auth/screens/role_selection_screen.dart';
 import 'package:simple/features/auth/screens/profile_setup_screen.dart';
+import 'package:simple/core/services/privacy_policy_service.dart';
 import 'package:simple/core/services/push_notification_service.dart';
 
 /// Nivel 1 — Verifica si hay sesión activa de Firebase Auth.
@@ -95,13 +97,7 @@ class _UserOnboardingGate extends StatefulWidget {
 }
 
 class _UserOnboardingGateState extends State<_UserOnboardingGate> {
-  @override
-  void initState() {
-    super.initState();
-    // Sincroniza el token FCM del dispositivo al documento Firestore del usuario
-    // cada vez que se inicia sesión o hay un rebuild con un usuario nuevo.
-    PushNotificationService.syncUserToken(widget.user);
-  }
+  bool _syncedPushToken = false;
 
   @override
   Widget build(BuildContext context) {
@@ -121,6 +117,19 @@ class _UserOnboardingGateState extends State<_UserOnboardingGate> {
         }
 
         final data = snapshot.data!.data()!;
+
+        // Cumplimiento legal MVP: antes de entrar a la app, el usuario debe
+        // aceptar la version vigente de la Politica de Privacidad.
+        if (!PrivacyPolicyService.hasAcceptedCurrentPolicy(data)) {
+          return const PrivacyConsentScreen();
+        }
+
+        // Privacidad por diseno: el token FCM se registra solo despues
+        // de aceptar la Politica de Privacidad vigente.
+        if (!_syncedPushToken) {
+          _syncedPushToken = true;
+          PushNotificationService.syncUserToken(widget.user);
+        }
         // Campo 'role' determina el flujo: null/vacío → selección de rol.
         final role = data['role'] as String?;
 

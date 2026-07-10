@@ -19,6 +19,9 @@ Cada usuario vive en su propia trinchera de seguridad. Un paciente con TEA no de
 ### Soberanía de los Datos
 El control de la información debe estar en manos de la familia, no de la plataforma. Por eso, integramos **Google Drive** para asegurar que los respaldos y la configuración pertenezcan al usuario de forma privada y directa. Ningún dato crítico queda rehén de un servicio externo.
 
+### Privacidad desde el Diseño
+Simple incorpora consentimiento explícito para la Política de Privacidad, control de acceso por rol y registro versionado de aceptación. Este enfoque busca alinear el MVP con buenas prácticas de protección de datos personales y preparar el camino para mayores exigencias normativas.
+
 ### Autonomía y Vínculo Afectivo
 Creemos en adaptar la tecnología a la realidad de cada hogar. Permitir que un tutor use una fotografía de su mascota, de un familiar o de un espacio conocido como pictograma personalizado no es un detalle menor: es el núcleo de la propuesta. La familiaridad reduce la ansiedad y construye confianza. La app no impone un vocabulario visual genérico; invita a construir el propio.
 
@@ -168,6 +171,7 @@ Nuestra meta inmediata es consolidar un **MVP funcional** que demuestre que la t
 - ✅ Sincronización en tiempo real
 - ✅ Ícono de app generado
 - ✅ Código estable y análisis estático limpio
+- ✅ Política de Privacidad versionada con aceptación obligatoria y respaldo en Firestore
 - 🔄 APK funcional listo para instalación directa
 
 ### Roadmap Post-MVP

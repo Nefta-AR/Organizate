@@ -392,6 +392,7 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
 | 02 Jul | Botón "Agregar" redundante eliminado del tab Pictogramas del tutor | Se elimina el FAB extendido "+ Agregar" y su bottom sheet asociado; el tutor accede a la creación de pictogramas desde "Organizar pictogramas" → "Nuevo" | Fase 6 |
 | 08 Jul | Tour de bienvenida del tutor | `TutorSupervisarScreen` incorpora un tour propio con pasos para usuario supervisado, configuración, panel, agregar tareas, navegación inferior y estado sin usuarios vinculados | Fase 6 |
 | 08 Jul | Tour de bienvenida del usuario reforzado | `HomeScreen` explica Inicio, tarea prioritaria, Súper Experto, botón flotante, menú inferior y acceso a Perfil/Configuración; se versiona la clave local del tour | Fase 6 |
+| 10 Jul | Política de Privacidad y consentimiento versionado | Se agrega pantalla obligatoria de aceptación, documento `docs/Politica_Privacidad_Simple.md`, campos `privacyPolicyAccepted*` y respaldo inmutable `legalConsents/{version}` protegido por Firestore Rules | Fase 7 |
 
 ---
 

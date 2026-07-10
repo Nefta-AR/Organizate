@@ -153,6 +153,31 @@ service cloud.firestore {
       match /invitationCodes/{codeId} {
         allow read, write: if isOwner(userId) && isTutor();
       }
+
+      // Respaldo de aceptaciones legales por version. El usuario puede crear
+      // su propia aceptacion, pero no modificarla ni borrarla despues.
+      match /legalConsents/{consentId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+          request.resource.data.keys().hasOnly([
+            'type',
+            'appName',
+            'policyVersion',
+            'accepted',
+            'acceptedAt',
+            'acceptedByUid',
+            'acceptedEmail',
+            'source',
+            'contactEmail',
+            'contactPhone',
+            'consentText'
+          ]) &&
+          request.resource.data.type == 'privacy_policy' &&
+          request.resource.data.policyVersion == consentId &&
+          request.resource.data.accepted == true &&
+          request.resource.data.acceptedByUid == request.auth.uid;
+        allow update, delete: if false;
+      }
     }
 
     // ─── /sensitiveData ───────────────────────────────────────────
