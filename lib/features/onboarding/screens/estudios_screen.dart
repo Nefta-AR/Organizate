@@ -230,8 +230,12 @@ class _EstudiosScreenState extends State<EstudiosScreen> {
                     // Batch atómico: ambas operaciones (tarea + puntos) se
                     // confirman juntas o ninguna, evitando inconsistencias
                     final batch = FirebaseFirestore.instance.batch();
-                    batch.update(tasksCollection.doc(taskId),
-                        {'done': !isCurrentlyDone}); // Invierte el estado
+                    batch.update(tasksCollection.doc(taskId), {
+                      'done': !isCurrentlyDone,
+                      'completedAt': isCurrentlyDone
+                          ? FieldValue.delete()
+                          : FieldValue.serverTimestamp(),
+                    }); // Invierte el estado
                     batch.update(userDocRef,
                         {'points': FieldValue.increment(pointsChange)});
 

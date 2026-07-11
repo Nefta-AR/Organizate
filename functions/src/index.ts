@@ -329,9 +329,11 @@ export const recreateRecurringTask = functionsV1.firestore
     const recurrence = after?.recurrence as string | undefined;
     if (!recurrence) return null;
 
-    const { userId } = context.params as { userId: string };
+    const { userId, taskId } = context.params as { userId: string; taskId: string };
 
-    // Calcular la próxima fecha de vencimiento
+    // Calcular la próxima fecha de vencimiento. Si una tarea repetida no tiene
+    // dueDate, no se puede inferir la próxima ocurrencia sin crear un duplicado
+    // inmediato que parece que la tarea "no se marcó".
     let nextDue: admin.firestore.Timestamp | undefined;
     const currentDue = after.dueDate as admin.firestore.Timestamp | undefined;
     if (currentDue) {
@@ -341,12 +343,15 @@ export const recreateRecurringTask = functionsV1.firestore
       else if (recurrence === 'monthly') d.setMonth(d.getMonth() + 1);
       nextDue = admin.firestore.Timestamp.fromDate(d);
     }
+    if (!nextDue) return null;
 
     const newTask: Record<string, unknown> = {
       text: after.text,
       category: after.category,
       done: false,
       recurrence,
+      generatedFromTaskId: taskId,
+      availableFrom: nextDue,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       ...(after.iconName != null ? { iconName: after.iconName } : {}),
       ...(after.colorName != null ? { colorName: after.colorName } : {}),
@@ -356,11 +361,39 @@ export const recreateRecurringTask = functionsV1.firestore
       ...(nextDue ? { dueDate: nextDue } : {}),
     };
 
-    await firestore
+    const newTaskRef = await firestore
       .collection('users')
       .doc(userId)
       .collection('tasks')
       .add(newTask);
+
+    const reminderMinutes =
+      typeof after.reminderMinutes === 'number' ? after.reminderMinutes : undefined;
+    if (reminderMinutes != null) {
+      const runAtDate = nextDue.toDate();
+      runAtDate.setMinutes(runAtDate.getMinutes() - Math.max(reminderMinutes, 10));
+
+      await firestore
+        .collection('users')
+        .doc(userId)
+        .collection(QUEUE_COLLECTION)
+        .doc(newTaskRef.id)
+        .set({
+          taskId: newTaskRef.id,
+          taskTitle: after.text ?? 'Recordatorio',
+          runAt: admin.firestore.Timestamp.fromDate(
+            runAtDate < new Date() ? new Date() : runAtDate,
+          ),
+          scheduledAt: admin.firestore.Timestamp.fromDate(runAtDate),
+          status: 'pending',
+          type: 'task',
+          dueDate: nextDue,
+          reminderMinutes: Math.max(reminderMinutes, 10),
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          queuedBy: 'recreateRecurringTask',
+        });
+    }
 
     return null;
   });
@@ -455,8 +488,112 @@ export const notifyTutorOnTaskComplete = functionsV1.firestore
     return null;
   });
 
+// ─────────────────────────────────────────────────────────────
+// CLOUD FUNCTION: notifyUserOnTutorTask
+// Se dispara cuando un tutor crea una tarea para el usuario (addedByTutor: true).
+// Envía FCM inmediato al dispositivo del usuario.
+// ─────────────────────────────────────────────────────────────
+
+export const notifyUserOnTutorTask = functionsV1.firestore
+  .document('users/{userId}/tasks/{taskId}')
+  .onCreate(async (snap, context) => {
+    const data = snap.data() as { addedByTutor?: boolean; text?: string } | undefined;
+
+    // Solo actuar cuando la tarea fue creada por el tutor
+    if (!data?.addedByTutor) return null;
+
+    const { userId } = context.params as { userId: string };
+    const taskText = data?.text ?? 'Nueva tarea';
+
+    // Obtener el nombre del tutor desde linkedTutors del usuario
+    let tutorName = 'Tu tutor';
+    try {
+      const tutorsSnap = await firestore
+        .collection('users')
+        .doc(userId)
+        .collection('linkedTutors')
+        .limit(1)
+        .get();
+
+      if (!tutorsSnap.empty) {
+        const tutorId = tutorsSnap.docs[0].id;
+        const tutorSnap = await firestore.collection('users').doc(tutorId).get();
+        const tutorData = tutorSnap.data() as { name?: string } | undefined;
+        tutorName = tutorData?.name ?? 'Tu tutor';
+      }
+    } catch (_) {}
+
+    // Obtener tokens FCM del usuario
+    const userSnap = await firestore.collection('users').doc(userId).get();
+    if (!userSnap.exists) return null;
+
+    const userData = userSnap.data() as { fcmTokens?: unknown[] } | undefined;
+    const tokens = Array.isArray(userData?.fcmTokens)
+      ? (userData!.fcmTokens as unknown[]).filter(
+          (t): t is string => typeof t === 'string' && t.trim().length > 0,
+        )
+      : [];
+
+    if (tokens.length === 0) return null;
+
+    const title = `${tutorName} te asignó una tarea`;
+    const body = taskText;
+
+    const invalidCodes = new Set([
+      'messaging/registration-token-not-registered',
+      'messaging/invalid-registration-token',
+      'messaging/mismatched-credential',
+      'messaging/invalid-argument',
+    ]);
+
+    const message: admin.messaging.MulticastMessage = {
+      tokens,
+      notification: { title, body },
+      data: { userId, type: 'tutor_task' },
+      android: {
+        priority: 'high',
+        notification: { channelId: 'tareas_channel' },
+      },
+      apns: {
+        payload: {
+          aps: {
+            contentAvailable: true,
+            sound: 'default',
+            alert: { title, body },
+          },
+        },
+      },
+    };
+
+    const response = await messaging.sendEachForMulticast(message);
+
+    // Limpiar tokens inválidos del usuario
+    const invalidTokens = response.responses
+      .map((resp, idx) =>
+        !resp.success && resp.error && invalidCodes.has(resp.error.code)
+          ? tokens[idx]
+          : null,
+      )
+      .filter((t): t is string => !!t);
+
+    if (invalidTokens.length) {
+      await firestore.collection('users').doc(userId).set(
+        { fcmTokens: admin.firestore.FieldValue.arrayRemove(...invalidTokens) },
+        { merge: true },
+      );
+    }
+
+    return null;
+  });
+
 const QUEUE_COLLECTION = 'notificationQueue';
 const MAX_PER_RUN = 50;
+const INVALID_FCM_TOKEN_CODES = new Set([
+  'messaging/registration-token-not-registered',
+  'messaging/invalid-registration-token',
+  'messaging/mismatched-credential',
+  'messaging/invalid-argument',
+]);
 
 type QueueDoc = {
   taskId?: string;
@@ -467,6 +604,175 @@ type QueueDoc = {
   reminderMinutes?: number;
 };
 
+async function claimDueQueueDoc(
+  docRef: admin.firestore.DocumentReference,
+): Promise<QueueDoc | null> {
+  const now = admin.firestore.Timestamp.now();
+
+  return firestore.runTransaction(async (transaction) => {
+    const snap = await transaction.get(docRef);
+    if (!snap.exists) return null;
+
+    const data = snap.data() as QueueDoc;
+    if (data.status !== 'pending') return null;
+
+    if (!data.runAt) {
+      transaction.set(
+        docRef,
+        {
+          status: 'failed',
+          lastError: 'Missing runAt',
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+      return null;
+    }
+
+    if (data.runAt.toMillis() > now.toMillis()) return null;
+
+    transaction.set(
+      docRef,
+      {
+        status: 'processing',
+        processingAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+
+    return data;
+  });
+}
+
+async function processQueueDoc(docRef: admin.firestore.DocumentReference): Promise<void> {
+  const data = await claimDueQueueDoc(docRef);
+  if (!data) return;
+
+  try {
+    const userRef = docRef.parent.parent;
+    if (!userRef) {
+      await docRef.set(
+        {
+          status: 'failed',
+          lastError: 'Missing user reference',
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+      return;
+    }
+
+    const userSnap = await userRef.get();
+    if (!userSnap.exists) {
+      await docRef.set(
+        {
+          status: 'failed',
+          lastError: 'User document not found',
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+      return;
+    }
+
+    const userData = userSnap.data() as { fcmTokens?: unknown[] } | undefined;
+    const tokens = Array.isArray(userData?.fcmTokens)
+      ? (userData!.fcmTokens as unknown[]).filter(
+          (token): token is string => typeof token === 'string' && token.trim().length > 0,
+        )
+      : [];
+
+    if (tokens.length === 0) {
+      await docRef.set(
+        {
+          status: 'no_tokens',
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+      return;
+    }
+
+    const title = data.taskTitle ?? 'Recordatorio';
+    const body = 'Tienes una tarea pendiente.';
+    const taskId = data.taskId ?? docRef.id;
+
+    const message: admin.messaging.MulticastMessage = {
+      tokens,
+      notification: { title, body },
+      data: {
+        taskId,
+        type: data.type ?? 'task',
+      },
+      android: {
+        priority: 'high',
+        notification: { channelId: 'tareas_channel' },
+      },
+      apns: {
+        payload: {
+          aps: {
+            contentAvailable: true,
+            sound: 'default',
+            alert: { title, body },
+          },
+        },
+      },
+    };
+
+    const response = await messaging.sendEachForMulticast(message);
+    const hasSuccess = response.successCount > 0;
+    const invalidTokens = response.responses
+      .map((resp, idx) =>
+        !resp.success && resp.error && INVALID_FCM_TOKEN_CODES.has(resp.error.code)
+          ? tokens[idx]
+          : null,
+      )
+      .filter((token): token is string => !!token);
+
+    if (invalidTokens.length) {
+      await userRef.set(
+        { fcmTokens: admin.firestore.FieldValue.arrayRemove(...invalidTokens) },
+        { merge: true },
+      );
+    }
+
+    await docRef.set(
+      {
+        status: hasSuccess ? 'sent' : 'failed',
+        sentAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        lastError: hasSuccess
+          ? admin.firestore.FieldValue.delete()
+          : JSON.stringify(response.responses.find((r) => !r.success)?.error ?? {}),
+      },
+      { merge: true },
+    );
+  } catch (error) {
+    await docRef.set(
+      {
+        status: 'failed',
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        lastError: (error as Error).message,
+      },
+      { merge: true },
+    );
+  }
+}
+
+export const processNotificationQueueOnWrite = functionsV1.firestore
+  .document('users/{userId}/notificationQueue/{queueId}')
+  .onWrite(async (change) => {
+    if (!change.after.exists) return null;
+
+    const data = change.after.data() as QueueDoc;
+    if (data.status !== 'pending' || !data.runAt) return null;
+    if (data.runAt.toMillis() > Date.now()) return null;
+
+    await processQueueDoc(change.after.ref);
+    return null;
+  });
+
 export const processDueNotifications = functionsV1.pubsub
   .schedule('every 1 minutes')
   .timeZone('Etc/UTC')
@@ -476,130 +782,13 @@ export const processDueNotifications = functionsV1.pubsub
       .collectionGroup(QUEUE_COLLECTION)
       .where('status', '==', 'pending')
       .where('runAt', '<=', now)
+      .orderBy('runAt', 'asc')
       .limit(MAX_PER_RUN)
       .get();
 
     if (snapshot.empty) return null;
 
-    const jobs = snapshot.docs.map(async (doc) => {
-      try {
-        const data = doc.data() as QueueDoc;
-        const userRef = doc.ref.parent.parent;
-        if (!userRef) {
-          await doc.ref.set(
-            {
-              status: 'failed',
-              lastError: 'Missing user reference',
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            },
-            { merge: true },
-          );
-          return;
-        }
-
-        const userSnap = await userRef.get();
-        if (!userSnap.exists) {
-          await doc.ref.set(
-            {
-              status: 'failed',
-              lastError: 'User document not found',
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            },
-            { merge: true },
-          );
-          return;
-        }
-
-        const userData = userSnap.data() as { fcmTokens?: unknown[] } | undefined;
-        const tokens = Array.isArray(userData?.fcmTokens)
-          ? (userData!.fcmTokens as unknown[]).filter(
-              (token): token is string => typeof token === 'string' && token.trim().length > 0,
-            )
-          : [];
-
-        if (tokens.length === 0) {
-          await doc.ref.set(
-            {
-              status: 'no_tokens',
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            },
-            { merge: true },
-          );
-          return;
-        }
-
-        const title = data.taskTitle ?? 'Recordatorio';
-        const body = 'Tienes una tarea pendiente.';
-        const taskId = data.taskId ?? doc.id;
-
-        const message: admin.messaging.MulticastMessage = {
-          tokens,
-          notification: { title, body },
-          data: {
-            taskId,
-            type: data.type ?? 'task',
-          },
-          android: {
-            priority: 'high',
-            notification: { channelId: 'tareas_channel' },
-          },
-          apns: {
-            payload: {
-              aps: {
-                contentAvailable: true,
-                sound: 'default',
-                alert: { title, body },
-              },
-            },
-          },
-        };
-
-        const response = await messaging.sendEachForMulticast(message);
-        const hasSuccess = response.successCount > 0;
-
-        const invalidCodes = new Set([
-          'messaging/registration-token-not-registered',
-          'messaging/invalid-registration-token',
-          'messaging/mismatched-credential',
-          'messaging/invalid-argument',
-        ]);
-        const invalidTokens = response.responses
-          .map((resp, idx) =>
-            !resp.success && resp.error && invalidCodes.has(resp.error.code)
-              ? tokens[idx]
-              : null,
-          )
-          .filter((token): token is string => !!token);
-
-        if (invalidTokens.length) {
-          await userRef.set(
-            { fcmTokens: admin.firestore.FieldValue.arrayRemove(...invalidTokens) },
-            { merge: true },
-          );
-        }
-
-        await doc.ref.set(
-          {
-            status: hasSuccess ? 'sent' : 'failed',
-            sentAt: admin.firestore.FieldValue.serverTimestamp(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            lastError: hasSuccess
-              ? admin.firestore.FieldValue.delete()
-              : JSON.stringify(response.responses.find((r) => !r.success)?.error ?? {}),
-          },
-          { merge: true },
-        );
-      } catch (error) {
-        await doc.ref.set(
-          {
-            status: 'failed',
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            lastError: (error as Error).message,
-          },
-          { merge: true },
-        );
-      }
-    });
+    const jobs = snapshot.docs.map((doc) => processQueueDoc(doc.ref));
 
     await Promise.all(jobs);
     return null;

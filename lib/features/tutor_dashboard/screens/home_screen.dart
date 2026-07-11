@@ -37,6 +37,7 @@ import 'package:simple/core/utils/emergency_contact_helper.dart';
 import 'package:simple/core/utils/reminder_helper.dart';
 import 'package:simple/core/utils/reminder_options.dart';
 import 'package:simple/core/utils/task_urgency_helper.dart';
+import 'package:simple/core/utils/task_visibility_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple/features/onboarding/screens/super_experto_sheet.dart';
 import 'package:simple/core/widgets/custom_nav_bar.dart';
@@ -324,7 +325,10 @@ class _HomeScreenState extends State<HomeScreen> {
         final docs = snapshot.data?.docs ?? [];
         // Filtra solo las tareas no completadas.
         final pending =
-            docs.where((d) => !(d.data()['done'] as bool? ?? false)).toList();
+            docs
+                .where((d) => shouldShowTaskToday(d.data()))
+                .where((d) => !(d.data()['done'] as bool? ?? false))
+                .toList();
 
         // Algoritmo de ordenamiento por urgencia:
         // 1. Si ambas tienen dueDate, la más próxima primero.
@@ -733,7 +737,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final pointsChange = isDone ? -10 : 10;
     final batch = FirebaseFirestore.instance.batch();
     // Cambia el estado done de la tarea.
-    batch.update(_tasksCollection.doc(taskId), {'done': !isDone});
+    batch.update(_tasksCollection.doc(taskId), {
+      'done': !isDone,
+      'completedAt': isDone
+          ? FieldValue.delete()
+          : FieldValue.serverTimestamp(),
+    });
     // Incrementa o decrementa los puntos del usuario.
     batch.update(_userDocRef, {'points': FieldValue.increment(pointsChange)});
     try {

@@ -36,7 +36,7 @@ flutter run
 - `auth_service.dart` — Firebase Auth wrapper
 - `pictogram_service.dart` — Pictogram CRUD + Firebase Storage upload
 - `notification_service.dart` — Local notifications
-- `push_notification_service.dart` — FCM token sync
+- `push_notification_service.dart` — FCM token sync + remote reminder queue
 - `activity_log_service.dart` — User activity tracking
 - `tour_service.dart` — Welcome tour state for usuario, home and tutor flows
 - `google_drive_service.dart` — Backup/restore
@@ -45,7 +45,8 @@ flutter run
 ### Cloud Functions (`functions/`)
 - `desglosarTarea` — Gemini AI task breakdown (fallback to local plan)
 - `sintetizarVoz` — Google Cloud TTS for pictograms
-- `processDueNotifications` — Scheduled notification queue processor
+- `processNotificationQueueOnWrite` — Immediate processor for due push reminder queue docs
+- `processDueNotifications` — Scheduled notification queue processor for future reminders
 
 **Deploy:** `cd functions && npm run deploy`  
 **Emulate:** `cd functions && npm run serve`
@@ -138,7 +139,9 @@ flutterfire configure --project=organizate-26065
 1. **SHA-1 mismatch** — Google Sign-In fails if SHA-1 in Firebase Console doesn't match your keystore
 2. **IndexedStack + ValueKey** — Tutor dashboard uses this pattern to force rebuild when switching patients
 3. **Cloud Functions secrets** — `GEMINI_API_KEY` is a Firebase secret, not env var in production
-4. **Notification Queue** — Uses collection group query on `notificationQueue` with composite index (see `firestore.indexes.json`)
+4. **Notification Queue** — Uses `users/{uid}/notificationQueue`, an immediate Firestore trigger for already-due docs, and a collection group cron query with composite index (see `firestore.indexes.json`)
+5. **Android notification UX** — Do not enable `fullScreenIntent` for normal reminders; it can force intrusive Android UI and increase APK stability risk on some devices.
+6. **Reminder reliability** — Task CRUD must not depend on local/push notification success; `ReminderDispatcher` treats both channels as best-effort.
 
 ## Project Status
 
@@ -149,12 +152,13 @@ flutterfire configure --project=organizate-26065
 | Módulo TEA (Pictogramas) | ✅ Done | 100% |
 | Módulo TDAH (Tareas) | ✅ Done | 100% |
 | Integración y Correcciones | ✅ Done | 100% |
-| Pulido y Testing | 🔄 In Progress | 96% |
+| Pulido y Testing | 🔄 In Progress | 98% |
 | Documentación y Entrega | ⏳ Pending | 30% |
 
 **Next critical tasks:**
-- Generate signed APK for delivery
-- Final user/manual testing
+- Generate signed APK with the latest Android hotfixes for delivery
+- Test task edit/complete, FCM reminders and crash-free behavior on a physical Android device
+- Final user/manual testing: edit, complete (`completedAt`), recurrence visibility, FCM and crash-free behavior
 - Verify Firebase Storage rules and App Check before broader real-user use
 - Complete technical report (Informe Técnico)
 - User manual

@@ -284,7 +284,7 @@ Se adoptó una metodología **ágil adaptada**, basada en **Scrum** con sprints 
 | RF-04 | El usuario debe poder crear pictogramas personalizados con fotos de la galería | Alta | Pictogramas |
 | RF-05 | El sistema debe reproducir texto en voz (TTS) al tocar un pictograma | Alta | Pictogramas |
 | RF-06 | El usuario debe gestionar tareas con categorías, fechas y recordatorios | Alta | Tareas |
-| RF-07 | El sistema debe enviar notificaciones locales para recordatorios de tareas | Media | Tareas |
+| RF-07 | El sistema debe enviar notificaciones locales y push FCM para recordatorios de tareas | Media | Tareas |
 | RF-08 | El usuario debe usar un temporizador Pomodoro configurable | Media | Foco |
 | RF-09 | El tutor debe generar códigos de invitación de 6 caracteres para vincular usuarios | Alta | Vinculación |
 | RF-10 | El tutor debe supervisar tareas, pictogramas, progreso y historial de actividad del usuario vinculado | Alta | Supervisión |
@@ -585,7 +585,7 @@ class RoleDispatcher extends StatelessWidget {
 
 #### Módulo 3: Tareas y Notificaciones
 
-**Arquitectura:** Las tareas se almacenan en `users/{uid}/tasks` como documentos de Firestore con campos: `text`, `category`, `done`, `createdAt`, `deletedByUser` (soft-delete para visibilidad del tutor). El sistema de notificaciones utiliza `flutter_local_notifications` programado mediante `timezone` para recordatorios exactos.
+**Arquitectura:** Las tareas se almacenan en `users/{uid}/tasks` como documentos de Firestore con campos: `text`, `category`, `done`, `completedAt`, `createdAt`, `deletedByUser` (soft-delete para visibilidad del tutor). El sistema de notificaciones usa un canal local con `flutter_local_notifications` y un canal remoto FCM basado en `users/{uid}/notificationQueue`, procesado por Cloud Functions mediante trigger inmediato para recordatorios vencidos y cron para recordatorios futuros.
 
 **Patrón aplicado:** **Observer Pattern** (Firestore snapshots para actualización en tiempo real de la lista de tareas).
 
@@ -651,6 +651,9 @@ class RoleDispatcher extends StatelessWidget {
 | **Conflictos de configuración tutor/usuario**: Usuario con tutor vinculado podía cambiar de rol o desactivar pestañas controladas por el tutor | Se ocultaron las opciones de personalización de pantalla y edición de rol cuando existe `linkedTutors` activo | Configuración coherente y sin competencia entre roles |
 | **Recorte de pictogramas en pantallas pequeñas**: Controles nativos de `image_cropper` se superponían con la navegación por gestos | Se implementó cropper Flutter puro (`PictogramCropPage`) con `LayoutBuilder`/`SafeArea` y se ocultaron los bottom controls del cropper nativo | Experiencia de recorte usable en cualquier tamaño de pantalla |
 | **FAB de Súper Experto poco visible**: Botón flotante de IA en HomeScreen usaba color gris apagado y podía quedar fuera de pantalla | Se migró a `FloatingActionButton.large` con color púrpura de alto contraste, se validó la posición guardada y se fijó la ubicación por encima de la barra de navegación | El asistente IA es ahora visible y accesible desde el inicio |
+| **Push FCM no llegaba de forma confiable**: El token podia fallar una vez sin reintento y la cola dependia solo del cron programado | `AuthGate` reintenta la sincronizacion del token; `PushNotificationService` refuerza el token al encolar; Cloud Functions agrega trigger inmediato y claim transaccional para evitar duplicados | Recordatorios push con mejor tolerancia a fallos y estados de diagnostico (`sent`, `failed`, `no_tokens`) |
+| **APK Android con cierre forzado y botón de cerrar sesión tapado**: En configuración de tutor el contenido inferior podía quedar bajo la navegación del sistema y los recordatorios locales usaban `fullScreenIntent` | `SettingsScreen` agrega padding inferior basado en `MediaQuery.paddingOf(context).bottom`; `NotificationService` desactiva pantalla completa forzada y se elimina `USE_FULL_SCREEN_INTENT` del manifest | Interfaz de tutor usable en pantallas con navegación inferior y menor riesgo de cierres por notificaciones intrusivas |
+| **Editar/completar tareas podía quedar afectado por notificaciones**: Fallos del canal local o push podían contaminar el flujo de guardado, y tareas repetidas podían confundirse con la misma tarea al generar la siguiente ocurrencia | `ReminderDispatcher` separa local/push como operaciones best-effort; el completado registra `completedAt`; `recreateRecurringTask` solo crea la siguiente ocurrencia con fecha base, la marca con `generatedFromTaskId` y encola push para esa nueva tarea | La persistencia de tareas queda protegida frente a fallos temporales de notificaciones y se evita la percepción de que una tarea repetida no fue completada |
 | **Botón "Agregar" redundante en Pictogramas del tutor**: Dos FABs (Organizar + Agregar) generaban confusión | Se eliminó el FAB "+ Agregar" y su bottom sheet; la creación de pictogramas se centraliza en `PictogramManagerScreen` | Interfaz del tutor más limpia y consistente |
 
 ---
@@ -723,7 +726,7 @@ class RoleDispatcher extends StatelessWidget {
 | RF-04: Pictogramas personalizados | ✅ Cumplido | Camera + Gallery + ImageCropper + Storage |
 | RF-05: TTS | ✅ Cumplido | `flutter_tts` + Cloud TTS fallback |
 | RF-06: Gestión de tareas | ✅ Cumplido | CRUD completo con Firestore |
-| RF-07: Notificaciones | ✅ Cumplido | `flutter_local_notifications` + timezone |
+| RF-07: Notificaciones | ✅ Cumplido | `flutter_local_notifications` + timezone + FCM con `notificationQueue` |
 | RF-08: Pomodoro | ✅ Cumplido | Timer + sonido + vibración + estadísticas |
 | RF-09: Vinculación tutor | ✅ Cumplido | Códigos de 6 chars + batch atómico |
 | RF-10: Supervisión tutor | ✅ Cumplido | 5 tabs: Tareas, Pictogramas, Progreso, Historial, Ajustes |

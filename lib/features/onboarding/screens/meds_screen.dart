@@ -224,8 +224,12 @@ class _MedsScreenState extends State<MedsScreen> {
                     // Batch atómico: actualiza tarea y puntos en una sola operación
                     // (ambas escrituras se confirman juntas o ninguna)
                     final batch = FirebaseFirestore.instance.batch();
-                    batch.update(tasksCollection.doc(taskId),
-                        {'done': !isCurrentlyDone});
+                    batch.update(tasksCollection.doc(taskId), {
+                      'done': !isCurrentlyDone,
+                      'completedAt': isCurrentlyDone
+                          ? FieldValue.delete()
+                          : FieldValue.serverTimestamp(),
+                    });
                     batch.update(userDocRef,
                         {'points': FieldValue.increment(pointsChange)});
 

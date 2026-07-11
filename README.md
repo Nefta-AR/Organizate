@@ -8,6 +8,9 @@ Simple es una aplicación móvil inclusiva diseñada específicamente para apoya
 
 ### 📝 Registro de Cambios Recientes
 
+- ✅ **Notificaciones push FCM reforzadas**: sincronizacion resiliente de tokens, cola remota con trigger inmediato para recordatorios vencidos, procesamiento transaccional sin duplicados y guardado de tareas desacoplado de fallos temporales del canal push.
+- ✅ **Hotfix Android APK**: configuración de tutor con padding inferior seguro y notificaciones locales sin `fullScreenIntent` para evitar pantalla completa forzada en Android.
+- ✅ **Hotfix tareas/recordatorios**: editar, completar y eliminar tareas ya no dependen de que falle o funcione el canal local/push; las tareas completadas registran `completedAt` y las recurrencias futuras generadas por Functions no se muestran antes de su día.
 - ✅ **Privacidad y consentimiento legal MVP**: Política de Privacidad versionada, pantalla obligatoria de aceptación y respaldo inmutable en `users/{uid}/legalConsents/{version}`.
 - ✅ **Tour de bienvenida del tutor** agregado en `TutorSupervisarScreen`, con pasos específicos para usuario supervisado, configuración, panel, tareas y navegación.
 - ✅ **Tour de bienvenida del usuario** reforzado en `HomeScreen`, incluyendo menú inferior y acceso a Perfil/Configuración.
@@ -145,8 +148,10 @@ El proyecto ha alcanzado hitos significativos desde su inicio el **27 de Abril 2
 - [x] Restricciones de personalización para usuarios con tutor
 - [x] Recorte de pictogramas responsive
 - [x] Tour de bienvenida específico para tutor
+- [x] Notificaciones push FCM robustecidas en cliente y Cloud Functions
+- [x] Hotfix de persistencia de tareas, completado trazable y recordatorios best-effort
 - [ ] Pulir dashboard de progreso (gráficos fl_chart)
-- [ ] Notificaciones push FCM completas
+- [ ] Prueba final de push FCM en dispositivo fisico tras deploy
 - [ ] Testing y correcciones de bugs menores
 
 **Fase 7: Documentación y Entrega**

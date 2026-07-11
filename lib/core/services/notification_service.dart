@@ -194,7 +194,7 @@ class NotificationService {
   // ── Detalles por defecto para todas las notificaciones ───────────────────────
 
   // Construye el objeto NotificationDetails común a todas las notificaciones.
-  // - Android: Importance MAX + fullScreenIntent para la pantalla bloqueada
+  // - Android: Importance MAX sin pantalla completa forzada
   // - iOS: Alert + Badge + Sound + interrupción de nivel TimeSensitive
   static NotificationDetails _defaultDetails() {
     return const NotificationDetails(
@@ -206,8 +206,8 @@ class NotificationService {
         priority: Priority.max,
         playSound: true,
         enableVibration: true,
-        category: AndroidNotificationCategory.alarm, // Categoría alarma para pantalla bloqueada
-        fullScreenIntent: true, // Abre la pantalla incluso si el teléfono está bloqueado
+        category: AndroidNotificationCategory.reminder, // reminder no requiere permiso especial de Android 12
+        fullScreenIntent: false,
       ),
       iOS: DarwinNotificationDetails(
         presentAlert: true,  // Muestra el banner de alerta

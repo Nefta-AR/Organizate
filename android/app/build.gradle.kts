@@ -39,6 +39,11 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            // R8 (minificación) está desactivado porque borra las firmas genéricas
+            // que flutter_local_notifications necesita para TypeToken (Gson).
+            // Sin esto el ScheduledNotificationReceiver crashea en release.
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }

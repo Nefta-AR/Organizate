@@ -41,6 +41,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_time_helper.dart';
 import '../../../core/utils/reminder_helper.dart';
 import '../../../core/utils/reminder_options.dart';
+import '../../../core/utils/task_visibility_helper.dart';
 import '../../../core/widgets/custom_nav_bar.dart';
 import '../services/pomodoro_service.dart';
 import '../services/streak_service.dart';
@@ -772,7 +773,9 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
                 ),
               );
             }
-            final docs = snapshot.data?.docs ?? [];
+            final docs = (snapshot.data?.docs ?? [])
+                .where((doc) => shouldShowTaskToday(doc.data()))
+                .toList();
             if (docs.isEmpty) {
               return Container(
                 width: double.infinity,
@@ -949,7 +952,12 @@ class _FocoScreenState extends State<FocoScreen> with TickerProviderStateMixin {
     HapticFeedback.selectionClick();
     final pointsChange = isDone ? -10 : 10;
     final batch = FirebaseFirestore.instance.batch();
-    batch.update(taskRef, {'done': !isDone});
+    batch.update(taskRef, {
+      'done': !isDone,
+      'completedAt': isDone
+          ? FieldValue.delete()
+          : FieldValue.serverTimestamp(),
+    });
     batch.update(userDocRef, {'points': FieldValue.increment(pointsChange)});
     try {
       await batch.commit();

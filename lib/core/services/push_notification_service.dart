@@ -90,6 +90,8 @@ class PushNotificationService {
   /// Se llama después de cada login exitoso. Si el usuario cambia,
   /// cancela la suscripción anterior y crea una nueva para el nuevo UID.
   static Future<void> syncUserToken(User user) async {
+    if (!_initialized) await initialize();
+
     final messaging = FirebaseMessaging.instance;
 
     // Si el usuario cambió, cancelar la suscripción al token del usuario anterior
@@ -116,7 +118,8 @@ class PushNotificationService {
   /// Encola un recordatorio remoto en Firestore para [taskId].
   ///
   /// [runAt] se calcula como: dueDate - reminderMinutes.
-  /// Si ese momento ya pasó, se programa 5 segundos en el futuro.
+  /// Si ese momento ya pasó, queda vencido inmediatamente para que
+  /// Cloud Functions lo procese sin una espera artificial.
   /// Cloud Functions procesa la cola y envía la FCM en el momento indicado.
   static Future<void> queueRemoteReminder({
     required DocumentReference<Map<String, dynamic>> userDocRef,
@@ -126,29 +129,48 @@ class PushNotificationService {
     int? reminderMinutes,
   }) async {
     if (dueDate == null || reminderMinutes == null) {
-      throw ArgumentError('dueDate y reminderMinutes son requeridos para encolar un recordatorio remoto');
+      throw ArgumentError(
+        'dueDate y reminderMinutes son requeridos para encolar un recordatorio remoto',
+      );
     }
 
     // Aplica el piso mínimo
-    final normalizedMinutes = reminderMinutes < kMinimumReminderMinutes ? kMinimumReminderMinutes : reminderMinutes;
+    final normalizedMinutes = reminderMinutes < kMinimumReminderMinutes
+        ? kMinimumReminderMinutes
+        : reminderMinutes;
 
     final now = DateTime.now();
-    final scheduledAt = dueDate.toLocal().subtract(Duration(minutes: normalizedMinutes));
-    // Si el momento ya pasó, program 5 segundos en el futuro (para pruebas/debug)
-    final runAt = scheduledAt.isBefore(now) ? now.add(const Duration(seconds: 5)) : scheduledAt;
+    final scheduledAt =
+        dueDate.toLocal().subtract(Duration(minutes: normalizedMinutes));
+    // Si el momento ya pasó, queda vencido inmediatamente para que Cloud
+    // Functions lo procese sin una espera artificial de pruebas/debug.
+    final runAt = scheduledAt.isBefore(now) ? now : scheduledAt;
+
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null && currentUser.uid == userDocRef.id) {
+      try {
+        await syncUserToken(currentUser);
+      } catch (error) {
+        debugPrint(
+          '[PUSH] No se pudo reforzar el token antes de encolar: $error',
+        );
+      }
+    }
 
     await userDocRef.collection('notificationQueue').doc(taskId).set(
       {
         'taskId': taskId,
         'taskTitle': taskTitle,
         'runAt': Timestamp.fromDate(runAt),
+        'scheduledAt': Timestamp.fromDate(scheduledAt),
         'status': 'pending',
         'type': 'task',
         'dueDate': Timestamp.fromDate(dueDate),
         'reminderMinutes': normalizedMinutes,
+        if (currentUser != null) 'queuedByUid': currentUser.uid,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
-        'sentAt': FieldValue.delete(),       // Limpiar campos de estado anterior
+        'sentAt': FieldValue.delete(), // Limpiar campos de estado anterior
         'lastError': FieldValue.delete(),
       },
       SetOptions(merge: true),

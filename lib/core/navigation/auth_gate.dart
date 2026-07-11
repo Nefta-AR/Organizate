@@ -97,7 +97,52 @@ class _UserOnboardingGate extends StatefulWidget {
 }
 
 class _UserOnboardingGateState extends State<_UserOnboardingGate> {
+  static const Duration _pushTokenRetryCooldown = Duration(seconds: 30);
+
   bool _syncedPushToken = false;
+  bool _syncingPushToken = false;
+  DateTime? _lastPushTokenSyncAttempt;
+
+  @override
+  void didUpdateWidget(covariant _UserOnboardingGate oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.user.uid != widget.user.uid) {
+      _syncedPushToken = false;
+      _syncingPushToken = false;
+      _lastPushTokenSyncAttempt = null;
+    }
+  }
+
+  Future<void> _syncPushTokenOnce() async {
+    if (_syncedPushToken || _syncingPushToken) return;
+
+    final now = DateTime.now();
+    final lastAttempt = _lastPushTokenSyncAttempt;
+    if (lastAttempt != null &&
+        now.difference(lastAttempt) < _pushTokenRetryCooldown) {
+      return;
+    }
+
+    _lastPushTokenSyncAttempt = now;
+    _syncingPushToken = true;
+    try {
+      await PushNotificationService.syncUserToken(widget.user);
+      if (!mounted) return;
+      setState(() {
+        _syncedPushToken = true;
+      });
+    } catch (error) {
+      debugPrint('[PUSH] No se pudo sincronizar token FCM: $error');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _syncingPushToken = false;
+        });
+      } else {
+        _syncingPushToken = false;
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -126,9 +171,8 @@ class _UserOnboardingGateState extends State<_UserOnboardingGate> {
 
         // Privacidad por diseno: el token FCM se registra solo despues
         // de aceptar la Politica de Privacidad vigente.
-        if (!_syncedPushToken) {
-          _syncedPushToken = true;
-          PushNotificationService.syncUserToken(widget.user);
+        if (!_syncedPushToken && !_syncingPushToken) {
+          _syncPushTokenOnce();
         }
         // Campo 'role' determina el flujo: null/vacío → selección de rol.
         final role = data['role'] as String?;

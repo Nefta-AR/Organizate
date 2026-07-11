@@ -237,8 +237,12 @@ class _HogarScreenState extends State<HogarScreen> {
                     final batch = FirebaseFirestore.instance.batch();
 
                     // Invierte el estado done de la tarea
-                    batch.update(tasksCollection.doc(taskId),
-                        {'done': !isCurrentlyDone});
+                    batch.update(tasksCollection.doc(taskId), {
+                      'done': !isCurrentlyDone,
+                      'completedAt': isCurrentlyDone
+                          ? FieldValue.delete()
+                          : FieldValue.serverTimestamp(),
+                    });
 
                     // Incrementa (o decrementa) los puntos del usuario
                     batch.update(userDocRef,

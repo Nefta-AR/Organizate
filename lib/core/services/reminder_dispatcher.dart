@@ -45,8 +45,10 @@ class ReminderDispatcher {
     final normalizedMinutes = normalizeReminderMinutes(reminderMinutes);
     final normalizedDueDate = dueDate.toLocal();
 
+    // Canal 1: Notificación local via flutter_local_notifications.
+    // Corre independiente del canal push: si Android/ROM/permisos fallan,
+    // no debe impedir que la tarea se guarde ni que se encole FCM.
     try {
-      // Canal 1: Notificación local via flutter_local_notifications
       await NotificationService.scheduleReminderIfNeeded(
         userDocRef: userDocRef,
         taskId: taskId,
@@ -54,8 +56,14 @@ class ReminderDispatcher {
         dueDate: normalizedDueDate,
         reminderMinutes: normalizedMinutes,
       );
+    } catch (e, stack) {
+      debugPrint('[REMINDER] Error programando recordatorio local: $e\n$stack');
+    }
 
-      // Canal 2: Cola de push remota en Firestore
+    // Canal 2: Cola de push remota en Firestore.
+    // También es best-effort: un fallo temporal de FCM/Firestore no debe
+    // romper crear, editar o completar tareas.
+    try {
       await PushNotificationService.queueRemoteReminder(
         userDocRef: userDocRef,
         taskId: taskId,
@@ -64,8 +72,7 @@ class ReminderDispatcher {
         reminderMinutes: normalizedMinutes,
       );
     } catch (e, stack) {
-      debugPrint('[REMINDER] Error programando recordatorio: $e\n$stack');
-      rethrow;
+      debugPrint('[REMINDER] Error encolando recordatorio push: $e\n$stack');
     }
   }
 
@@ -74,8 +81,14 @@ class ReminderDispatcher {
     required DocumentReference<Map<String, dynamic>> userDocRef,
     required String taskId,
   }) async {
-    // Cancela el canal local (siempre disponible, no puede fallar con rethrow)
-    await NotificationService.cancelTaskNotification(taskId);
+    try {
+      // Cancela el canal local. Algunos dispositivos pueden lanzar errores
+      // del plugin; cancelar recordatorios no debe revertir una tarea guardada.
+      await NotificationService.cancelTaskNotification(taskId);
+    } catch (e, stack) {
+      debugPrint('[REMINDER] No se pudo cancelar notificacion local: $e\n$stack');
+    }
+
     try {
       // Cancela el canal remoto (puede fallar si no hay conexión)
       await PushNotificationService.cancelRemoteReminder(
@@ -84,7 +97,6 @@ class ReminderDispatcher {
       );
     } catch (e, stack) {
       debugPrint('[REMINDER] No se pudo cancelar push en cola: $e\n$stack');
-      rethrow;
     }
   }
 

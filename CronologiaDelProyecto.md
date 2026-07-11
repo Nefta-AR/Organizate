@@ -2,9 +2,9 @@
 
 Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y el registro de avance real del desarrollo de la aplicación Simple.
 
-**Período:** 27 Abril 2026 - 07 Julio 2026 (10 semanas)  
-**Estado Actual:** 99% Completado | Código estable, análisis estático limpio y últimos ajustes de tutoría completados  
-**Próximo Hito:** Generación del APK firmado para entrega
+**Período:** 27 Abril 2026 - 10 Julio 2026 (10+ semanas)
+**Estado Actual:** 99% Completado | Código estable, push FCM reforzado y hotfix de tareas/Android aplicado
+**Próximo Hito:** Prueba FCM/edición/completado de tareas en dispositivo real y generación del APK firmado
 
 ---
 
@@ -272,9 +272,10 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
 
 **Sprint B — Notificaciones y QA (03 - 30 Jun):**
 
-- 🔄 **Notificaciones push FCM** *(media prioridad)*
-  - Infraestructura lista; recordatorios locales funcionando
-  - Pendiente: alertas de rutinas y notificación al tutor
+- ✅ **Notificaciones push FCM** *(media prioridad)*
+  - Token FCM se reintenta si falla y se refuerza al encolar recordatorios propios
+  - Cola `notificationQueue` procesada por trigger inmediato para vencidos y cron cada minuto para futuros
+  - Pendiente operativo: deploy de Functions y prueba final en dispositivo físico
 
 - 🔄 **QA y corrección de bugs** *(alta prioridad)*
   - Testing en dispositivos Android de gama baja/media
@@ -329,7 +330,7 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
 |:---|:---|:---:|:---:|
 | 🔴 **Alta** | Fix flujo auth/registro/login | 4 días | ✅ Completado |
 | 🔴 **Alta** | Limpieza roles legacy + reglas Firebase | 1 día | ✅ Completado |
-| 🟡 **Media** | Notificaciones push FCM | 4 días | ✅ Infraestructura lista |
+| 🟡 **Media** | Notificaciones push FCM | 4 días | ✅ Reforzado; falta deploy/prueba real |
 | 🟡 **Media** | QA — testing en dispositivos reales | 2 días | 🔲 Pendiente |
 
 **Objetivo del Sprint:** Cerrar bugs restantes y estabilizar la sincronización tutor-paciente antes del 16 de junio para entrar a Fase 7.
@@ -368,6 +369,9 @@ Este documento consolida la **Carta Gantt**, la planificación de **Sprints** y 
 | 24 May | Ajustes del tutor simplificado | Contacto de emergencia y Modo Foco retirados del perfil del tutor (irrelevantes para ese rol); el tutor solo ve perfil, vinculación, backup y logout | Fase 6 |
 | 24 May | Contacto de emergencia del usuario editable por el tutor | Agregado en `_TutorConfigTab` del panel de supervisión — el tutor puede leer y guardar `emergencyName`/`emergencyPhone` del paciente directamente | Fase 6 |
 | 24 May | `PantallasConfigScreen` — pantalla dedicada de selección de tabs | Reemplaza los switches inline de Ajustes; muestra tarjetas visuales por pestaña (Inicio/Perfil siempre activos y bloqueados); si hay tutor vinculado todos los controles se deshabilitan | Fase 6 |
+| 10 Jul | Refuerzo de notificaciones push FCM | `AuthGate` reintenta sincronizacion de token, `PushNotificationService` refuerza token antes de encolar y Cloud Functions procesa `notificationQueue` con trigger inmediato + cron transaccional sin duplicados | Fase 6 |
+| 10 Jul | Hotfix Android APK para estabilidad y configuración tutor | `SettingsScreen` agrega padding inferior seguro cuando se abre sin nav interna; `NotificationService` desactiva `fullScreenIntent` y se elimina `USE_FULL_SCREEN_INTENT` del manifest para evitar pantallas completas forzadas | Fase 6 |
+| 10 Jul | Hotfix de tareas y recordatorios | `ReminderDispatcher` separa canal local y push para que fallos de notificación no rompan guardar/editar/completar; el completado guarda `completedAt`; `recreateRecurringTask` identifica próximas ocurrencias y la app oculta recurrencias futuras generadas hasta su día | Fase 6 |
 | 24 May | Defaults de pestañas: Inicio, Tareas, Foco, Perfil activos por defecto | Foco cambia de `false` a `true` como default en `CustomNavBar` y en `PantallasConfigScreen`; Pictogramas sigue desactivado por ser opt-in | Fase 6 |
 | 24 May | Fix race condition en creación de cuenta (parte 1) | `_UserOnboardingGate` navegaba a `RoleSelectionScreen` cuando el doc Firestore aún no existía; fix: comprobar `snapshot.data?.exists == false` y mostrar spinner | Fase 6 |
 | 24 May | Fix parpadeo de pantallas en registro nuevo (parte 2) | El stream de `_UserOnboardingGate` emitía estados intermedios (RoleSelectionScreen → flash avatar → RoleSelectionScreen) porque el registro navegaba a `AuthGate` antes de seleccionar rol; fix: registro email y Google nuevo navegan directamente a `RoleSelectionScreen` antes de `AuthGate`; `hasCompletedProfile: true` en el write inicial; navigator capturado al inicio de la función (antes de awaits que desmontan `LoginScreen`) | Fase 6 |
@@ -458,6 +462,6 @@ El Trello original tenía 5 sprints. Estado actual vs lo planificado:
 
 ## Notas de Actualización
 
-**Última actualización:** 02 Julio 2026 — `flutter analyze` limpio y últimas restricciones de tutoría implementadas  
-**Próxima revisión:** Inmediata — generación del APK firmado y QA final  
+**Última actualización:** 10 Julio 2026 — push FCM reforzado y hotfix de tareas/Android aplicado
+**Próxima revisión:** Inmediata — prueba FCM, edición, completado trazable y recurrencias en dispositivo real
 **Próximo milestone:** 07 Julio 2026 (entrega final APK + documentación)

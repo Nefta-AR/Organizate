@@ -34,6 +34,7 @@ import 'package:simple/core/utils/date_time_helper.dart';
 import 'package:simple/core/utils/reminder_helper.dart';
 import 'package:simple/core/utils/reminder_options.dart';
 import 'package:simple/core/utils/task_urgency_helper.dart';
+import 'package:simple/core/utils/task_visibility_helper.dart';
 import 'package:simple/core/widgets/custom_nav_bar.dart';
 import 'package:simple/core/widgets/celebration_overlay.dart';
 
@@ -236,6 +237,7 @@ class _TareasScreenState extends State<TareasScreen> {
         // Nivel 1: Excluye soft-deleted. El tutor puede verlas en su panel.
         final all = (snapshot.data?.docs ?? [])
             .where((d) => d.data()['deletedByUser'] != true)
+            .where((d) => shouldShowTaskToday(d.data()))
             .toList();
 
         // Nivel 2: Filtro por categoría (null = "Todas").
@@ -462,7 +464,12 @@ class _TareasScreenState extends State<TareasScreen> {
   Future<void> _toggleTask(String taskId, bool isDone) async {
     final pointsChange = isDone ? -10 : 10; // +10 al completar, -10 al descompletar
     final batch = FirebaseFirestore.instance.batch();
-    batch.update(_tasksCollection.doc(taskId), {'done': !isDone});
+    batch.update(_tasksCollection.doc(taskId), {
+      'done': !isDone,
+      'completedAt': isDone
+          ? FieldValue.delete()
+          : FieldValue.serverTimestamp(),
+    });
     batch.update(_userDocRef, {'points': FieldValue.increment(pointsChange)});
     try {
       await batch.commit();

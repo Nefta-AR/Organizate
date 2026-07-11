@@ -43,6 +43,7 @@ import 'package:simple/core/services/pictogram_service.dart';
 import 'package:simple/core/services/tour_service.dart';
 import 'package:simple/core/widgets/tour_step_card.dart';
 import 'package:simple/features/tea_board/screens/pictogram_manager_screen.dart';
+import 'package:simple/core/utils/task_visibility_helper.dart';
 import 'package:simple/features/tda_focus/screens/progreso_screen.dart';
 import 'package:simple/features/tutor_dashboard/screens/settings_screen.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
@@ -607,8 +608,21 @@ class _TutorTasksTabState extends State<_TutorTasksTab> {
         .collection('tasks');
   }
 
-  Future<void> _toggleDone(String taskId, bool current) =>
-      _tasksRef.doc(taskId).update({'done': !current});
+  Future<void> _toggleDone(String taskId, bool current) async {
+    try {
+      await _tasksRef.doc(taskId).update({
+        'done': !current,
+        'completedAt': current
+            ? FieldValue.delete()
+            : FieldValue.serverTimestamp(),
+      });
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo actualizar la tarea')),
+      );
+    }
+  }
 
   Future<void> _deleteTask(String taskId) =>
       _tasksRef.doc(taskId).delete();
@@ -627,79 +641,79 @@ class _TutorTasksTabState extends State<_TutorTasksTab> {
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text('Nueva tarea para ${widget.patientName}'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: textCtrl,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Descripción de la tarea',
-                  border: OutlineInputBorder(),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: textCtrl,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    hintText: 'Descripción de la tarea',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 2,
                 ),
-                maxLines: 2,
-              ),
-              const SizedBox(height: 16),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text('Categoría',
+                const SizedBox(height: 16),
+                Text('Categoría',
                     style: TextStyle(
                         color: Colors.grey.shade600, fontSize: 13)),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _categories.map((c) {
-                  final sel = selectedCat == c.label;
-                  return ChoiceChip(
-                    label: Text(c.label),
-                    avatar: Icon(c.icon,
-                        size: 16,
-                        color: sel ? Colors.white : c.color),
-                    selected: sel,
-                    selectedColor: c.color,
-                    labelStyle: TextStyle(
-                        color: sel ? Colors.white : Colors.black87),
-                    onSelected: (_) =>
-                        setS(() => selectedCat = c.label),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: noteCtrl,
-                decoration: InputDecoration(
-                  hintText: 'Nota para el usuario (opcional)',
-                  hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400),
-                  border: const OutlineInputBorder(),
-                  prefixIcon: const Icon(Icons.sticky_note_2_outlined, size: 18),
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _categories.map((c) {
+                    final sel = selectedCat == c.label;
+                    return ChoiceChip(
+                      label: Text(c.label),
+                      avatar: Icon(c.icon,
+                          size: 16,
+                          color: sel ? Colors.white : c.color),
+                      selected: sel,
+                      selectedColor: c.color,
+                      labelStyle: TextStyle(
+                          color: sel ? Colors.white : Colors.black87),
+                      onSelected: (_) =>
+                          setS(() => selectedCat = c.label),
+                    );
+                  }).toList(),
                 ),
-                maxLines: 2,
-                maxLength: 120,
-              ),
-              SwitchListTile.adaptive(
-                title: const Text('Repetir tarea', style: TextStyle(fontSize: 14)),
-                value: repeatEnabled,
-                onChanged: (v) => setS(() => repeatEnabled = v),
-                contentPadding: EdgeInsets.zero,
-                dense: true,
-              ),
-              if (repeatEnabled)
-                DropdownButtonFormField<String>(
-                  initialValue: recurrence,
-                  decoration: const InputDecoration(
-                      labelText: 'Frecuencia', border: OutlineInputBorder()),
-                  items: const [
-                    DropdownMenuItem(value: 'daily', child: Text('Diaria')),
-                    DropdownMenuItem(value: 'weekly', child: Text('Semanal')),
-                    DropdownMenuItem(value: 'monthly', child: Text('Mensual')),
-                  ],
-                  onChanged: (v) => setS(() => recurrence = v ?? 'daily'),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: noteCtrl,
+                  decoration: InputDecoration(
+                    hintText: 'Nota para el usuario (opcional)',
+                    hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400),
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.sticky_note_2_outlined, size: 18),
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                  ),
+                  maxLines: 2,
+                  maxLength: 120,
                 ),
-            ],
+                SwitchListTile.adaptive(
+                  title: const Text('Repetir tarea', style: TextStyle(fontSize: 14)),
+                  value: repeatEnabled,
+                  onChanged: (v) => setS(() => repeatEnabled = v),
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                ),
+                if (repeatEnabled)
+                  DropdownButtonFormField<String>(
+                    initialValue: recurrence,
+                    decoration: const InputDecoration(
+                        labelText: 'Frecuencia', border: OutlineInputBorder()),
+                    items: const [
+                      DropdownMenuItem(value: 'daily', child: Text('Diaria')),
+                      DropdownMenuItem(value: 'weekly', child: Text('Semanal')),
+                      DropdownMenuItem(value: 'monthly', child: Text('Mensual')),
+                    ],
+                    onChanged: (v) => setS(() => recurrence = v ?? 'daily'),
+                  ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -749,7 +763,13 @@ class _TutorTasksTabState extends State<_TutorTasksTab> {
               if (snap.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
-              final docs = snap.data?.docs ?? [];
+              // Ocultar instancias futuras generadas por la función de recurrencia
+              // (la misma lógica que usa la vista del usuario en tareas_screen.dart).
+              // Sin este filtro, cuando el tutor marca una tarea recurrente como hecha,
+              // la nueva instancia futura aparece de inmediato en "Pendientes".
+              final docs = (snap.data?.docs ?? [])
+                  .where((d) => shouldShowTaskToday(d.data()))
+                  .toList();
               if (docs.isEmpty) {
                 return const Center(
                   child: Column(

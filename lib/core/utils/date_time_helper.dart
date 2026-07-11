@@ -60,8 +60,12 @@ Future<DateTime?> pickDateTime({
     pickedTime.minute,
   );
 
-  // Validar que no sea en el pasado
-  if (result.isBefore(now)) {
+  // Validar que no sea en el pasado. Se compara contra ahora truncado al minuto
+  // porque el selector de hora solo permite elegir horas y minutos (no segundos).
+  // Si now = 19:47:45 y el usuario elige 19:47, result = 19:47:00 es válido.
+  final DateTime nowMinute =
+      DateTime(now.year, now.month, now.day, now.hour, now.minute);
+  if (result.isBefore(nowMinute)) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('No puedes agendar en el pasado')),
     );

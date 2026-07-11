@@ -169,21 +169,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _handleLogout() async {
     if (!mounted) return;
 
-    // Navegamos primero: quitamos todas las pantallas del stack
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-      (route) => false, // Elimina todas las rutas previas
-    );
-
-    // Luego cerramos la sesión de Google (puede fallar si no hay sesión de Google)
+    // Cerramos sesión primero para evitar que una re-autenticación rápida con
+    // Google encuentre un usuario de Firebase todavía activo (condición de carrera
+    // que causa error "unknown" en signInWithCredential al cambiar de cuenta).
     try {
       await GoogleSignIn().signOut();
     } catch (_) {}
-
-    // Finalmente cerramos la sesión de Firebase Auth
     try {
       await FirebaseAuth.instance.signOut();
     } catch (_) {}
+
+    // Navegamos después de cerrar sesión: AuthGate ya detectó user == null,
+    // y esta navegación explícita limpia el stack de rutas del Navigator.
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
   }
 
   // ── Guardar contacto de emergencia ────────────────────────────────────────────
@@ -569,7 +571,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           return SingleChildScrollView(
             // Padding inferior extra si hay nav bar para no quedar detrás de ella
-            padding: EdgeInsets.fromLTRB(16, 16, 16, widget.showNavBar ? 96 : 16),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              16,
+              16,
+              MediaQuery.paddingOf(context).bottom +
+                  (widget.showNavBar ? 112 : 88),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

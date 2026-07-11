@@ -193,7 +193,12 @@ class _LoginScreenState extends State<LoginScreen> {
         userCred = await FirebaseAuth.instance.signInWithPopup(provider);
       } else {
         // En móvil, abre el selector nativo de cuentas de Google.
-        final googleUser = await GoogleSignIn().signIn();
+        // signOut() limpia la cuenta cacheada de la sesión anterior para que
+        // el selector de cuentas siempre aparezca y el usuario pueda elegir
+        // una cuenta distinta (ej: cambiar de cuenta tutor a cuenta usuario).
+        final gSignIn = GoogleSignIn();
+        await gSignIn.signOut();
+        final googleUser = await gSignIn.signIn();
         // El usuario canceló el selector (no es un error, simplemente no hace nada).
         if (googleUser == null) return;
 

@@ -121,7 +121,7 @@ Simple no es una adaptación de una app genérica. Fue concebida desde cero con 
 - ✅ Tutor puede crear pictogramas personalizados para el paciente
 - ✅ Restricciones de personalización para usuarios con tutor
 - ✅ Recorte de pictogramas responsive
-- 🔄 Notificaciones push FCM
+- ✅ Notificaciones push FCM reforzadas en cliente y Cloud Functions
 - 🔄 Testing exhaustivo y corrección de bugs
 
 ### Fase 7: Documentación y Entrega ⏳ (17 Jun - 07 Jul 2026)
@@ -172,7 +172,11 @@ Nuestra meta inmediata es consolidar un **MVP funcional** que demuestre que la t
 - ✅ Ícono de app generado
 - ✅ Código estable y análisis estático limpio
 - ✅ Política de Privacidad versionada con aceptación obligatoria y respaldo en Firestore
-- 🔄 APK funcional listo para instalación directa
+- ✅ Recordatorios push FCM con cola remota y fallback local
+- ✅ Hotfix Android APK para configuración de tutor y notificaciones sin pantalla completa forzada
+- ✅ Persistencia de tareas desacoplada de fallos temporales de notificaciones
+- ✅ Completado de tareas trazable con `completedAt` y recurrencias futuras generadas sin confundir el estado actual
+- 🔄 APK funcional en validación final de estabilidad
 
 ### Roadmap Post-MVP
 
@@ -200,8 +204,8 @@ Para alcanzar el MVP en Julio 2026, estas son las tareas prioritarias:
 4. **Ícono de app** - Generación de íconos adaptativos para Android ✅
 
 ### 🔵 Prioridad Baja (Nice to have)
-5. **Notificaciones push** - Recordatorios de tareas y rutinas
-6. **Testing y bugs menores** - Pulido final antes de la entrega
+5. **Prueba final de notificaciones push** - Validar recordatorios FCM en dispositivo real
+6. **Testing de estabilidad APK** - Confirmar edición, completado con `completedAt`, recordatorios, recurrencias y ausencia de cierres forzados tras los hotfixes
 
 ---
 
@@ -225,7 +229,7 @@ Para alcanzar el MVP en Julio 2026, estas son las tareas prioritarias:
 
 Simple no es una app terminada. Es una conversación en curso con las familias que la usan. Desde su concepción en abril de 2026 hasta su entrega proyectada en julio, el proyecto ha evolucionado de una idea simple a una solución completa que abarca comunicación aumentativa, organización personal y supervisión familiar.
 
-El reto ahora es cerrar los últimos 3%: generar el APK firmado, realizar la prueba final de usuario y completar la documentación de entrega.
+El reto ahora es cerrar los últimos 3%: validar estabilidad en Android real, generar el APK firmado, realizar la prueba final de usuario y completar la documentación de entrega.
 
 **La tecnología es simple cuando está bien hecha. Y esta app está diseñada para ser exactamente eso: simple.**
 
