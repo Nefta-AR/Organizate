@@ -466,6 +466,97 @@ class _PantallaUsuarioTEAState extends State<PantallaUsuarioTEA>
     }
   }
 
+  // Muestra un menú de opciones al mantener presionado un pictograma:
+  // - Siempre permite cambiar el texto de voz.
+  // - Solo para personalizados: permite eliminarlo.
+  Future<void> _mostrarOpcionesPictograma(PictogramaDisplay picto) async {
+    await showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 36, height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  picto.etiqueta,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.record_voice_over_rounded),
+              title: const Text('Cambiar texto de voz'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _editarTexto(picto);
+              },
+            ),
+            if (picto.esPersonalizado)
+              ListTile(
+                leading: const Icon(Icons.delete_rounded, color: Colors.red),
+                title: const Text(
+                  'Eliminar pictograma',
+                  style: TextStyle(color: Colors.red),
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _confirmarEliminar(picto);
+                },
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmarEliminar(PictogramaDisplay picto) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Eliminar pictograma'),
+        content: Text(
+          '¿Eliminar "${picto.etiqueta}"? Esta acción no se puede deshacer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    final firestoreId = picto.id.replaceFirst('custom_', '');
+    await PictogramService.deletePictogram(firestoreId);
+  }
+
   Future<void> _initTourIfNeeded() async {
     if (!mounted) return;
     final needed = await TourService.needsUserTour();
@@ -759,7 +850,9 @@ class _PantallaUsuarioTEAState extends State<PantallaUsuarioTEA>
             ],
           ),
         ),
-        body: Column(
+        body: SafeArea(
+          top: false,
+          child: Column(
           children: [
             _buildCoreStrip(colors),
             Expanded(
@@ -775,7 +868,7 @@ class _PantallaUsuarioTEAState extends State<PantallaUsuarioTEA>
                         key: const PageStorageKey('tab_rutina'),
                         pictogramas: _filtrarPorCategoria(todos, _catHoraria),
                         onTap: _hablarPictograma,
-                        onLongPress: _editarTexto,
+                        onLongPress: _mostrarOpcionesPictograma,
                         nombreRutina: _nombreRutina,
                         iconoRutina: _iconoRutina,
                       ),
@@ -783,31 +876,31 @@ class _PantallaUsuarioTEAState extends State<PantallaUsuarioTEA>
                         key: const PageStorageKey('tab_comida'),
                         pictogramas: _filtrarPorCategoria(todos, 'Comida'),
                         onTap: _hablarPictograma,
-                        onLongPress: _editarTexto,
+                        onLongPress: _mostrarOpcionesPictograma,
                       ),
                       _GridCategoriaDisplay(
                         key: const PageStorageKey('tab_emociones'),
                         pictogramas: _filtrarPorCategoria(todos, 'Emociones'),
                         onTap: _hablarPictograma,
-                        onLongPress: _editarTexto,
+                        onLongPress: _mostrarOpcionesPictograma,
                       ),
                       _GridCategoriaDisplay(
                         key: const PageStorageKey('tab_acciones'),
                         pictogramas: _filtrarPorCategoria(todos, 'Acciones'),
                         onTap: _hablarPictograma,
-                        onLongPress: _editarTexto,
+                        onLongPress: _mostrarOpcionesPictograma,
                       ),
                       _GridCategoriaDisplay(
                         key: const PageStorageKey('tab_necesidades'),
                         pictogramas: _filtrarPorCategoria(todos, 'Necesidades'),
                         onTap: _hablarPictograma,
-                        onLongPress: _editarTexto,
+                        onLongPress: _mostrarOpcionesPictograma,
                       ),
                       _GridCategoriaDisplay(
                         key: const PageStorageKey('tab_familia'),
                         pictogramas: _filtrarPorCategoria(todos, 'Familia'),
                         onTap: _hablarPictograma,
-                        onLongPress: _editarTexto,
+                        onLongPress: _mostrarOpcionesPictograma,
                       ),
                     ],
                   );
@@ -816,6 +909,7 @@ class _PantallaUsuarioTEAState extends State<PantallaUsuarioTEA>
             ),
             _buildAyudaRow(colors),
           ],
+        ),
         ),
         bottomNavigationBar: const CustomNavBar(screen: NavScreen.pictogramas),
       ),

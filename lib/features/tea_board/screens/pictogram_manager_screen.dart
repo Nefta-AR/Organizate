@@ -348,12 +348,15 @@ class _PictogramManagerScreenState extends State<PictogramManagerScreen> {
       ),
       body: loading
           ? const Center(child: CircularProgressIndicator()) // Cargando streams
-          : Column(
-              children: [
-                _buildFilterBar(), // Chips horizontales para filtrar por categoría
-                _buildLegend(),    // Contador de pictos totales y ocultos
-                Expanded(child: _buildGrid()), // Cuadrícula de tarjetas
-              ],
+          : SafeArea(
+              top: false,
+              child: Column(
+                children: [
+                  _buildFilterBar(), // Chips horizontales para filtrar por categoría
+                  _buildLegend(),    // Contador de pictos totales y ocultos
+                  Expanded(child: _buildGrid()), // Cuadrícula de tarjetas
+                ],
+              ),
             ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
@@ -509,6 +512,7 @@ class _PictogramManagerScreenState extends State<PictogramManagerScreen> {
           isVisible:         _visible(e.id),
           onCategoryTap:     () => _showCategoryPicker(e), // Abre el picker de categoría
           onToggleVisible:   () => _toggleVisible(e.id),   // Alterna visibilidad
+          onDelete:          e.esPersonalizado ? () => _deleteCustomPictogram(e) : null,
         );
       },
     );
@@ -587,6 +591,15 @@ class _PictogramManagerScreenState extends State<PictogramManagerScreen> {
         ),
       ),
     );
+  }
+
+  // ─── Eliminar pictograma personalizado ───────────────────────────────────
+
+  /// Elimina un pictograma personalizado del usuario de Firestore y Storage.
+  /// Solo se puede llamar para entries con [esPersonalizado] == true.
+  Future<void> _deleteCustomPictogram(PictoEntry entry) async {
+    final firestoreId = entry.id.replaceFirst('custom_', '');
+    await PictogramService.deletePictogramFor(widget.userId, firestoreId);
   }
 
   // ─── Restablecer toda la configuración ───────────────────────────────────
@@ -668,6 +681,7 @@ class _PictoManagerCard extends StatelessWidget {
   final bool isVisible;             // Si el pictograma es visible en el tablero
   final VoidCallback onCategoryTap; // Callback al tocar el chip de categoría
   final VoidCallback onToggleVisible; // Callback al tocar el botón de visibilidad
+  final VoidCallback? onDelete;     // Solo para personalizados; null = no se puede eliminar
 
   const _PictoManagerCard({
     required this.entry,
@@ -676,7 +690,82 @@ class _PictoManagerCard extends StatelessWidget {
     required this.isVisible,
     required this.onCategoryTap,
     required this.onToggleVisible,
+    this.onDelete,
   });
+
+  void _showDeleteSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 36, height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  entry.etiqueta,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.delete_rounded, color: Colors.red),
+              title: const Text(
+                'Eliminar pictograma',
+                style: TextStyle(color: Colors.red),
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                _confirmDelete(context);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Eliminar pictograma'),
+        content: Text(
+          '¿Eliminar "${entry.etiqueta}"? Esta acción no se puede deshacer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              onDelete?.call();
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -691,7 +780,10 @@ class _PictoManagerCard extends StatelessWidget {
     final isModified =
         settings.containsKey('categoria') || settings['visible'] == false;
 
-    return AnimatedOpacity(
+    return GestureDetector(
+      // Long-press solo activo en pictogramas personalizados (onDelete != null)
+      onLongPress: onDelete != null ? () => _showDeleteSheet(context) : null,
+      child: AnimatedOpacity(
       duration: const Duration(milliseconds: 200),
       // Opacidad reducida al 45% cuando el pictograma está oculto para el usuario
       opacity: isVisible ? 1.0 : 0.45,
@@ -829,7 +921,8 @@ class _PictoManagerCard extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ),    // cierra AnimatedOpacity (child del GestureDetector)
+  );     // cierra GestureDetector
   }
 
   Widget _buildImage() {

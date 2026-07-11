@@ -56,7 +56,12 @@ class CrearPictogramaSheet extends StatefulWidget {
       context: context,
       isScrollControlled: true,    // Permite que el sheet ocupe más del 50% de pantalla
       backgroundColor: Colors.transparent, // El Container interior define el fondo real
-      builder: (_) => CrearPictogramaSheet(targetUserId: targetUserId),
+      // El Padding dinámico empuja el sheet hacia arriba cuando aparece el teclado,
+      // haciendo que los campos de texto queden visibles sobre él.
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: CrearPictogramaSheet(targetUserId: targetUserId),
+      ),
     );
   }
 
