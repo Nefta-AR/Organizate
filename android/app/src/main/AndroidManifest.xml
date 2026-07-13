@@ -10,9 +10,15 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
+    <!-- allowBackup=false: sin esto, al reinstalar el APK Android restaura
+         desde el respaldo de Google el cache interno de FCM con el token de
+         la instalacion anterior (ya invalidado). La app entonces registra un
+         token muerto en Firestore y las push nunca llegan al dispositivo. -->
     <application
         android:label="Simple"
         android:name="${applicationName}"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
         android:icon="@mipmap/simple"
         android:roundIcon="@mipmap/simple">
         <receiver
