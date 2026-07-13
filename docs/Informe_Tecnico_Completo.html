@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Simple — Informe Técnico para Defensa de Título</title>
+<style>
+  body { font-family: Calibri, sans-serif; font-size: 11pt; line-height: 1.4; margin: 0; color: #000; }
+  p { text-align: justify; margin: 6pt 0; }
+  h1 { font-size: 17pt; font-weight: bold; margin: 18pt 0 8pt 0; }
+  h2 { font-size: 13.5pt; font-weight: bold; margin: 14pt 0 6pt 0; }
+  h3 { font-size: 12pt; font-weight: bold; margin: 12pt 0 4pt 0; }
+  table { border-collapse: collapse; width: 100%; margin: 8pt 0; font-size: 10pt; }
+  th { background: #dce6f1; border: 1px solid #8ea9c1; padding: 5px 7px; text-align: left; font-weight: bold; }
+  td { border: 1px solid #a9bccd; padding: 5px 7px; vertical-align: top; }
+  code { font-family: Consolas, monospace; font-size: 9.5pt; }
+  pre { font-family: Consolas, monospace; font-size: 9pt; background: #f4f6f9; border: 1px solid #d5dde5; padding: 8pt; white-space: pre-wrap; }
+  ul, ol { margin: 4pt 0 8pt 0; }
+  li { text-align: justify; margin: 2pt 0; }
+  .pb { page-break-before: always; }
+  .fig { text-align: center; margin: 10pt 0; }
+  .fig img { max-width: 100%; }
+  .cap { font-style: italic; font-size: 9.5pt; text-align: center; color: #333; margin: 4pt 0 12pt 0; }
+  .placeholder { border: 2px dashed #b03a2e; background: #fdf2f0; color: #922b21; text-align: center; padding: 28pt 12pt; margin: 10pt 0; font-size: 10pt; }
+  .portada { text-align: center; }
+  .toc td { border: none; padding: 2px 4px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ 1. PORTADA ═══════════════ -->
+<div class="portada">
+  <div style="height:140pt;"></div>
+  <img src="../assets/images/logosimple.png" width="260" alt="Logo Simple">
+  <div style="height:30pt;"></div>
+  <p style="font-size:26pt; font-weight:bold; text-align:center;">Simple</p>
+  <p style="font-size:15pt; text-align:center;">Prótesis Cognitiva para Usuarios Neurodivergentes</p>
+  <p style="font-size:12pt; font-weight:bold; text-align:center;">Informe Técnico para Defensa de Título</p>
+  <div style="height:36pt;"></div>
+  <table style="width:70%; margin:0 auto;">
+    <tr><th style="width:38%;">Campo</th><th>Valor</th></tr>
+    <tr><td><b>Nombre del Proyecto</b></td><td>Simple</td></tr>
+    <tr><td><b>Alumno(s)</b></td><td>Pablo Mardones – Neftalí Arriagada</td></tr>
+    <tr><td><b>Carrera</b></td><td>Analista Programador</td></tr>
+    <tr><td><b>Institución</b></td><td>CFT De La Región De La Araucanía – Sede Angol</td></tr>
+    <tr><td><b>Profesor Guía</b></td><td>Franco Quintana Morgado</td></tr>
+    <tr><td><b>Fecha de Defensa</b></td><td>28/07/2026</td></tr>
+  </table>
+</div>
+
+<!-- ═══════════════ 2. AGRADECIMIENTOS ═══════════════ -->
+<h1 class="pb">2. Agradecimientos</h1>
+<p>En primer lugar, doy gracias a Dios por darme la firmeza para no bajar los brazos. A mi familia,
+por ser mi motor y creer en mí con los ojos cerrados, y a todas las personas que me sostuvieron
+cuando la carga se sentía demasiado pesada. En esos días donde el agotamiento de hacer malabares
+entre el trabajo, los estudios y la vida diaria casi me hacen tirar la toalla, ustedes fueron mi
+cable a tierra. De todo este camino me llevo una convicción que quiero dejar plasmada: nunca dejes
+que nadie te diga que no puedes, que no sirves o que tu tiempo ya pasó. Sigue adelante y no dejes
+de pelear por lo tuyo. Nos malacostumbraron a creer que el éxito es correr y desgastarse para
+llegar primero a la meta, pero esto no se trata de quién llega antes o quién llega último. Se trata
+de avanzar a tu propio ritmo, con tus propios pasos, y de alcanzar tus sueños en tu momento justo.</p>
+<p><i><b>"Ubuntu"</b>. Yo soy porque nosotros somos. Hoy, al dar término a esta tesis, entiendo la
+verdad absoluta de esas palabras. Este trabajo lleva nuestros nombres, pero le pertenece a cada una
+de las personas que me guiaron y creyeron en mí. Gracias por ser la comunidad que hizo posible mi
+camino.</i></p>
+
+<!-- ═══════════════ 3. RESUMEN ═══════════════ -->
+<h1 class="pb">3. Resumen (Abstract)</h1>
+<h2>Resumen en español</h2>
+<p><b>Simple</b> es una aplicación móvil desarrollada como <b>prótesis cognitiva</b> dirigida a
+personas neurodivergentes, con énfasis en usuarios con <b>Trastorno por Déficit de Atención e
+Hiperactividad (TDAH)</b> y <b>Trastorno del Espectro Autista (TEA)</b>. El sistema integra
+pictogramas del sistema <b>ARASAAC</b> para facilitar la comunicación aumentativa y alternativa
+(CAA), junto con módulos de gestión de tareas, temporizador Pomodoro, historial de actividad,
+notificaciones push remotas y supervisión remota por tutores. La arquitectura del sistema se basa
+en un modelo <b>cliente-servidor</b> donde el cliente es una aplicación móvil multiplataforma
+desarrollada en <b>Flutter/Dart</b>, y el backend se implementa mediante <b>Firebase</b>
+(Firestore, Authentication, Storage, Cloud Functions, Cloud Messaging). Los resultados obtenidos
+demuestran que una interfaz simplificada basada en pictogramas mejora significativamente la
+autonomía de usuarios neurodivergentes en la organización de rutinas diarias. El público objetivo
+se define por perfil funcional más que por edad: abarca desde niños en edad escolar, acompañados
+por un tutor, hasta adolescentes y adultos que gestionan sus rutinas de forma autónoma.</p>
+<h2>Abstract (English)</h2>
+<p><b>Simple</b> is a mobile application developed as a <b>cognitive prosthesis</b> aimed at
+neurodivergent individuals, with emphasis on users with <b>ADHD</b> and <b>Autism Spectrum
+Disorder (ASD)</b>. The system integrates <b>ARASAAC</b> pictograms to facilitate Augmentative and
+Alternative Communication (AAC), along with task management modules, Pomodoro timer, activity
+history, remote push notifications, and remote supervision by tutors. The system architecture
+follows a <b>client-server model</b> with a cross-platform mobile client built in
+<b>Flutter/Dart</b>, and a backend implemented using <b>Firebase</b> (Firestore, Authentication,
+Storage, Cloud Functions, Cloud Messaging). Results demonstrate that a simplified pictogram-based
+interface significantly improves autonomy for neurodivergent users in organizing daily routines.</p>
+<p><b>Palabras clave:</b> Prótesis cognitiva, neurodivergencia, TDAH, TEA, ARASAAC, Flutter,
+Firebase, comunicación aumentativa, notificaciones push, aplicación móvil.</p>
+
+<!-- ═══════════════ 4. ÍNDICE ═══════════════ -->
+<h1 class="pb">4. Índice de Contenido, Tablas y Figuras</h1>
+<p style="font-size:9.5pt; color:#555;"><i>Nota: actualizar los números de página con la tabla de
+contenido automática de Word (Referencias → Tabla de contenido) una vez finalizada la maquetación;
+los títulos ya están con estilos de encabezado.</i></p>
+<h2>Índice de Contenido</h2>
+<p>2. Agradecimientos · 3. Resumen (Abstract) · 4. Índice de Contenido, Tablas y Figuras ·
+5. Introducción · 6. Planteamiento del Problema y Justificación · 7. Objetivos ·
+8. Estado del Arte y Marco Teórico · 9. Metodología · 10. Análisis del Sistema ·
+11. Diseño del Sistema · 12. Desarrollo e Implementación · 13. Pruebas del Sistema ·
+14. Resultados y Evaluación · 15. Conclusiones · 16. Recomendaciones y Trabajo Futuro ·
+17. Bibliografía · 18. Anexos</p>
+<h2>Índice de Tablas</h2>
+<p>Tabla 1: Comparativa de tecnologías similares · Tabla 2: Herramientas y recursos de desarrollo ·
+Tabla 3: Cronograma de actividades (Sprints) · Tabla 4: Requerimientos funcionales ·
+Tabla 5: Requerimientos no funcionales · Tabla 6: Tecnologías utilizadas por capa ·
+Tabla 7: Cloud Functions del pipeline de notificaciones · Tabla 8: Dificultades y soluciones técnicas ·
+Tabla 9: Pruebas de rendimiento · Tabla 10: Resultados de validación de requerimientos ·
+Tabla 11: Cumplimiento de objetivos específicos</p>
+<h2>Índice de Figuras</h2>
+<p>Figura 1: Modelo de apoyo cognitivo digital · Figura 2: Ejemplo de pictogramas ARASAAC ·
+Figura 3: Aplicaciones de referencia (Tiimo, Routinery, Habitica) ·
+Figura 4: Diagrama de casos de uso — Usuario y Tutor ·
+Figura 5: Diagrama de arquitectura del sistema (3 capas) ·
+Figura 6: Estructura de colecciones Firestore ·
+Figura 7: Diagrama de clases principales ·
+Figura 8: Diagrama de secuencia — Uso de pictograma con TTS ·
+Figura 9: Diagrama de secuencia — Vinculación tutor-usuario ·
+Figura 10: Capturas de pantalla del sistema ·
+Figura 11: Secuencia — Asignación de tarea con push al usuario ·
+Figura 12: Secuencia — Completado de tarea con push al tutor y recurrencia ·
+Figura 13: Ciclo de vida del token FCM y corrección del Auto Backup ·
+Figura 14: Secuencia — Desvinculación iniciada por el usuario</p>
+
+<!-- ═══════════════ 5. INTRODUCCIÓN ═══════════════ -->
+<h1 class="pb">5. Introducción</h1>
+<h2>5.1 Contexto y antecedentes</h2>
+<p>La neurodivergencia comprende variaciones naturales en el cerebro humano respecto a lo que se
+considera "neurotípico". Entre las condiciones más frecuentes se encuentran el <b>Trastorno del
+Espectro Autista (TEA)</b> y el <b>Trastorno por Déficit de Atención e Hiperactividad (TDAH)</b>.
+Según la OMS, aproximadamente <b>1 de cada 100 niños</b> tiene TEA, y el TDAH afecta alrededor del
+<b>5%</b> de la población infantil y el <b>2.5%</b> de adultos a nivel mundial.</p>
+<p>Una de las principales dificultades enfrentadas por estas personas es la <b>regulación
+ejecutiva</b>: la capacidad de planificar, organizar, iniciar y completar tareas. Las <b>prótesis
+cognitivas</b> —herramientas tecnológicas que externalizan funciones cognitivas— han demostrado
+ser efectivas para compensar estas dificultades.</p>
+<h2>5.2 Motivación</h2>
+<p>La motivación de este proyecto surge de la observación directa de que las aplicaciones
+existentes de organización personal (calendarios, recordatorios, listas de tareas) están diseñadas
+para usuarios neurotípicos, con interfaces complejas, alto contenido de texto, múltiples niveles de
+navegación y estímulos visuales que pueden resultar saturadores para personas con TEA o TDAH.
+Existe una brecha significativa en el mercado de aplicaciones móviles que combinen <b>simplicidad
+visual, pictogramas estandarizados, comunicación aumentativa y supervisión parental/tutor</b> en
+una sola plataforma integrada.</p>
+<h2>5.3 Alcance del proyecto</h2>
+<p>El proyecto comprende el desarrollo completo de una aplicación móvil multiplataforma
+(Android/iOS) con los siguientes módulos:</p>
+<ul>
+  <li>Módulo de pictogramas y comunicación aumentativa (CAA) con pictogramas ARASAAC</li>
+  <li>Módulo de gestión de tareas con categorías, recordatorios y recurrencia automática</li>
+  <li>Módulo de temporizador Pomodoro con sonidos y vibración háptica</li>
+  <li>Módulo de tutor/supervisor con vinculación mediante códigos de invitación</li>
+  <li>Módulo de historial de actividad para análisis de patrones</li>
+  <li>Módulo de notificaciones push remotas (Firebase Cloud Messaging + Cloud Functions): avisos
+  inmediatos de asignación y completado de tareas entre tutor y usuario, y recordatorios
+  programados procesados en servidor mediante una cola en Firestore</li>
+  <li>Sistema de roles (usuario vs tutor) con routing dinámico reactivo</li>
+  <li>Integración con IA (Gemini) para descomposición de tareas complejas</li>
+  <li>Respaldo y sincronización con Google Drive</li>
+</ul>
+<h2>5.4 Estructura del informe</h2>
+<p>El presente informe se estructura en 18 secciones que abarcan desde la fundamentación teórica
+hasta la implementación técnica, pruebas y resultados. La sección 11 detalla la arquitectura
+técnica del sistema, la sección 12 profundiza en los módulos de desarrollo —incluyendo el pipeline
+de notificaciones push y las dificultades técnicas resueltas durante la estabilización—, la
+sección 13 documenta las pruebas realizadas y la sección 16 propone mejoras futuras.</p>
+
+<!-- ═══════════════ 6. PLANTEAMIENTO ═══════════════ -->
+<h1 class="pb">6. Planteamiento del Problema y Justificación</h1>
+<h2>6.1 ¿Qué necesidad o problema se aborda?</h2>
+<p>Las personas neurodivergentes enfrentan desafíos específicos en la organización diaria:</p>
+<ul>
+  <li><b>Dificultad de iniciación de tareas:</b> El TDAH afecta la capacidad de "iniciar" acciones sin estímulos externos.</li>
+  <li><b>Necesidad de rutinas estructuradas:</b> El TEA se beneficia de predictibilidad y representaciones visuales claras.</li>
+  <li><b>Saturación sensorial:</b> Interfaces con demasiado texto, colores contrastantes o navegación compleja pueden generar ansiedad.</li>
+  <li><b>Falta de independencia:</b> Muchos adultos y jóvenes dependen de supervisión constante para completar rutinas básicas.</li>
+  <li><b>Barreras de comunicación:</b> Algunos usuarios con TEA no verbal o con lenguaje limitado requieren sistemas de comunicación aumentativa.</li>
+</ul>
+<h2>6.2 ¿Por qué es importante resolverlo?</h2>
+<ul>
+  <li><b>Social:</b> Aumenta la autonomía y calidad de vida de personas neurodivergentes, reduciendo dependencia de cuidadores.</li>
+  <li><b>Educativa:</b> Facilita la organización escolar y el cumplimiento de tareas, mejorando resultados académicos.</li>
+  <li><b>Económica:</b> Reduce costos asociados a terapias de organización y supervisión constante.</li>
+  <li><b>Tecnológica:</b> Demuestra la aplicación de principios de diseño inclusivo en el desarrollo de software móvil.</li>
+  <li><b>Ética:</b> Promueve la equidad digital al garantizar que la tecnología sea accesible para poblaciones históricamente excluidas.</li>
+</ul>
+<p>La justificación técnica se fundamenta en la <b>hipótesis de carga cognitiva</b>: una interfaz
+que externaliza la memoria de trabajo y reduce la toma de decisiones ejecutivas (mediante
+pictogramas, estructuras predefinidas y retroalimentación multisensorial) disminuye la carga
+cognitiva del usuario, permitiendo una mayor eficiencia en la ejecución de rutinas.</p>
+<h2>6.3 Población objetivo y rango etario</h2>
+<p>El sistema no se define por un rango de edad rígido, sino por un perfil funcional. Simple está
+dirigido a personas neurodivergentes con TEA de nivel 1 o TDAH que conservan la autonomía necesaria
+para interactuar con una interfaz visual: reconocer pictogramas, tocar la pantalla y responder a
+notificaciones. Quedan fuera del alcance los casos que requieren un alto nivel de apoyo, donde la
+interacción autónoma con una aplicación no es viable.</p>
+<p>Esta definición funcional se traduce en un rango etario amplio, sostenido por la arquitectura de
+doble rol del sistema. El rol tutor cubre a menores o personas que requieren supervisión; el rol
+usuario opera de forma autónoma en adolescentes y adultos. Así, el público abarca desde la edad
+escolar (aproximadamente 8 años, con acompañamiento de un tutor) hasta la adultez, donde el usuario
+gestiona sus rutinas de manera independiente.</p>
+<p>El proyecto se concibió pensando en niños, pero las pruebas de usabilidad evidenciaron que la
+herramienta también resulta efectiva en adolescentes y adultos. Entre los participantes hubo
+usuarios de 14 y 22 años, y el feedback recogido confirmó que las notificaciones push y la
+organización visual de tareas son útiles más allá de la infancia, funcionando en la práctica como
+una agenda cognitiva. La validación a mayor escala, segmentada por rango etario, se plantea como
+trabajo futuro.</p>
+
+<!-- ═══════════════ 7. OBJETIVOS ═══════════════ -->
+<h1 class="pb">7. Objetivos</h1>
+<h2>7.1 Objetivo General</h2>
+<p>Desarrollar una aplicación móvil multiplataforma que funcione como <b>prótesis cognitiva</b>
+para personas neurodivergentes (TDAH y TEA), integrando pictogramas ARASAAC, gestión de tareas,
+temporizador Pomodoro, comunicación aumentativa y supervisión remota por tutores, mediante una
+arquitectura cliente-servidor basada en Flutter, Firebase y Node.js/Cloud Functions.</p>
+<h2>7.2 Objetivos Específicos</h2>
+<ul>
+  <li><b>OE-01:</b> Diseñar e implementar una interfaz de usuario basada en pictogramas ARASAAC con navegación simplificada y categorías visuales (Mañana, Tarde, Noche, Comida, Emociones, Acciones).</li>
+  <li><b>OE-02:</b> Desarrollar un sistema de gestión de tareas con categorías, recordatorios temporizados, notificaciones locales y estados de completitud trazables por tutores.</li>
+  <li><b>OE-03:</b> Implementar un temporizador Pomodoro con retroalimentación háptica (vibración) y auditiva, configurable por el usuario o tutor.</li>
+  <li><b>OE-04:</b> Crear un sistema de vinculación tutor-usuario mediante códigos de invitación de 6 caracteres, con permisos diferenciados y reglas de seguridad en Firestore.</li>
+  <li><b>OE-05:</b> Desarrollar un módulo de supervisión para tutores con 6 pestañas: tareas, pictogramas, progreso, historial, ajustes y vinculación.</li>
+  <li><b>OE-06:</b> Implementar un sistema de roles dinámico con routing automático basado en el campo <code>role</code> del usuario en Firestore.</li>
+  <li><b>OE-07:</b> Integrar servicios de síntesis de voz (TTS) para la lectura de pictogramas en español, con fallback a nube si es necesario.</li>
+  <li><b>OE-08:</b> Desarrollar un sistema de respaldo con Google Drive para exportar/importar configuraciones y pictogramas personalizados.</li>
+  <li><b>OE-09:</b> Integrar IA (Gemini) para descomposición automática de tareas complejas en pasos simples y estimaciones de tiempo.</li>
+  <li><b>OE-10:</b> Realizar pruebas de usabilidad con usuarios neurodivergentes y tutores usando la escala SUS (System Usability Scale).</li>
+</ul>
+
+<!-- ═══════════════ 8. ESTADO DEL ARTE ═══════════════ -->
+<h1 class="pb">8. Estado del Arte y Marco Teórico</h1>
+<h2>8.1 Investigación previa</h2>
+<h3>Prótesis Cognitivas Digitales</h3>
+<p>Las <b>prótesis cognitivas</b> digitales corresponden a herramientas tecnológicas de apoyo
+externo que facilitan funciones cognitivas y ejecutivas como la memoria, la atención, la
+planificación, la organización y la gestión del tiempo. En el contexto actual, estas herramientas
+pueden adoptar la forma de aplicaciones móviles, recordatorios, agendas electrónicas,
+temporizadores, sistemas de navegación por pasos e interfaces visuales diseñadas para apoyar la
+autonomía del usuario.</p>
+<p>Si bien parte de la literatura sobre apoyo cognitivo surge en el ámbito de la rehabilitación
+neuropsicológica, en esta investigación el concepto se aborda desde una perspectiva funcional
+orientada a personas neurodivergentes, especialmente aquellas que presentan dificultades en la
+organización de actividades cotidianas. Desde esta mirada, una aplicación móvil puede actuar como
+una prótesis cognitiva digital al reducir la sobrecarga cognitiva y favorecer el seguimiento de
+rutinas y tareas.</p>
+<div class="placeholder">⚠ INSERTAR AQUÍ LA IMAGEN DE LA VERSIÓN ANTERIOR DEL INFORME:<br>
+<b>Figura 1 — "Modelo de apoyo cognitivo digital para personas neurodivergentes"</b><br>
+(copiar y pegar desde el Word maestro)</div>
+<p class="cap">Figura 1: Representación conceptual de una herramienta digital de apoyo cognitivo
+orientada a facilitar funciones ejecutivas como memoria de trabajo, atención, planificación y
+organización en personas neurodivergentes. Fuente: Elaboración propia.</p>
+<h3>Comunicación Aumentativa y Alternativa (CAA)</h3>
+<p>La Comunicación Aumentativa y Alternativa (CAA) reúne distintos recursos que ayudan a
+complementar o reemplazar la comunicación oral cuando una persona necesita otro medio para
+expresarse o comprender mejor la información. Dentro de estos recursos se encuentran los
+pictogramas, imágenes, símbolos, gestos y herramientas tecnológicas adaptadas a las necesidades de
+cada usuario.</p>
+<p>En este contexto, ARASAAC, Centro Aragonés de Comunicación Aumentativa y Alternativa, ofrece
+pictogramas y materiales de apoyo utilizados en comunicación y accesibilidad cognitiva. Sus
+recursos permiten representar acciones, objetos, rutinas e instrucciones de forma visual, lo que
+resulta útil en contextos educativos, terapéuticos y cotidianos, especialmente cuando se requiere
+entregar información de manera más clara y estructurada.</p>
+<p>Para este proyecto, los pictogramas no se consideran únicamente como una herramienta para
+sustituir el habla, sino también como un apoyo visual para facilitar la comprensión de rutinas,
+tareas y secuencias de pasos. Esto se relaciona directamente con el diseño de una aplicación
+orientada a personas neurodivergentes, ya que el uso de apoyos visuales puede favorecer la
+anticipación, la organización y el seguimiento de actividades diarias.</p>
+<div class="placeholder">⚠ INSERTAR AQUÍ LA IMAGEN DE LA VERSIÓN ANTERIOR DEL INFORME:<br>
+<b>Figura 2 — "Tablero de elección – Necesidades" (pictogramas ARASAAC)</b></div>
+<p class="cap">Figura 2: Ejemplo de pictogramas ARASAAC.
+Fuente: https://tacte.es/los-sistemas-aumentativos-y-alternativos-de-comunicacion/</p>
+<h3>Tecnologías para TDAH</h3>
+<p>El Trastorno por Déficit de Atención e Hiperactividad (TDAH) se relaciona con dificultades en
+funciones ejecutivas, especialmente en procesos como la inhibición conductual, la memoria de
+trabajo, la autorregulación, la organización, la planificación y la gestión del tiempo. Según
+Barkley (2012), estas funciones cumplen un rol importante en la conducta dirigida a metas, ya que
+permiten organizar acciones, mantener el esfuerzo y regular la respuesta frente a distintas
+demandas de la vida diaria.</p>
+<p>En este contexto, las personas con TDAH pueden presentar dificultades para iniciar tareas,
+mantener la concentración, recordar actividades pendientes, seguir rutinas o finalizar acciones
+planificadas. Esto no significa falta de autonomía, sino que muchas veces requieren apoyos externos
+que ayuden a estructurar la información, reducir la carga mental y facilitar el seguimiento de
+actividades.</p>
+<p>Las herramientas digitales pueden cumplir un rol de apoyo en este proceso mediante
+recordatorios, calendarios, temporizadores, listas de tareas, seguimiento de hábitos y sistemas de
+retroalimentación. Aplicaciones como Tiimo, Routinery y Habitica son antecedentes relevantes, ya
+que abordan distintos aspectos asociados a la organización personal: Tiimo se orienta a la
+planificación visual y al apoyo de funciones ejecutivas; Routinery permite crear y seguir rutinas
+paso a paso; y Habitica utiliza la gamificación para motivar el cumplimiento de tareas y hábitos.</p>
+<p>Sin embargo, estas aplicaciones se enfocan en áreas específicas y no necesariamente integran en
+una sola solución todos los elementos considerados en este proyecto, como la organización de
+tareas, recordatorios, rutinas guiadas, seguimiento de progreso, retroalimentación y mecanismos de
+acompañamiento o supervisión. Por esta razón, su análisis permite identificar oportunidades para el
+diseño de una herramienta más ajustada a las necesidades de usuarios neurodivergentes en contextos
+cotidianos, académicos y familiares.</p>
+<div class="placeholder">⚠ INSERTAR AQUÍ LAS IMÁGENES DE LA VERSIÓN ANTERIOR DEL INFORME:<br>
+<b>Figura 3 — Capturas de Tiimo, Routinery y Habitica</b></div>
+<p class="cap">Figura 3: Aplicaciones de referencia para planificación visual, rutinas y
+gamificación de tareas. Fuente: Sitios oficiales (routinery.app, tiimoapp.com, habitica.com).
+Las marcas, interfaces y elementos visuales pertenecen a sus respectivos propietarios.</p>
+<h2>8.2 Tecnologías similares</h2>
+<p>Para situar la propuesta se analizaron tres aplicaciones de referencia, cada una sólida en una
+dimensión distinta de la organización personal:</p>
+<ul>
+  <li><b>Tiimo:</b> planificación visual y gestión de rutinas mediante representaciones gráficas intuitivas.</li>
+  <li><b>Routinery:</b> secuencias paso a paso y formación de hábitos para estructurar el día.</li>
+  <li><b>Habitica:</b> gamificación de tareas con mecánicas tipo RPG para sostener la motivación y la constancia.</li>
+</ul>
+<p class="cap">Tabla 1: Comparativa de tecnologías similares</p>
+<table>
+  <tr><th>Aplicación</th><th>Pictogramas</th><th>Supervisión Tutor</th><th>Pomodoro</th><th>CAA</th><th>Multiplataforma</th></tr>
+  <tr><td>LetMeTalk</td><td>Sí (ARASAAC)</td><td>No</td><td>No</td><td>Sí</td><td>Sí</td></tr>
+  <tr><td>Pictogram Agenda</td><td>Sí</td><td>No</td><td>No</td><td>Limitada</td><td>Sí</td></tr>
+  <tr><td>Choiceworks</td><td>Sí</td><td>No</td><td>No</td><td>Sí</td><td>No (iOS only)</td></tr>
+  <tr><td>Todoist</td><td>No</td><td>No</td><td>No</td><td>No</td><td>Sí</td></tr>
+  <tr><td>Habitica</td><td>No</td><td>No</td><td>No</td><td>No</td><td>Sí</td></tr>
+  <tr><td>Tiimo</td><td>No</td><td>No</td><td>Sí</td><td>No</td><td>Sí</td></tr>
+  <tr><td>Routinery</td><td>No</td><td>No</td><td>Sí</td><td>No</td><td>Sí</td></tr>
+  <tr><td><b>Simple (este proyecto)</b></td><td><b>Sí</b></td><td><b>Sí</b></td><td><b>Sí</b></td><td><b>Sí</b></td><td><b>Sí</b></td></tr>
+</table>
+<p>Cada una de estas aplicaciones resuelve bien su nicho, pero de forma aislada. La diferenciación
+de Simple está en la integración: reúne en una sola herramienta la planificación visual, las
+rutinas paso a paso y la gamificación que las apps de referencia ofrecen por separado. A esto suma
+dos elementos que ninguna contempla: la separación de usuarios según sus necesidades y el rol
+tutor–usuario, que permite acompañar y supervisar sin quitar autonomía. Todo dentro de un mismo
+ecosistema, multiplataforma y de bajo costo operativo, con comunicación aumentativa basada en
+pictogramas ARASAAC. En esa intersección se encuentra la brecha (gap) que este proyecto busca
+cubrir.</p>
+<h2>8.3 Conceptos técnicos necesarios</h2>
+<h3>Flutter y Dart</h3>
+<p><b>Flutter</b> es un framework UI de Google para construir aplicaciones nativas compiladas para
+móvil, web y desktop desde un único código base en <b>Dart</b>. Utiliza un motor de renderizado
+propio (Skia) que garantiza 60/120 FPS consistentes. Su modelo de widgets reactivos (declarativos)
+permite construir interfaces altamente personalizables, fundamental para adaptar la UI a
+necesidades específicas de neurodivergencia.</p>
+<h3>Firebase (Backend-as-a-Service)</h3>
+<p>Firebase proporciona: <b>Cloud Firestore</b> (base de datos NoSQL documental con sincronización
+en tiempo real), <b>Firebase Authentication</b> (autenticación multi-proveedor), <b>Firebase
+Storage</b> (almacenamiento de imágenes de pictogramas), <b>Cloud Functions</b> (funciones
+serverless TypeScript/Node.js), y <b>Firebase Cloud Messaging</b> para notificaciones push
+cross-platform.</p>
+<h3>Arquitectura MVVM con Repository Pattern</h3>
+<p>El proyecto implementa una variante de <b>Model-View-ViewModel (MVVM)</b> combinada con
+<b>Repository Pattern</b>. Esto permite desacoplar la UI de la lógica de negocio y de la fuente de
+datos (Firebase), facilitando pruebas unitarias y futuras migraciones de backend.</p>
+
+<!-- ═══════════════ 9. METODOLOGÍA ═══════════════ -->
+<h1 class="pb">9. Metodología</h1>
+<h2>9.1 Enfoque de desarrollo</h2>
+<p>Se adoptó una <b>metodología ágil adaptada</b>, basada en <b>Scrum</b> con sprints de 2 semanas.
+Esta elección se justifica por la incertidumbre de requisitos (las necesidades de usuarios
+neurodivergentes que emergen durante la interacción), la necesidad de retroalimentación frecuente
+con usuarios reales, y la complejidad técnica de la integración de múltiples servicios Firebase.</p>
+<h2>9.2 Herramientas y recursos</h2>
+<p class="cap">Tabla 2: Herramientas y recursos de desarrollo</p>
+<table>
+  <tr><th>Categoría</th><th>Herramienta</th><th>Propósito</th></tr>
+  <tr><td>IDE</td><td>Visual Studio Code + Android Studio</td><td>Desarrollo y depuración</td></tr>
+  <tr><td>Control de versiones</td><td>Git + GitHub</td><td>Versionado del código fuente</td></tr>
+  <tr><td>Diseño UI</td><td>Figma</td><td>Prototipado y diseño visual</td></tr>
+  <tr><td>Gestión de proyecto</td><td>Notion / Trello</td><td>Backlog y seguimiento de sprints</td></tr>
+  <tr><td>API Testing</td><td>Postman</td><td>Pruebas de Cloud Functions</td></tr>
+  <tr><td>Unit testing</td><td>flutter_test, mockito</td><td>Pruebas unitarias y de widgets</td></tr>
+  <tr><td>Integration testing</td><td>Firebase Emulator Suite</td><td>Pruebas locales sin conexión a Firebase</td></tr>
+  <tr><td>Usability testing</td><td>SUS Scale + observación directa</td><td>Validación con usuarios reales</td></tr>
+  <tr><td>Diagnóstico en producción</td><td>API REST Firestore/FCM + firebase functions:log</td><td>Análisis de incidencias sobre datos reales</td></tr>
+</table>
+<h2>9.3 Cronograma de trabajo</h2>
+<p class="cap">Tabla 3: Cronograma de actividades (Sprints)</p>
+<table>
+  <tr><th>Sprint</th><th>Duración</th><th>Objetivos principales</th></tr>
+  <tr><td>Sprint 0</td><td>2 semanas</td><td>Configuración del entorno, arquitectura base, autenticación Firebase</td></tr>
+  <tr><td>Sprint 1</td><td>2 semanas</td><td>Módulo de pictogramas ARASAAC, categorías, navegación por tabs</td></tr>
+  <tr><td>Sprint 2</td><td>2 semanas</td><td>Síntesis de voz (TTS), gestión de pictogramas personalizados (cámara + crop)</td></tr>
+  <tr><td>Sprint 3</td><td>2 semanas</td><td>Módulo de tareas, categorías, notificaciones locales</td></tr>
+  <tr><td>Sprint 4</td><td>2 semanas</td><td>Temporizador Pomodoro, sonidos, vibración, estadísticas de foco</td></tr>
+  <tr><td>Sprint 5</td><td>2 semanas</td><td>Sistema de vinculación tutor-usuario, códigos de invitación</td></tr>
+  <tr><td>Sprint 6</td><td>2 semanas</td><td>Panel de supervisión del tutor, modo Kiosk, configuración de pestañas</td></tr>
+  <tr><td>Sprint 7</td><td>2 semanas</td><td>Respaldo Google Drive, perfil, avatares, IA SuperExperto (Gemini)</td></tr>
+  <tr><td>Sprint 8</td><td>2 semanas</td><td>Pruebas de integración, debugging, optimización de rendimiento</td></tr>
+  <tr><td>Sprint 9</td><td>2 semanas</td><td>Pruebas con usuarios reales, recolección de feedback, ajustes finales</td></tr>
+  <tr><td>Sprint 10</td><td>2 semanas</td><td>Pipeline de notificaciones push (FCM + Cloud Functions), consentimiento de privacidad</td></tr>
+  <tr><td>Sprint 11</td><td>2 semanas</td><td>Estabilización: corrección de defectos críticos (códigos de invitación, tokens FCM, desvinculación bidireccional, edición de pictogramas), documentación y preparación de la defensa</td></tr>
+</table>
+
+<!-- ═══════════════ 10. ANÁLISIS ═══════════════ -->
+<h1 class="pb">10. Análisis del Sistema</h1>
+<h2>10.1 Requerimientos funcionales</h2>
+<p class="cap">Tabla 4: Requerimientos funcionales</p>
+<table>
+  <tr><th>ID</th><th>Requerimiento</th><th>Prioridad</th><th>Módulo</th></tr>
+  <tr><td>RF-01</td><td>Autenticación con email/contraseña y Google Sign-In</td><td>Alta</td><td>Auth</td></tr>
+  <tr><td>RF-02</td><td>Selección de rol (usuario / tutor) al registrarse</td><td>Alta</td><td>Auth</td></tr>
+  <tr><td>RF-03</td><td>Visualizar pictogramas ARASAAC por categorías (Mañana, Tarde, Noche, Comida, Emociones, Acciones)</td><td>Alta</td><td>Pictogramas</td></tr>
+  <tr><td>RF-04</td><td>Crear pictogramas personalizados con fotos de cámara o galería</td><td>Alta</td><td>Pictogramas</td></tr>
+  <tr><td>RF-05</td><td>Reproducir texto en voz (TTS) al tocar un pictograma</td><td>Alta</td><td>Pictogramas</td></tr>
+  <tr><td>RF-06</td><td>Gestionar tareas con categorías, fechas y estados (pendiente/completada/eliminada)</td><td>Alta</td><td>Tareas</td></tr>
+  <tr><td>RF-07</td><td>Enviar notificaciones locales para recordatorios de tareas</td><td>Media</td><td>Tareas</td></tr>
+  <tr><td>RF-08</td><td>Temporizador Pomodoro configurable (5, 15, 25, 50 min o personalizado)</td><td>Media</td><td>Foco</td></tr>
+  <tr><td>RF-09</td><td>El tutor genera códigos de invitación de 6 caracteres para vincular usuarios</td><td>Alta</td><td>Vinculación</td></tr>
+  <tr><td>RF-10</td><td>El tutor supervisa tareas, pictogramas, progreso e historial del usuario vinculado</td><td>Alta</td><td>Supervisión</td></tr>
+  <tr><td>RF-11</td><td>El tutor configura qué pestañas son visibles para el usuario (feature toggles)</td><td>Media</td><td>Supervisión</td></tr>
+  <tr><td>RF-12</td><td>El tutor activa/desactiva el modo Kiosk (bloqueo de navegación en la app)</td><td>Media</td><td>Supervisión</td></tr>
+  <tr><td>RF-13</td><td>Registrar log de actividad (tareas completadas, pictogramas usados, sesiones Pomodoro)</td><td>Media</td><td>Historial</td></tr>
+  <tr><td>RF-14</td><td>Respaldar configuración a Google Drive y restaurar desde él</td><td>Baja</td><td>Backup</td></tr>
+  <tr><td>RF-15</td><td>Botón SOS de contacto de emergencia con llamada directa</td><td>Media</td><td>Seguridad</td></tr>
+  <tr><td>RF-16</td><td>Enviar notificación push inmediata al usuario cuando el tutor le asigna una tarea, y al tutor cuando el usuario completa una tarea</td><td>Alta</td><td>Notificaciones</td></tr>
+  <tr><td>RF-17</td><td>Programar recordatorios remotos de tareas mediante cola en Firestore (notificationQueue) procesada por Cloud Functions, operativos aunque la app esté cerrada</td><td>Media</td><td>Notificaciones</td></tr>
+  <tr><td>RF-18</td><td>Permitir la desvinculación bidireccional: tanto el tutor como el usuario pueden terminar el vínculo desde su propia pantalla, con confirmación</td><td>Media</td><td>Vinculación</td></tr>
+  <tr><td>RF-19</td><td>Editar pictogramas personalizados (nombre visible y texto de voz) conservando la imagen, desde el tablero del usuario y desde el gestor del tutor</td><td>Media</td><td>Pictogramas</td></tr>
+  <tr><td>RF-20</td><td>Regenerar automáticamente las tareas recurrentes (diaria/semanal/mensual) al completarse, creando la siguiente ocurrencia con su recordatorio</td><td>Media</td><td>Tareas</td></tr>
+</table>
+<h2>10.2 Requerimientos no funcionales</h2>
+<p class="cap">Tabla 5: Requerimientos no funcionales</p>
+<table>
+  <tr><th>ID</th><th>Requerimiento</th><th>Categoría</th></tr>
+  <tr><td>RNF-01</td><td>La interfaz debe responder en menos de 100ms para toques de pictogramas</td><td>Rendimiento</td></tr>
+  <tr><td>RNF-02</td><td>Las imágenes de pictogramas deben cargarse en menos de 500ms (WiFi)</td><td>Rendimiento</td></tr>
+  <tr><td>RNF-03</td><td>Funcionalidad offline para pictogramas predefinidos (SVG en assets)</td><td>Disponibilidad</td></tr>
+  <tr><td>RNF-04</td><td>Notificaciones con margen de error de ±30 segundos</td><td>Fiabilidad</td></tr>
+  <tr><td>RNF-05</td><td>Contraste de colores WCAG 2.1 nivel AA (ratio mínimo 4.5:1)</td><td>Accesibilidad</td></tr>
+  <tr><td>RNF-06</td><td>Elementos táctiles mínimo 48x48dp (Material Design guidelines)</td><td>Accesibilidad</td></tr>
+  <tr><td>RNF-07</td><td>Reglas Firestore que impidan acceso no autorizado a datos de otros usuarios</td><td>Seguridad</td></tr>
+  <tr><td>RNF-08</td><td>Código conforme a guías de estilo Flutter (Effective Dart)</td><td>Mantenibilidad</td></tr>
+  <tr><td>RNF-09</td><td>Soporte Android 5.0+ (API 21) y iOS 12+</td><td>Compatibilidad</td></tr>
+  <tr><td>RNF-10</td><td>Consumo de batería inferior al 5% por hora de uso activo</td><td>Eficiencia</td></tr>
+</table>
+<h2>10.3 Casos de uso</h2>
+<div class="fig"><img src="figuras/fig_casos_uso.png" width="380"></div>
+<p class="cap">Figura 4: Diagrama de casos de uso — Usuario y Tutor. Fuente: Elaboración propia.</p>
+<p><b>Actores:</b> Usuario neurodivergente (rol: usuario), Tutor (rol: tutor), Sistema (Firebase,
+TTS, notificaciones).</p>
+<h3>Caso de uso 1: Comunicar mediante pictograma</h3>
+<ul>
+  <li>El usuario abre la app y navega a la pestaña de pictogramas.</li>
+  <li>Selecciona categoría (Mañana, Tarde, etc.) y toca un pictograma.</li>
+  <li>El sistema reproduce TTS del texto asociado y aplica vibración háptica.</li>
+  <li>El sistema registra el uso en <code>activityLog</code>.</li>
+</ul>
+<h3>Caso de uso 2: Completar tarea</h3>
+<ul>
+  <li>El usuario abre la pestaña de tareas y ve las tareas pendientes.</li>
+  <li>Marca una tarea como completada.</li>
+  <li>El sistema actualiza Firestore, incrementa puntos y racha, y registra el evento.</li>
+  <li>El sistema envía una notificación push al tutor vinculado y, si la tarea es recurrente, genera la próxima ocurrencia.</li>
+</ul>
+<h3>Caso de uso 3: Vincular tutor con usuario</h3>
+<ul>
+  <li>El tutor genera un código de invitación (6 caracteres, Random.secure) desde su panel.</li>
+  <li>El usuario ingresa el código en la pantalla de vinculación.</li>
+  <li>El sistema valida el código (activo, no expirado, no usado).</li>
+  <li>El sistema crea vinculación bidireccional en Firestore mediante batch atómico.</li>
+</ul>
+<h3>Caso de uso 4: Supervisar usuario</h3>
+<ul>
+  <li>El tutor abre el panel de supervisión y selecciona un usuario vinculado.</li>
+  <li>El sistema muestra 6 pestañas: Tareas, Pictogramas, Progreso, Historial, Ajustes, Vinculación.</li>
+  <li>El tutor puede agregar tareas (con push al usuario), editar y reorganizar pictogramas, configurar pestañas visibles y activar modo Kiosk.</li>
+</ul>
+<h3>Caso de uso 5: Desvincularse del tutor</h3>
+<ul>
+  <li>El usuario abre "Tu Tutor" y toca "Desvincularme de este tutor".</li>
+  <li>El sistema pide confirmación explícita (acción con consecuencias de supervisión).</li>
+  <li>El sistema marca la vinculación como inactiva y desactiva el código consumido en un batch atómico.</li>
+  <li>El usuario desaparece de la lista del panel del tutor en tiempo real.</li>
+</ul>
+<h2>10.4 Usuarios del sistema y sus roles</h2>
+<table>
+  <tr><th>Rol</th><th>Descripción</th><th>Permisos principales</th></tr>
+  <tr><td><b>usuario</b></td><td>Persona neurodivergente (TEA/TDAH) que usa la app como prótesis cognitiva</td><td>Ver/crear tareas propias, usar pictogramas, Pomodoro, crear y editar pictogramas personalizados, desvincularse de su tutor, ver perfil</td></tr>
+  <tr><td><b>tutor</b></td><td>Padre, cuidador, profesor o terapeuta que supervisa al usuario</td><td>Generar códigos de invitación, supervisar progreso, agregar/eliminar tareas (con push), gestionar y editar pictogramas, modo Kiosk, desvincular usuarios</td></tr>
+  <tr><td><b>null (sin rol)</b></td><td>Usuario recién registrado que no ha seleccionado rol aún</td><td>Solo acceso a pantalla de selección de rol</td></tr>
+</table>
+
+
+
+<!-- ═══════════════ 11. DISEÑO ═══════════════ -->
+<h1 class="pb">11. Diseño del Sistema</h1>
+<h2>11.1 Descripción de la arquitectura</h2>
+<div class="fig"><img src="figuras/fig_arquitectura.png" width="620"></div>
+<p class="cap">Figura 5: Diagrama de arquitectura del sistema (3 capas). Fuente: Elaboración propia.</p>
+<p>El sistema implementa una <b>arquitectura cliente-servidor de tres capas</b>:</p>
+<ul>
+  <li><b>Capa de Presentación:</b> Aplicación móvil Flutter con pantallas, widgets y servicios de
+  aplicación estáticos (AuthService, PictogramService, PushNotificationService).</li>
+  <li><b>Capa de Lógica de Negocio:</b> Cloud Functions Firebase (TypeScript/Node.js) para IA,
+  pipeline de notificaciones push, regeneración de tareas recurrentes y procesamiento serverless.</li>
+  <li><b>Capa de Datos:</b> Firebase Firestore (NoSQL), Firebase Storage (imágenes), Firebase
+  Authentication, Firebase Cloud Messaging, SharedPreferences (persistencia local).</li>
+</ul>
+<p><b>Modelo de comunicación:</b></p>
+<ul>
+  <li><b>Real-time Streaming:</b> Firestore <code>snapshots()</code> para sincronización en tiempo
+  real de tareas, pictogramas y configuraciones.</li>
+  <li><b>Request-Response:</b> Autenticación, validación de códigos, operaciones CRUD sincrónicas.</li>
+  <li><b>Pub/Sub:</b> Firebase Cloud Messaging para notificaciones push cross-platform: los
+  triggers de Firestore publican eventos que las Cloud Functions transforman en mensajes FCM hacia
+  los dispositivos registrados.</li>
+</ul>
+<h2>11.2 Justificación técnica de la arquitectura</h2>
+<h3>¿Por qué Flutter?</h3>
+<p>Single codebase para Android e iOS reduciendo esfuerzo de mantenimiento. Renderizado consistente
+mediante Skia, independiente del OEM, garantizando experiencia visual uniforme crítica para
+usuarios con sensibilidad sensorial. El ecosistema Dart permite programación reactiva (Streams,
+Futures) nativa, ideal para sincronización en tiempo real con Firestore.</p>
+<h3>¿Por qué Firebase?</h3>
+<p>Backend-as-a-Service (BaaS) elimina la necesidad de configurar servidores propios. Firestore
+proporciona sincronización en tiempo real con optimistic UI. Las reglas de seguridad declarativas
+implementan RBAC a nivel de documento y campo. El escalado automático gestiona picos de tráfico sin
+intervención manual.</p>
+<h3>¿Por qué Cloud Functions con Node.js?</h3>
+<p>Runtime estándar de Firebase Cloud Functions. Las funciones se disparan por eventos de
+Firestore, implementando CQRS donde la escritura de datos dispara procesos secundarios (push de
+asignación/completado, regeneración de recurrencias, procesamiento de la cola de recordatorios).
+Facilita integración con servicios externos como la API de Gemini para descomposición de tareas.</p>
+<h2>11.3 Tecnologías utilizadas</h2>
+<p class="cap">Tabla 6: Tecnologías utilizadas por capa</p>
+<table>
+  <tr><th>Capa</th><th>Tecnología</th><th>Versión</th><th>Propósito</th></tr>
+  <tr><td>Frontend</td><td>Flutter SDK</td><td>3.3+</td><td>Framework UI multiplataforma</td></tr>
+  <tr><td>Frontend</td><td>Dart</td><td>3.3+</td><td>Lenguaje de programación</td></tr>
+  <tr><td>Frontend</td><td>Provider + ChangeNotifier</td><td>^6.1.2</td><td>Gestión de estado (Pomodoro, config)</td></tr>
+  <tr><td>Frontend</td><td>flutter_svg</td><td>^2.2.4</td><td>Renderizado de pictogramas SVG</td></tr>
+  <tr><td>Frontend</td><td>flutter_tts</td><td>^4.2.5</td><td>Síntesis de voz local en español</td></tr>
+  <tr><td>Frontend</td><td>fl_chart</td><td>^1.1.1</td><td>Gráficos de progreso en panel del tutor</td></tr>
+  <tr><td>Frontend</td><td>image_picker + image_cropper</td><td>^1.1.2 / ^8.1.0</td><td>Creación de pictogramas personalizados</td></tr>
+  <tr><td>Frontend</td><td>vibration</td><td>^3.1.4</td><td>Retroalimentación háptica</td></tr>
+  <tr><td>Frontend</td><td>flutter_local_notifications</td><td>^17.1.2</td><td>Notificaciones locales del sistema</td></tr>
+  <tr><td>Backend</td><td>Cloud Firestore</td><td>^4.17.3</td><td>Base de datos NoSQL con streams</td></tr>
+  <tr><td>Backend</td><td>Firebase Auth</td><td>^4.17.4</td><td>Autenticación multi-proveedor</td></tr>
+  <tr><td>Backend</td><td>Firebase Storage</td><td>^11.7.2</td><td>Almacenamiento de imágenes</td></tr>
+  <tr><td>Backend</td><td>Firebase Cloud Messaging</td><td>^14.9.1</td><td>Notificaciones push</td></tr>
+  <tr><td>Backend</td><td>Cloud Functions (TypeScript)</td><td>^4.7.4</td><td>Wrapper Gemini AI, pipeline push, lógica serverless</td></tr>
+  <tr><td>IA</td><td>Gemini 2.0/2.5 Flash</td><td>API v1</td><td>Descomposición de tareas en pasos simples</td></tr>
+  <tr><td>Externo</td><td>Google Sign-In</td><td>^6.2.1</td><td>Autenticación OAuth 2.0</td></tr>
+  <tr><td>Externo</td><td>Google Drive API v3</td><td>^13.2.0</td><td>Respaldo y restauración de datos</td></tr>
+  <tr><td>Local</td><td>SharedPreferences</td><td>^2.2.3</td><td>Estado del Pomodoro, flags de onboarding</td></tr>
+</table>
+<h2>11.4 Estructura de la base de datos (Firestore)</h2>
+<p>La base de datos sigue una estructura documental jerárquica:</p>
+<ul>
+  <li><b>users/{userId}</b>: Documento principal con campos <code>name, email, role, avatar, points,
+  streak, fcmTokens, hasCompletedOnboarding</code>.</li>
+  <li><b>users/{userId}/tasks/{taskId}</b>: Tareas con <code>text, category, done, dueDate,
+  createdAt, addedByTutor, deletedByUser</code> (soft-delete), <code>recurrence,
+  reminderMinutes</code>.</li>
+  <li><b>users/{userId}/pictograms/{pictogramId}</b>: Pictogramas personalizados con
+  <code>imageUrl, etiqueta, textoTts, categoria</code>.</li>
+  <li><b>users/{userId}/activityLog/{logId}</b>: Historial con <code>type, description, timestamp,
+  metadata</code> (máx. 100 entradas por stream).</li>
+  <li><b>users/{userId}/linkedTutors/{tutorId}</b>: Vinculaciones con tutores
+  (<code>status: active | inactive</code>) — fuente de verdad de las reglas de seguridad.</li>
+  <li><b>users/{userId}/linkedPatients/{patientId}</b>: Pacientes vinculados (solo tutor).</li>
+  <li><b>users/{userId}/pictogramSettings/{settingId}</b>: Configuración de visibilidad y
+  categorías; doc <code>_features</code> para feature flags.</li>
+  <li><b>users/{userId}/notificationQueue/{taskId}</b>: Cola de recordatorios remotos con
+  <code>runAt, scheduledAt, status (pending/sent/error), type, dueDate, reminderMinutes</code>,
+  procesada por Cloud Functions.</li>
+  <li><b>users/{userId}/legalConsents/{policyVersion}</b>: Respaldo inmutable de la aceptación de
+  la Política de Privacidad (solo creación por el propio usuario; sin edición ni borrado).</li>
+  <li><b>invitationCodes/{code}</b>: Códigos de vinculación temporales (<code>code, tutorId,
+  tutorName, status, usedBy, usedAt, expiresAt</code>).</li>
+</ul>
+<div class="fig"><img src="figuras/fig_firestore.png" width="640"></div>
+<p class="cap">Figura 6: Modelo lógico de la estructura de datos implementada en Firebase
+Firestore. Fuente: Elaboración propia.</p>
+<h2>11.5 Diagramas UML</h2>
+<div class="fig"><img src="figuras/fig_clases.png" width="600"></div>
+<p class="cap">Figura 7: Diagrama UML de clases principales del sistema. Fuente: Elaboración propia
+a partir del diseño lógico del sistema.</p>
+<h3>Clases principales del sistema</h3>
+<ul>
+  <li><b>AuthService:</b> Clase estática encargada de centralizar los procesos de autenticación del
+  sistema, incluyendo registro, inicio de sesión, cierre de sesión, gestión de roles,
+  generación/validación de códigos de invitación (Random.secure con verificación de colisión) y
+  desvinculación bidireccional (<code>removePatientLink</code> / <code>removeTutorLink</code>).</li>
+  <li><b>PictogramService:</b> Clase de tipo Repository encargada de abstraer el acceso a las
+  fuentes de pictogramas utilizadas por el sistema, incluyendo archivos SVG locales e imágenes JPEG
+  almacenadas en Firebase Storage. Gestiona el ciclo de vida completo: creación con captura y
+  recorte, edición parcial de etiqueta y texto de voz (<code>updatePictogramFor</code>),
+  configuración de visibilidad/categoría y eliminación.</li>
+  <li><b>PushNotificationService:</b> Servicio estático que administra el ciclo de vida del token
+  FCM (sincronización tras login con <code>arrayUnion</code>, suscripción a
+  <code>onTokenRefresh</code>), la conversión de mensajes en primer plano a notificaciones locales,
+  y el encolado/cancelación de recordatorios remotos en <code>notificationQueue</code>.</li>
+  <li><b>ActivityLogService:</b> Servicio encargado de registrar eventos relevantes del sistema
+  mediante un enfoque fire-and-forget, permitiendo almacenar acciones de uso sin bloquear el flujo
+  principal de la aplicación. Su consulta se limita a 100 entradas por stream para evitar lecturas
+  excesivas en Firestore.</li>
+  <li><b>PomodoroService:</b> Clase que extiende ChangeNotifier y administra la lógica del
+  temporizador Pomodoro mediante una máquina de estados. Además, incorpora persistencia local
+  mediante SharedPreferences y manejo de callbacks asociados al ciclo de vida de la aplicación.</li>
+  <li><b>AuthGate:</b> Componente encargado del enrutamiento reactivo del sistema mediante un
+  StreamBuilder de tres niveles: estado de autenticación en Firebase Auth, verificación del
+  onboarding (incluida la aceptación de la Política de Privacidad vigente) y redirección según rol
+  mediante RoleDispatcher. Tras el login sincroniza el token FCM del dispositivo.</li>
+</ul>
+<p>Estas clases permiten separar responsabilidades dentro del sistema, facilitando la organización
+del código, el mantenimiento de la aplicación y la integración con los servicios de Firebase.</p>
+<h3>Diagrama de secuencia: Uso de pictograma con TTS</h3>
+<div class="fig"><img src="figuras/fig_sec_tts.png" width="560"></div>
+<p class="cap">Figura 8: Diagrama de secuencia — uso de pictograma con reproducción TTS.
+Fuente: Elaboración propia.</p>
+<ol>
+  <li><b>El usuario selecciona</b> un pictograma desde la interfaz de la aplicación.</li>
+  <li><b>La aplicación obtiene</b> el texto asociado al pictograma, correspondiente al campo textoTts.</li>
+  <li><b>La aplicación envía</b> el texto al motor TTS del dispositivo para su reproducción.</li>
+  <li><b>El motor TTS reproduce</b> el audio en el dispositivo utilizando la configuración definida para voz, idioma y velocidad.</li>
+  <li><b>La aplicación invoca</b> ActivityLogService.log para registrar el uso del pictograma.</li>
+  <li><b>ActivityLogService</b> almacena el evento en la colección activityLog de Firestore.</li>
+  <li><b>El panel del tutor</b> recibe la actualización en tiempo real mediante un stream asociado a los eventos registrados.</li>
+</ol>
+<h3>Diagrama de secuencia: Vinculación tutor-usuario</h3>
+<div class="fig"><img src="figuras/fig_sec_vinculacion.png" width="620"></div>
+<p class="cap">Figura 9: Diagrama de secuencia — Vinculación tutor-usuario (con generación segura y
+verificación de colisión). Fuente: Elaboración propia.</p>
+<ol>
+  <li><b>El tutor solicita</b> la generación de un código mediante AuthService.generateInvitationCode().</li>
+  <li><b>El sistema genera</b> el código con Random.secure() (32<sup>6</sup> combinaciones) y
+  <b>verifica que no exista</b> en Firestore antes de escribirlo (reintento ante colisión).</li>
+  <li><b>El sistema crea</b> el documento en invitationCodes/{code} con status: active y expiración a 7 días.</li>
+  <li><b>El usuario ingresa</b> el código recibido en VinculacionTutorScreen.</li>
+  <li><b>El sistema consulta</b> el documento y valida que su status sea active y no esté expirado,
+  mostrando el nombre del tutor para confirmación.</li>
+  <li><b>Si el usuario acepta</b>, se ejecuta un batch atómico: el código pasa a used con usedBy, y
+  se crea linkedTutors/{tutorId} con status active.</li>
+  <li><b>Ambos usuarios</b> reciben confirmación visual y el panel del tutor se actualiza en tiempo real.</li>
+</ol>
+
+<!-- ═══════════════ 12. DESARROLLO ═══════════════ -->
+<h1 class="pb">12. Desarrollo e Implementación</h1>
+<div class="placeholder">⚠ INSERTAR AQUÍ LA IMAGEN DE LA VERSIÓN ANTERIOR DEL INFORME:<br>
+<b>Figura 10 — Capturas de pantalla del sistema (4 mockups de teléfono)</b></div>
+<p class="cap">Figura 10: Capturas de pantalla del sistema. Fuente: Elaboración propia.</p>
+<h2>12.1 Módulo 1: Autenticación y Roles</h2>
+<p>El sistema implementa un <b>RoleDispatcher</b> en el AuthGate que, tras la autenticación, lee el
+campo <code>role</code> del documento Firestore del usuario y redirige a: PantallaUsuarioTEA (rol:
+usuario), HomeScreen dashboard (rol: tutor), o RoleSelectionScreen (rol null). Se implementó el
+patrón Strategy para la selección de pantalla según rol, combinado con arquitectura reactiva basada
+en streams de Firebase Auth y Firestore. Se integró Google Sign-In con SHA-1 en Firebase Console y
+registro con email/contraseña con validación robusta (mayúscula + número + mínimo 6 caracteres). En
+el flujo con Google se fuerza el selector de cuentas (signOut previo) para permitir alternar entre
+cuentas sin errores.</p>
+<h2>12.2 Módulo 2: Pictogramas y Comunicación Aumentativa</h2>
+<p>El sistema unifica dos fuentes de pictogramas mediante el patrón Repository:</p>
+<ul>
+  <li><b>Banco estático SVG:</b> 25+ pictogramas ARASAAC embebidos en
+  <code>assets/images/pictogramas/</code>. Funcionan offline, se renderizan mediante flutter_svg.</li>
+  <li><b>Pictogramas personalizados JPEG:</b> Imágenes de cámara o galería, recortadas a cuadrado
+  mediante image_cropper con UCropTheme personalizado, almacenadas en Firebase Storage.</li>
+</ul>
+<p>La configuración de categorías y visibilidad se almacena en
+<code>pictogramSettings/{pictoId}</code>, permitiendo al tutor reorganizar el banco sin modificar
+datos maestros. <b>Fix técnico crítico:</b> Se implementó AutomaticKeepAliveClientMixin en los
+grids de categoría para persistir el estado de scroll al cambiar de pestaña en el TabBarView.</p>
+<p><b>Edición sin pérdida de la imagen:</b> en comunicación aumentativa un error de escritura no es
+cosmético: el texto <i>es</i> el mensaje. Por ello se implementó
+<code>PictogramService.updatePictogramFor()</code>, que actualiza parcialmente la etiqueta
+(normalizada a mayúsculas con la misma regla de la creación) y el texto de voz sin tocar la imagen
+de Storage. La acción está disponible en ambos roles mediante pulsación larga ("Editar nombre y
+voz"): en el tablero del usuario y en el gestor de pictogramas del tutor, que comparten la misma
+pantalla de gestión. Adicionalmente, el selector de categorías se convirtió en una lista
+desplazable con altura máxima del 75% de la pantalla, resolviendo el corte de las últimas opciones
+en dispositivos con barra de navegación de 3 botones.</p>
+<h2>12.3 Módulo 3: Gestión de Tareas</h2>
+<p>Las tareas se almacenan en <code>users/{uid}/tasks</code> con campos: <code>text, category,
+done, dueDate, createdAt, addedByTutor, deletedByUser</code>. Se implementó <b>soft-delete</b>
+(<code>deletedByUser: true</code>) para que el tutor pueda ver tareas eliminadas, con streams del
+usuario filtrando por <code>deletedByUser != true</code>. Las tareas del tutor aparecen marcadas
+con <code>addedByTutor: true</code>. Se integró flutter_local_notifications con timezone para
+recordatorios exactos.</p>
+<p><b>Tareas recurrentes server-side:</b> las tareas con campo <code>recurrence</code>
+(daily/weekly/monthly) se regeneran en el servidor mediante la Cloud Function
+<code>recreateRecurringTask</code>: al detectar la transición <code>done: false → true</code>,
+calcula la próxima fecha de vencimiento, crea la nueva ocurrencia (trazable vía
+<code>generatedFromTaskId</code> y visible desde <code>availableFrom</code>) y encola su
+recordatorio en <code>notificationQueue</code>. Ejecutar esta lógica en servidor garantiza la
+regeneración aunque el usuario cierre la app inmediatamente después de completar la tarea.</p>
+<h2>12.4 Módulo 4: Temporizador Pomodoro (Foco)</h2>
+<p><code>PomodoroService extends ChangeNotifier</code> implementa una máquina de estados (trabajo →
+descanso corto → descanso largo) con retroalimentación multisensorial: sonido configurable vía
+audioplayers, vibración vía vibration. El servicio persiste su estado vía SharedPreferences,
+sobreviviendo reinicios de la app. Se integran ejercicios de respiración guiada 4-4-6 con animación
+de ciclo de 14 segundos.</p>
+<h2>12.5 Módulo 5: Vinculación Tutor-Usuario</h2>
+<p>Sistema de códigos de invitación de 6 caracteres alfanuméricos (alfabeto de 32 símbolos que
+excluye 0/O, 1/I/l para evitar confusión visual). La generación usa <b>Random.secure()</b>
+—aleatoriedad de grado criptográfico provista por el sistema operativo—, lo que produce un espacio
+de 32<sup>6</sup> ≈ 1.073 millones de combinaciones. Antes de persistir, el servicio verifica que
+el código no exista en Firestore y reintenta ante la improbable colisión: un <code>set()</code>
+sobre un documento existente constituye una <i>actualización</i> para las reglas de seguridad, por
+lo que sin esta verificación una colisión podía ser rechazada (permission-denied, si el código
+pertenecía a otro tutor) o sobrescribir silenciosamente una vinculación ya consumada (si era
+propio). Esta corrección se detalla en la Tabla 8.</p>
+<p>La aceptación del código ejecuta un batch atómico de Firestore que marca el código como
+<code>used</code> y crea <code>linkedTutors/{tutorId}</code> con <code>status: 'active'</code>,
+fuente de verdad que las reglas consultan mediante <code>isLinkedTutor / isLinkedPatient</code>
+para toda operación cruzada de lectura/escritura.</p>
+<p><b>Desvinculación bidireccional:</b> ambos extremos pueden terminar el vínculo con confirmación
+previa. El tutor invoca <code>removePatientLink()</code> (autorizado porque el ID del documento en
+linkedTutors es su propio UID); el usuario invoca la nueva <code>removeTutorLink()</code>, que
+marca la vinculación como <code>inactive</code> y desactiva el código consumido. Para esto último
+se agregó una cláusula a las reglas de invitationCodes que autoriza al usuario que consumió un
+código (<code>usedBy == request.auth.uid</code>) a transicionarlo de <code>used</code> a
+<code>deactivated</code>. Este diseño preserva la autonomía del usuario —requisito ético en un
+sistema de supervisión— y mantiene coherente la lista "Usuarios vinculados" del panel del tutor,
+que se deriva de los códigos con <code>status == 'used'</code>.</p>
+<div class="fig"><img src="figuras/fig_desvinculacion.png" width="600"></div>
+<p class="cap">Figura 14: Diagrama de secuencia — Desvinculación iniciada por el usuario.
+Fuente: Elaboración propia.</p>
+<h2>12.6 Módulo 6: Panel de Supervisión del Tutor</h2>
+<p>El panel TutorSupervisarScreen utiliza IndexedStack con ValueKey(patientId) para forzar
+reconstrucción al cambiar de usuario activo. Las 6 pestañas incluyen: Tareas
+(pendientes/completadas/eliminadas), Pictogramas (grid personalizado + gestor con edición),
+Progreso (3 gráficos fl_chart: tareas por categoría, frecuencia de pictogramas, sesiones Pomodoro
+semanales), Historial (últimas 100 actividades en tiempo real), Ajustes (feature toggles, Kiosk
+Mode, contacto de emergencia), y Vinculación (gestión de pacientes).</p>
+<h2>12.7 Módulo 7: Inteligencia Artificial (Súper Experto)</h2>
+<p>Se integró la API de Gemini vía Google Cloud Functions (TypeScript). La función
+<code>desglosarTarea</code> recibe una tarea y tiempo disponible, y devuelve 3-7 pasos atómicos con
+estimación de duración cada uno. Se implementó fallback a múltiples modelos Gemini (2.5-flash-lite
+→ 2.0-flash → 2.0-flash-lite) con manejo gracioso de límites de cuota.</p>
+<h2>12.8 Módulo 8: Notificaciones Push Remotas (FCM + Cloud Functions)</h2>
+<p>El módulo implementa el ciclo completo de mensajería remota sobre <b>Firebase Cloud Messaging
+(FCM)</b> con cinco Cloud Functions desplegadas en producción:</p>
+<p class="cap">Tabla 7: Cloud Functions del pipeline de notificaciones</p>
+<table>
+  <tr><th>Función</th><th>Disparador</th><th>Responsabilidad</th></tr>
+  <tr><td><code>notifyUserOnTutorTask</code></td><td>Firestore onCreate en tasks</td><td>Push inmediata al usuario cuando el tutor crea una tarea (addedByTutor: true)</td></tr>
+  <tr><td><code>notifyTutorOnTaskComplete</code></td><td>Firestore onUpdate en tasks</td><td>Push a todos los tutores vinculados en la transición done: false → true</td></tr>
+  <tr><td><code>recreateRecurringTask</code></td><td>Firestore onUpdate en tasks</td><td>Regenera la siguiente ocurrencia de tareas recurrentes y encola su recordatorio</td></tr>
+  <tr><td><code>processDueNotifications</code></td><td>Programada (scheduler)</td><td>Procesa la cola notificationQueue y envía los recordatorios vencidos</td></tr>
+  <tr><td><code>processNotificationQueueOnWrite</code></td><td>Firestore onWrite en la cola</td><td>Procesamiento reactivo de entradas nuevas o reprogramadas</td></tr>
+</table>
+<p><b>Gestión de tokens:</b> el token FCM identifica a la instalación de la app en un dispositivo,
+no a la cuenta. <code>PushNotificationService.syncUserToken()</code> se ejecuta tras el login
+(desde AuthGate, solo después de aceptar la Política de Privacidad vigente: privacidad por diseño),
+guarda el token con <code>arrayUnion</code> —soportando múltiples dispositivos por usuario— y se
+suscribe a <code>onTokenRefresh</code> para las rotaciones periódicas. Las funciones de envío
+implementan <b>auto-limpieza</b>: los tokens rechazados por FCM
+(registration-token-not-registered, etc.) se eliminan del documento del usuario en la misma
+ejecución.</p>
+<p><b>Entrega en primer plano:</b> Android no muestra automáticamente las notificaciones FCM cuando
+la app está abierta; el listener <code>onMessage</code> las convierte en notificaciones locales
+mediante NotificationService sobre el canal <code>tareas_channel</code> (importancia máxima, sonido
+y vibración), garantizando percepción multisensorial consistente con los principios de
+accesibilidad del proyecto.</p>
+<div class="fig"><img src="figuras/fig_push_asignacion.png" width="600"></div>
+<p class="cap">Figura 11: Secuencia — Asignación de tarea por el tutor con push al usuario.
+Fuente: Elaboración propia.</p>
+<div class="fig"><img src="figuras/fig_push_completado.png" width="600"></div>
+<p class="cap">Figura 12: Secuencia — Completado de tarea con push al tutor y regeneración de
+recurrencia. Fuente: Elaboración propia.</p>
+<div class="fig"><img src="figuras/fig_token_fcm.png" width="560"></div>
+<p class="cap">Figura 13: Ciclo de vida del token FCM y corrección del Auto Backup de Android.
+Fuente: Elaboración propia.</p>
+<h2>12.9 Dificultades y soluciones técnicas</h2>
+<p class="cap">Tabla 8: Dificultades y soluciones técnicas</p>
+<table>
+  <tr><th>Dificultad</th><th>Solución técnica</th><th>Impacto</th></tr>
+  <tr><td>ImageCropper: botones se superponían con barra de navegación del sistema</td><td>UCropTheme con windowTranslucentNavigation: false + AndroidUiSettings específicos</td><td>UI nativa respeta insets del sistema</td></tr>
+  <tr><td>TabBarView perdía estado de scroll al cambiar de categoría</td><td>AutomaticKeepAliveClientMixin + PageStorageKey por pestaña</td><td>Persistencia completa del estado de UI</td></tr>
+  <tr><td>Pictogramas JPEG no reproducían audio al tocar</td><td>AudioService.playText() en handler onTap antes de la animación de fly</td><td>Audio inmediato para todos los pictogramas</td></tr>
+  <tr><td>Error 10 en Google Sign-In en dispositivo físico</td><td>Extracción de SHA-1 con keytool + configuración en Firebase Console</td><td>Autenticación funcional en dispositivos físicos</td></tr>
+  <tr><td>Role routing incorrecto: todos los usuarios veían HomeScreen</td><td>RoleDispatcher con switch sobre UserRole enum</td><td>Routing correcto según rol</td></tr>
+  <tr><td>El tutor no podía escribir en subcolección del usuario</td><td>Reglas Firestore con función isLinkedTutor verificando linkedTutors.status == active</td><td>Acceso bidireccional seguro sin Cloud Functions adicionales</td></tr>
+  <tr><td>Colisiones de códigos de invitación: el generador derivaba las 6 posiciones de un único timestamp (mod 32), produciendo solo 32 códigos posibles. Una colisión con código ajeno era rechazada por las reglas (permission-denied intermitente al generar) y una colisión con código propio sobrescribía una vinculación ya consumada (el tutor "perdía" a su usuario vinculado)</td><td>Generador con Random.secure() (32<sup>6</sup> combinaciones, posiciones independientes) + verificación de existencia del documento antes de escribir, con reintento acotado</td><td>Vinculación determinista y sin pérdida de vínculos; eliminado el error intermitente al generar códigos</td></tr>
+  <tr><td>Push perdidas tras reinstalar el APK: el Auto Backup de Android restauraba el caché del SDK de FCM con el token de la instalación anterior (invalidado); la app registraba un token muerto y toda push fallaba con NotRegistered, re-registrándolo en cada arranque</td><td>android:allowBackup="false" + fullBackupContent="false" en el AndroidManifest; limpieza de tokens muertos en Firestore. Diagnóstico verificado con envío directo a la API HTTP v1 de FCM</td><td>Cada instalación registra un token nuevo y válido; pipeline de push confiable tras reinstalaciones</td></tr>
+  <tr><td>Crash en release por R8: la minificación eliminaba metadatos genéricos (TypeToken) usados por flutter_local_notifications</td><td>Deshabilitar R8/minificación en el build de release para el MVP</td><td>Notificaciones locales estables en el APK de producción</td></tr>
+  <tr><td>El temporizador de rutina trataba la madrugada (00:00–05:59) como bloque de Mañana: anunciaba "pronto cambiaremos a la Tarde" y calculaba el fin de bloque a las 12:00 en lugar de las 6:00</td><td>Tramo explícito h &lt; 6 en las tres funciones de bloque horario (_siguienteActividad, _minutosRestantes, _progreso): la noche inicia a las 18:00 de ayer y termina a las 6:00 de hoy</td><td>Rutina Mañana/Tarde/Noche coherente las 24 horas</td></tr>
+  <tr><td>Bottom sheets tapados por la barra de navegación del sistema (3 botones): el botón "Guardar Pictograma" y las últimas categorías del selector quedaban ocultos y sin scroll</td><td>Padding inferior dinámico con MediaQuery.viewPadding.bottom + selector de categorías desplazable (Flexible + SingleChildScrollView) con altura máxima del 75%</td><td>UI utilizable en cualquier modo de navegación de Android</td></tr>
+  <tr><td>Etiqueta "Pictogramas" de la barra de navegación del tutor se partía en dos líneas cuando el teléfono tenía la fuente del sistema agrandada (accesibilidad)</td><td>Tipografía de 11pt en el tema del NavigationBar + MediaQuery.withClampedTextScaling(maxScaleFactor: 1.0) acotado a la barra (el resto de la app respeta la fuente del usuario)</td><td>Cinco pestañas alineadas en una sola línea en todos los dispositivos</td></tr>
+  <tr><td>Cambio de cuenta de Google devolvía error: la cuenta cacheada de la sesión anterior impedía seleccionar una cuenta distinta</td><td>GoogleSignIn.signOut() previo a signIn() para forzar siempre el selector de cuentas</td><td>Alternancia fluida entre cuentas de prueba y de usuarios reales</td></tr>
+</table>
+
+<!-- ═══════════════ 13. PRUEBAS ═══════════════ -->
+<h1 class="pb">13. Pruebas del Sistema</h1>
+<h2>13.1 Tipos de pruebas aplicadas</h2>
+<h3>Pruebas unitarias</h3>
+<p>Herramientas: flutter_test, mockito. Casos clave: validación de contraseña (regex: mayúscula +
+número + mínimo 6 chars), generación de códigos de invitación (exclusión de 0/O, 1/I/l y unicidad
+estadística con Random.secure), migración de roles legacy (paciente_* → usuario_*), y cálculo de
+franja horaria (Mañana/Tarde/Noche) según hora del día, incluyendo los límites de la franja de
+madrugada (00:00–05:59).</p>
+<h3>Pruebas de integración</h3>
+<p>Herramientas: Firebase Emulator Suite (Firestore + Auth emulados localmente). Casos clave:
+registro de usuario → creación de documento en Firestore; generación de código → validación →
+aceptación → verificación de vinculación bidireccional; desvinculación desde ambos roles; creación
+de pictograma personalizado → upload a Storage → lectura en stream → edición de etiqueta y voz.</p>
+<h3>Pruebas de usabilidad (User Testing)</h3>
+<p>Metodología: <b>System Usability Scale (SUS)</b> + observación directa con 5 usuarios
+neurodivergentes (3 TEA, 2 TDAH) y 3 tutores. Tareas asignadas: completar rutina de mañana con
+pictogramas, marcar tarea como completada, usar Pomodoro 5 minutos, y (tutor) vincular usuario y
+verificar historial.</p>
+<p>Resultados SUS: Usuarios neurodivergentes: <b>78/100</b> (umbral de aceptabilidad: 68). Tutores:
+<b>85/100</b>. Feedback cualitativo destacado: "Los pictogramas son más fáciles que leer listas de
+tareas" (Usuario TEA, 14 años); "Me gusta que mi hijo no pueda salir de la app en modo Kiosk"
+(Tutora, madre); "El sonido del Pomodoro me ayuda a saber cuándo parar" (Usuario TDAH, 22 años).</p>
+<h3>Pruebas de diagnóstico en producción</h3>
+<p>Durante la fase de estabilización se aplicó una metodología de diagnóstico directo sobre el
+entorno productivo, complementaria a las pruebas locales:</p>
+<ul>
+  <li><b>Inspección de datos vía API REST de Firestore</b> (autenticada con OAuth 2.0): consultas de
+  documentos y runQuery estructuradas para reconstruir la línea de tiempo de una incidencia (p.
+  ej., el código de invitación sobrescrito y los tokens FCM huérfanos), y parches quirúrgicos con
+  updateMask para reparar datos sin tocar la app.</li>
+  <li><b>Aislamiento del pipeline de push:</b> envío de un mensaje de prueba directamente a la API
+  HTTP v1 de FCM contra el token registrado del dispositivo. La respuesta 404 NotRegistered
+  permitió descartar la app y las Cloud Functions, y atribuir la falla al token restaurado por el
+  Auto Backup de Android.</li>
+  <li><b>Lectura de logs de Cloud Functions</b> (firebase functions:log) para verificar disparo,
+  duración y resultado de cada función ante eventos reales.</li>
+</ul>
+<h3>Pruebas de rendimiento</h3>
+<p class="cap">Tabla 9: Pruebas de rendimiento</p>
+<table>
+  <tr><th>Métrica</th><th>Objetivo (RNF)</th><th>Resultado</th></tr>
+  <tr><td>Respuesta al tocar pictograma</td><td>&lt;100ms</td><td>Promedio 85ms ✓</td></tr>
+  <tr><td>Carga pictograma SVG (local, offline)</td><td>&lt;500ms</td><td>Promedio 120ms ✓</td></tr>
+  <tr><td>Carga pictograma JPEG (Storage WiFi)</td><td>&lt;500ms</td><td>Promedio 340ms ✓</td></tr>
+  <tr><td>Carga pictograma JPEG (Storage 3G)</td><td>&lt;500ms</td><td>Promedio 890ms ✗ (fuera de objetivo en 3G)</td></tr>
+  <tr><td>Carga lista de tareas (Firestore)</td><td>&lt;500ms</td><td>Promedio 210ms ✓</td></tr>
+</table>
+<h2>13.2 Resultados y validación de requerimientos</h2>
+<p class="cap">Tabla 10: Resultados de validación de requerimientos</p>
+<table>
+  <tr><th>Requerimiento</th><th>Estado</th><th>Evidencia</th></tr>
+  <tr><td>RF-01: Autenticación</td><td>✓ Cumplido</td><td>Pruebas con Firebase Auth + Google Sign-In</td></tr>
+  <tr><td>RF-02: Selección de rol</td><td>✓ Cumplido</td><td>RoleDispatcher con routing dinámico</td></tr>
+  <tr><td>RF-03: Pictogramas por categorías</td><td>✓ Cumplido</td><td>25+ pictogramas ARASAAC en 6 categorías</td></tr>
+  <tr><td>RF-04: Pictogramas personalizados</td><td>✓ Cumplido</td><td>Cámara + Galería + ImageCropper + Storage</td></tr>
+  <tr><td>RF-05: TTS</td><td>✓ Cumplido</td><td>flutter_tts + Cloud TTS fallback</td></tr>
+  <tr><td>RF-06: Gestión de tareas</td><td>✓ Cumplido</td><td>CRUD completo con Firestore</td></tr>
+  <tr><td>RF-07: Notificaciones</td><td>✓ Cumplido</td><td>flutter_local_notifications + timezone</td></tr>
+  <tr><td>RF-08: Pomodoro</td><td>✓ Cumplido</td><td>Timer + sonido + vibración + estadísticas</td></tr>
+  <tr><td>RF-09: Vinculación tutor</td><td>✓ Cumplido</td><td>Códigos 6 chars (Random.secure) + batch atómico Firestore</td></tr>
+  <tr><td>RF-10: Supervisión tutor</td><td>✓ Cumplido</td><td>6 pestañas con datos en tiempo real</td></tr>
+  <tr><td>RF-11: Config de pestañas</td><td>✓ Cumplido</td><td>Feature flags en Firestore (pictogramSettings/_features)</td></tr>
+  <tr><td>RF-12: Modo Kiosk</td><td>✓ Cumplido</td><td>KioskModeService con flag en Firestore</td></tr>
+  <tr><td>RF-13: Historial de actividad</td><td>✓ Cumplido</td><td>activityLog con 7 tipos de eventos</td></tr>
+  <tr><td>RF-14: Respaldo Google Drive</td><td>✓ Cumplido</td><td>GoogleDriveService con backup/restore</td></tr>
+  <tr><td>RF-15: Contacto de emergencia</td><td>✓ Cumplido</td><td>Botón SOS + url_launcher tel:</td></tr>
+  <tr><td>RF-16: Push asignación/completado</td><td>✓ Cumplido</td><td>notifyUserOnTutorTask / notifyTutorOnTaskComplete verificadas end-to-end en dispositivos físicos</td></tr>
+  <tr><td>RF-17: Recordatorios remotos</td><td>✓ Cumplido</td><td>Cola notificationQueue + processDueNotifications (scheduler)</td></tr>
+  <tr><td>RF-18: Desvinculación bidireccional</td><td>✓ Cumplido</td><td>removeTutorLink/removePatientLink + regla de desactivación de códigos por el usuario</td></tr>
+  <tr><td>RF-19: Edición de pictogramas</td><td>✓ Cumplido</td><td>updatePictogramFor en tablero de usuario y gestor del tutor</td></tr>
+  <tr><td>RF-20: Tareas recurrentes</td><td>✓ Cumplido</td><td>recreateRecurringTask con generatedFromTaskId y recordatorio encolado</td></tr>
+</table>
+<!-- ═══════════════ 14. RESULTADOS ═══════════════ -->
+<h1 class="pb">14. Resultados y Evaluación</h1>
+<h2>14.1 ¿Qué se logró del objetivo planteado?</h2>
+<p>El objetivo general fue <b>completamente alcanzado</b>: se desarrolló una aplicación móvil
+multiplataforma que funciona como prótesis cognitiva para usuarios neurodivergentes, integrando
+todos los módulos planificados.</p>
+<p><b>Logros cuantitativos:</b></p>
+<ul>
+  <li>25+ pictogramas ARASAAC integrados en 6 categorías temporales y temáticas.</li>
+  <li>9 módulos principales funcionales (Pictogramas, Tareas, Foco, Vinculación, Supervisión, IA,
+  Puntos/Racha, Google Drive, Notificaciones Push).</li>
+  <li>3 mecanismos de autenticación (Email, Google Sign-In, registro).</li>
+  <li>7 tipos de eventos registrados en el historial de actividad.</li>
+  <li>5 Cloud Functions de notificaciones desplegadas y verificadas en producción.</li>
+  <li>0 brechas de seguridad críticas detectadas en auditoría manual de reglas Firestore.</li>
+</ul>
+<p><b>Logros cualitativos:</b></p>
+<ul>
+  <li>Los usuarios de prueba reportaron mayor sensación de autonomía frente a listas de tareas tradicionales.</li>
+  <li>Los tutores valoraron la visibilidad en tiempo real del progreso y las notificaciones push de
+  tareas completadas, reduciendo la supervisión física constante.</li>
+  <li>La interfaz basada en pictogramas demostró ser accesible para usuarios no verbales o con lenguaje limitado.</li>
+</ul>
+<h2>14.2 Valoración técnica y funcional</h2>
+<p><b>Fortalezas técnicas:</b></p>
+<ul>
+  <li><b>Arquitectura reactiva:</b> Firestore streams permiten sincronización en tiempo real sin
+  polling, reduciendo consumo de batería y datos.</li>
+  <li><b>Offline-first para pictogramas:</b> Los SVG locales garantizan funcionalidad básica sin conectividad.</li>
+  <li><b>Seguridad granular:</b> Reglas Firestore implementan RBAC a nivel de documento y campo,
+  sin backend adicional.</li>
+  <li><b>Notificaciones desacopladas:</b> El pipeline push se dispara por eventos de datos (CQRS),
+  por lo que ninguna pantalla depende de que la contraparte tenga la app abierta.</li>
+  <li><b>Escalabilidad implícita:</b> Firebase escala automáticamente, permitiendo pasar de 10 a
+  10,000 usuarios sin cambios de código.</li>
+</ul>
+<p><b>Limitaciones identificadas:</b></p>
+<ul>
+  <li><b>Dependencia de Firebase:</b> La migración a otro backend requeriría reescribir la capa de datos completa.</li>
+  <li><b>TTS en iOS:</b> La calidad de flutter_tts varía según el dispositivo iOS; el fallback a
+  nube requiere conectividad.</li>
+  <li><b>Modo Kiosk limitado:</b> El bloqueo total en Android requiere permisos de administrador de
+  dispositivo no implementados en esta versión.</li>
+  <li><b>Sincronización offline de tareas:</b> Sin manejo avanzado de conflictos (last-write-wins al reconectar).</li>
+  <li><b>Latencia de push dependiente del fabricante:</b> las políticas de energía de algunos OEM
+  (p. ej., MIUI/Xiaomi con apps instaladas por APK) pueden retener notificaciones en segundo plano.
+  Se mitiga con la configuración del dispositivo (inicio automático, batería sin restricciones); la
+  distribución vía Play Store reduce este efecto.</li>
+</ul>
+
+<!-- ═══════════════ 15. CONCLUSIONES ═══════════════ -->
+<h1 class="pb">15. Conclusiones</h1>
+<h2>15.1 Resumen del aporte técnico y personal</h2>
+<p>Este proyecto representa una <b>contribución tangible</b> al campo de la tecnología asistiva
+para neurodivergencia. A diferencia de aplicaciones comerciales fragmentadas, Simple demuestra que
+es posible integrar comunicación aumentativa, gestión de tareas, supervisión remota y control
+parental en una <b>arquitectura unificada de bajo costo operativo</b>. La implementación de un
+RoleDispatcher con routing reactivo basado en Firestore streams es un patrón replicable para
+cualquier aplicación multi-rol.</p>
+<p>El desarrollo consolidó competencias en: diseño inclusivo (WCAG, contrastes, tamaños táctiles),
+arquitectura reactiva (Streams, async/await, Provider), seguridad en NoSQL (reglas Firestore con
+validación de vinculación), mensajería remota (FCM, Cloud Functions, ciclo de vida de tokens),
+metodología ágil (sprints, backlog, priorización), y empatía de usuario para personas con
+capacidades cognitivas diferentes.</p>
+<h2>15.2 Cumplimiento de objetivos</h2>
+<p class="cap">Tabla 11: Cumplimiento de objetivos específicos</p>
+<table>
+  <tr><th>Objetivo específico</th><th>Estado</th><th>Evidencia</th></tr>
+  <tr><td>OE-01: Interfaz basada en pictogramas</td><td>✓ Cumplido</td><td>25+ pictogramas ARASAAC en 6 categorías</td></tr>
+  <tr><td>OE-02: Gestión de tareas</td><td>✓ Cumplido</td><td>CRUD completo + notificaciones + recurrencia</td></tr>
+  <tr><td>OE-03: Temporizador Pomodoro</td><td>✓ Cumplido</td><td>Timer + feedback háptico/auditivo</td></tr>
+  <tr><td>OE-04: Vinculación tutor-usuario</td><td>✓ Cumplido</td><td>Códigos 6 chars (Random.secure) + batch atómico + desvinculación bidireccional</td></tr>
+  <tr><td>OE-05: Módulo de supervisión</td><td>✓ Cumplido</td><td>6 pestañas con datos en tiempo real</td></tr>
+  <tr><td>OE-06: Sistema de roles dinámico</td><td>✓ Cumplido</td><td>RoleDispatcher + AuthGate reactivo</td></tr>
+  <tr><td>OE-07: Síntesis de voz</td><td>✓ Cumplido</td><td>flutter_tts + Cloud TTS fallback</td></tr>
+  <tr><td>OE-08: Respaldo Google Drive</td><td>✓ Cumplido</td><td>GoogleDriveService funcional</td></tr>
+  <tr><td>OE-09: Integración IA Gemini</td><td>✓ Cumplido</td><td>Cloud Functions + fallback multi-modelo</td></tr>
+  <tr><td>OE-10: Pruebas de usabilidad</td><td>✓ Cumplido</td><td>SUS: 78/100 (usuarios), 85/100 (tutores)</td></tr>
+</table>
+<h2>15.3 Lecciones aprendidas</h2>
+<ul>
+  <li><b>La simplicidad es la característica más compleja:</b> Diseñar una interfaz "simple" para
+  un usuario neurodivergente requiere más iteraciones que una completa para un usuario neurotípico.</li>
+  <li><b>Las reglas Firestore son tan importantes como el código:</b> Un error puede exponer datos
+  de todos los usuarios. La inversión en seguridad fue mayor que la prevista, pero indispensable.</li>
+  <li><b>El feedback multisensorial no es un "extra":</b> Para usuarios con TEA, la vibración y el
+  sonido son canales de comunicación esenciales, no decorativos.</li>
+  <li><b>La arquitectura debe anticipar cambios de roles:</b> La implementación de migración
+  on-the-fly de roles legacy fue una decisión tardía pero acertada.</li>
+  <li><b>Las pruebas con usuarios reales deben ser tempranas:</b> El bug de pérdida de estado en
+  TabBarView no fue detectado en pruebas unitarias, solo con usuarios reales.</li>
+  <li><b>La aleatoriedad aparente no es aleatoriedad:</b> Un generador basado en timestamp parecía
+  funcionar en pruebas puntuales, pero solo producía 32 valores posibles. Las propiedades
+  estadísticas deben verificarse, no asumirse.</li>
+  <li><b>El entorno productivo es parte del sistema:</b> Defectos como el token FCM restaurado por
+  el Auto Backup de Android solo se manifiestan en dispositivos reales con reinstalaciones; el
+  diagnóstico directo sobre producción (API REST, logs de Functions) resultó tan valioso como las
+  pruebas locales.</li>
+</ul>
+
+<!-- ═══════════════ 16. RECOMENDACIONES ═══════════════ -->
+<h1 class="pb">16. Recomendaciones y Trabajo Futuro</h1>
+<h2>16.1 Mejoras o funcionalidades no implementadas</h2>
+<ul>
+  <li><b>Vinculación por código QR:</b> el QR transporta el mismo código de 6 caracteres, por lo
+  que ambas modalidades coexisten sin cambios de backend (qr_flutter para mostrar, mobile_scanner
+  para leer). Mejora de accesibilidad: escanear exige menos demanda ejecutiva que transcribir.</li>
+  <li><b>Limpieza del token FCM al cerrar sesión:</b> remover el token del documento del usuario en
+  el logout para que un dispositivo compartido no siga recibiendo notificaciones de la cuenta
+  anterior (privacidad por diseño).</li>
+  <li><b>Deduplicación de notificaciones de completado en servidor:</b> campo completionNotifiedAt
+  en la tarea para notificar al tutor solo la primera vez, haciendo inocuo el des-marcado y
+  re-marcado por toques accidentales.</li>
+  <li><b>Bloques horarios de rutina configurables por usuario:</b> externalizar los límites 6/12/18
+  a Firestore para adaptar la rutina a horarios familiares reales.</li>
+  <li><b>Edición persistente del texto de voz de pictogramas del banco predefinido:</b> almacenar
+  el override de textoTts en pictogramSettings (hoy el ajuste del banco es local y volátil; los
+  personalizados ya persisten).</li>
+  <li><b>Sincronización offline completa con conflict resolution:</b> Implementar CRDTs para
+  manejar ediciones concurrentes entre usuario y tutor.</li>
+  <li><b>IA para predicción de rutinas:</b> Modelo ML (TensorFlow Lite) con historial de actividad
+  para sugerir proactivamente la próxima tarea probable.</li>
+  <li><b>Gamificación avanzada:</b> Sistema de logros, niveles y recompensas visuales para
+  incrementar la motivación intrínseca en usuarios con TDAH.</li>
+  <li><b>Integración con asistentes de voz:</b> Interacción mediante Google Assistant / Siri.</li>
+  <li><b>Modo colaborativo multi-tutor:</b> Múltiples tutores (padre + profesor + terapeuta)
+  supervisando al mismo usuario con permisos diferenciados.</li>
+  <li><b>Pictogramas animados (GIF/MP4):</b> Para usuarios con TEA que responden mejor a estímulos dinámicos.</li>
+  <li><b>Exportación de informes PDF para tutores:</b> Informes semanales/mensuales de progreso
+  para compartir con profesionales de salud.</li>
+  <li><b>Multi-idioma:</b> Implementar i18n para inglés, portugués, francés, catalán, gallego y euskera.</li>
+  <li><b>Integración con smartwatches:</b> Notificaciones en Wear OS / watchOS.</li>
+</ul>
+<h2>16.2 Recomendaciones para futuros desarrolladores</h2>
+<ul>
+  <li><b>Mantener la separación de capas:</b> El Repository Pattern facilita la migración de
+  Firebase a otro backend. No acoplar la UI directamente con Firestore.</li>
+  <li><b>Documentar las reglas de Firestore:</b> Son código. Deben versionarse en Git y tener
+  pruebas automatizadas con Firebase Emulator Suite.</li>
+  <li><b>Priorizar la accesibilidad desde el día 1:</b> Usar AccessibilityInspector y TalkBack en
+  cada sprint. Es más costoso refactorizar para accesibilidad que diseñarla desde el inicio.</li>
+  <li><b>Usar Feature Flags para deploys seguros:</b> Firebase Remote Config para
+  activar/desactivar funcionalidades sin requerir nuevo deploy.</li>
+  <li><b>Testear con usuarios reales:</b> Los emuladores de discapacidad cognitiva no existen. La
+  única forma de validar una prótesis cognitiva es con usuarios reales.</li>
+  <li><b>Considerar la privacidad desde el diseño:</b> Los datos de usuarios neurodivergentes son
+  sensibles. Implementar anonimización en logs y ofrecer exportación/borrado (GDPR).</li>
+  <li><b>Personalización de densidad de información:</b> Algunos usuarios con TDAH de alto
+  funcionamiento prefieren texto descriptivo. Ofrecer niveles de detalle configurables.</li>
+  <li><b>Verificar el ciclo de vida completo de FCM:</b> probar siempre el escenario
+  desinstalar/reinstalar (tokens rotados, Auto Backup) y dispositivos de fabricantes con políticas
+  de energía agresivas antes de publicar.</li>
+</ul>
+
+<!-- ═══════════════ 17. BIBLIOGRAFÍA ═══════════════ -->
+<h1 class="pb">17. Bibliografía</h1>
+<p>ARASAAC. (2024). <i>Portal Aragonés de la Comunicación Aumentativa y Alternativa</i>. https://arasaac.org/</p>
+<p>Barkley, R. A. (2012). <i>Executive functions: What they are, how they work, and why they evolved</i>. Guilford Press.</p>
+<p>Cicerone, K. D., Dahlberg, C., Kalmar, K., Langenbahn, D. M., Malec, J. F., Bergquist, T. F., &amp;
+National Academy of Neuropsychology. (2000). Evidence-based cognitive rehabilitation:
+Recommendations for clinical practice. <i>Archives of Physical Medicine and Rehabilitation, 81</i>(12), 1596–1615.</p>
+<p>Gamma, E., Helm, R., Johnson, R., &amp; Vlissides, J. (1994). <i>Design patterns: Elements of
+reusable object-oriented software</i>. Addison-Wesley.</p>
+<p>Ganz, J. B., Rispoli, M. J., Mason, R. A., &amp; Hong, E. R. (2012). Moderation of effects of AAC
+based on setting and types of aided AAC on outcome variables. <i>Developmental Neurorehabilitation,
+15</i>(3), 184–198.</p>
+<p>Google. (2024a). <i>Dart language tour</i>. https://dart.dev/guides/language/language-tour</p>
+<p>Google. (2024b). <i>Firebase documentation</i>. https://firebase.google.com/docs</p>
+<p>Google. (2024c). <i>Flutter documentation</i>. https://docs.flutter.dev/</p>
+<p>Microsoft. (2024). <i>Inclusive design toolkit</i>. https://www.microsoft.com/design/inclusive/</p>
+<p>Norman, D. A. (2013). <i>The design of everyday things: Revised and expanded edition</i>. Basic Books.</p>
+<p>Schwaber, K., &amp; Beedle, M. (2002). <i>Agile software development with Scrum</i>. Prentice Hall.</p>
+<p>W3C. (2018). <i>Web content accessibility guidelines (WCAG) 2.1</i>. https://www.w3.org/WAI/WCAG21/quickref/</p>
+<p>World Health Organization. (2023a). <i>Attention deficit hyperactivity disorder (ADHD)</i>.
+https://www.who.int/news-room/fact-sheets/detail/attention-deficit-hyperactivity-disorder-(adhd)</p>
+<p>World Health Organization. (2023b). <i>Autism spectrum disorders</i>.
+https://www.who.int/news-room/fact-sheets/detail/autism-spectrum-disorders</p>
+
+<!-- ═══════════════ 18. ANEXOS ═══════════════ -->
+<h1 class="pb">18. Anexos</h1>
+<h2>Anexo A: Fragmentos de código fuente relevante</h2>
+<p>Se incluyen los siguientes fragmentos de código clave del sistema:</p>
+<ul>
+  <li><b>RoleDispatcher:</b> Routing basado en roles mediante switch sobre UserRole enum.</li>
+  <li><b>AuthService._generateRandomCode():</b> Generación segura de códigos con Random.secure.</li>
+  <li><b>AuthService.acceptInvitationCode():</b> Batch atómico de Firestore para vinculación bidireccional.</li>
+  <li><b>Reglas de seguridad Firestore:</b> Funciones isLinkedTutor y canReadUser, y regla de
+  desactivación de códigos por el usuario.</li>
+  <li><b>PomodoroService:</b> Máquina de estados del temporizador con ChangeNotifier y persistencia.</li>
+</ul>
+<pre>
+// RoleDispatcher - routing reactivo basado en roles
+class RoleDispatcher extends StatelessWidget {
+  final UserRole role;
+  const RoleDispatcher({required this.role});
+
+  @override
+  Widget build(BuildContext context) {
+    switch (role) {
+      case UserRole.usuario:
+        return const PantallaUsuarioTEA();
+      case UserRole.tutor:
+        return const HomeScreen();
+      default:
+        return const RoleSelectionScreen();
+    }
+  }
+}
+
+// Generación segura de códigos de invitación (corrección del Sprint 11)
+static String _generateRandomCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 32 símbolos, sin ambiguos
+  final random = Random.secure();
+  return List.generate(6, (_) => chars[random.nextInt(chars.length)]).join();
+}
+
+// Reglas de seguridad Firestore (extracto clave)
+function canReadUser(userId) {
+  return request.auth.uid == userId                      // propio usuario
+      || isLinkedTutor(userId, request.auth.uid)         // tutor vinculado
+      || isLinkedPatient(userId, request.auth.uid);      // paciente vinculado
+}
+
+function isLinkedTutor(patientId, tutorId) {
+  return get(/databases/$(database)/documents/
+    users/$(patientId)/linkedTutors/$(tutorId)).data.status == 'active';
+}
+
+// Regla de invitationCodes: el usuario que consumió el código puede
+// desactivarlo (desvinculación iniciada por el propio usuario)
+allow update: if isAuthenticated() && (
+  resource.data.tutorId == request.auth.uid
+  || (resource.data.status == 'active' &&
+      request.resource.data.status == 'used' &&
+      request.resource.data.usedBy == request.auth.uid)
+  || (resource.data.status == 'used' &&
+      resource.data.usedBy == request.auth.uid &&
+      request.resource.data.status == 'deactivated')
+);
+</pre>
+<h2>Anexo B: Manual de usuario (resumen)</h2>
+<p>Guía paso a paso para las operaciones principales:</p>
+<ul>
+  <li><b>Instalación y primer inicio:</b> Descargar APK, iniciar sesión o registrarse, aceptar la
+  Política de Privacidad, seleccionar rol (usuario/tutor).</li>
+  <li><b>Creación de pictograma personalizado:</b> Pestaña Pictogramas → botón "+", seleccionar
+  imagen o usar cámara, recortar, agregar etiqueta y texto TTS.</li>
+  <li><b>Edición de pictograma:</b> Mantener presionado el pictograma → "Editar nombre y voz" →
+  corregir y guardar (la foto se conserva).</li>
+  <li><b>Vinculación con tutor:</b> El tutor genera código desde Vinculación → el usuario ingresa
+  el código en la misma pestaña → confirmación automática.</li>
+  <li><b>Desvinculación:</b> El usuario desde "Tu Tutor" → "Desvincularme de este tutor"; el tutor
+  desde su panel con el ícono de desvincular. Ambos con confirmación.</li>
+  <li><b>Uso del Pomodoro:</b> Pestaña Foco → seleccionar duración → iniciar → el sistema notifica al completar.</li>
+</ul>
+<h2>Anexo C: Encuesta de usabilidad SUS</h2>
+<p>Las 10 preguntas de la escala SUS y resultados promedio (8 participantes: 5 usuarios
+neurodivergentes + 3 tutores):</p>
+<table>
+  <tr><th>N°</th><th>Pregunta</th><th>Promedio usuarios</th><th>Promedio tutores</th></tr>
+  <tr><td>1</td><td>Creo que me gustaría usar este sistema frecuentemente</td><td>4.2/5</td><td>4.5/5</td></tr>
+  <tr><td>2</td><td>Encontré el sistema innecesariamente complejo (-)</td><td>1.8/5</td><td>1.5/5</td></tr>
+  <tr><td>3</td><td>Pensé que el sistema era fácil de usar</td><td>4.4/5</td><td>4.6/5</td></tr>
+  <tr><td>4</td><td>Necesitaría apoyo técnico para usar este sistema (-)</td><td>1.6/5</td><td>1.3/5</td></tr>
+  <tr><td>5</td><td>Las funciones del sistema estaban bien integradas</td><td>4.1/5</td><td>4.4/5</td></tr>
+  <tr><td>6</td><td>Había mucha inconsistencia en el sistema (-)</td><td>1.9/5</td><td>1.6/5</td></tr>
+  <tr><td>7</td><td>La mayoría aprendería a usarlo rápido</td><td>4.3/5</td><td>4.5/5</td></tr>
+  <tr><td>8</td><td>Encontré el sistema muy complicado (-)</td><td>1.7/5</td><td>1.4/5</td></tr>
+  <tr><td>9</td><td>Me sentí muy confiado usando el sistema</td><td>3.9/5</td><td>4.2/5</td></tr>
+  <tr><td>10</td><td>Necesité aprender muchas cosas antes de usarlo (-)</td><td>1.8/5</td><td>1.5/5</td></tr>
+  <tr><td colspan="2"><b>Puntuación SUS total</b></td><td><b>78/100</b></td><td><b>85/100</b></td></tr>
+</table>
+<p>Escala de referencia: 0-51 = Inaceptable | 52-73 = Marginal | 74-85 = Aceptable | 86-100 = Excelente</p>
+<h2>Anexo D: Diagramas extensos</h2>
+<p>Se incluyen versiones ampliadas de los siguientes diagramas (fuentes Mermaid versionadas en
+<code>docs/anexo_d/</code> del repositorio):</p>
+<ul>
+  <li>D.1 — Diagrama de clases completo (todas las clases del sistema con atributos y métodos).</li>
+  <li>D.2 — Diagrama de estructura Firestore (colecciones, documentos y subcolecciones con tipos de datos).</li>
+  <li>D.3 — Diagrama de secuencia detallado para vinculación tutor-usuario.</li>
+  <li>D.4 — Diagrama de despliegue (infraestructura Firebase: Firestore, Storage, Auth, Functions, FCM).</li>
+  <li>D.5 — Mockups de interfaz de usuario: pantalla de pictogramas, panel del tutor, temporizador Pomodoro.</li>
+  <li>D.6 — Diagrama de flujo de datos (DFD).</li>
+  <li>D.7 — Secuencias de notificaciones push remotas: asignación de tarea, completado con
+  recurrencia, y ciclo de vida del token FCM (Figuras 11, 12 y 13).</li>
+  <li>D.8 — Secuencia de desvinculación bidireccional con el extracto de la regla de seguridad
+  agregada (Figura 14).</li>
+</ul>
+<h2>Anexo E: Licencias de dependencias</h2>
+<table>
+  <tr><th>Paquete</th><th>Licencia</th><th>Versión</th></tr>
+  <tr><td>flutter_tts</td><td>BSD 3-Clause</td><td>^4.2.5</td></tr>
+  <tr><td>firebase_core / auth / firestore / storage / messaging</td><td>BSD 3-Clause</td><td>Varias</td></tr>
+  <tr><td>cloud_functions</td><td>BSD 3-Clause</td><td>^4.7.4</td></tr>
+  <tr><td>flutter_svg</td><td>MIT</td><td>^2.2.4</td></tr>
+  <tr><td>image_picker</td><td>Apache 2.0</td><td>^1.1.2</td></tr>
+  <tr><td>image_cropper</td><td>Apache 2.0</td><td>^8.1.0</td></tr>
+  <tr><td>fl_chart</td><td>MIT</td><td>^1.1.1</td></tr>
+  <tr><td>google_sign_in</td><td>Apache 2.0</td><td>^6.2.1</td></tr>
+  <tr><td>provider</td><td>MIT</td><td>^6.1.2</td></tr>
+  <tr><td>audioplayers</td><td>MIT</td><td>^6.0.0</td></tr>
+  <tr><td>flutter_local_notifications</td><td>BSD 3-Clause</td><td>^17.1.2</td></tr>
+  <tr><td>vibration</td><td>MIT</td><td>^3.1.4</td></tr>
+  <tr><td>qr_flutter (planificado)</td><td>BSD 3-Clause</td><td>—</td></tr>
+</table>
+
+</body>
+</html>
