@@ -244,6 +244,11 @@ class _CrearPictogramaSheetState extends State<CrearPictogramaSheet> {
       snap: true,             // Hace clic en posiciones fijas al soltar el arrastre
 
       builder: (_, scrollController) {
+        // Alto de la barra de navegación del sistema (0 con pantalla completa,
+        // ~24px con gestos, ~48px con navegación de 3 botones). Se suma al
+        // padding inferior para que el botón "Guardar" nunca quede tapado.
+        final navBarInset = MediaQuery.of(context).viewPadding.bottom;
+
         return Container(
           decoration: const BoxDecoration(
             color: AppTheme.warmCream, // Fondo crema cálido (tono AAC accesible)
@@ -261,7 +266,8 @@ class _CrearPictogramaSheetState extends State<CrearPictogramaSheet> {
               Expanded(
                 child: SingleChildScrollView(
                   controller: scrollController,
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 40), // Padding inferior para teclado
+                  // Padding inferior: 40 base + barra de navegación del sistema
+                  padding: EdgeInsets.fromLTRB(24, 0, 24, 40 + navBarInset),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

@@ -139,6 +139,62 @@ class _VinculacionTutorScreenState extends State<VinculacionTutorScreen> {
     }
   }
 
+  /// Desvinculación iniciada por el usuario, con confirmación previa.
+  ///
+  /// Al confirmar, marca la vinculación como inactiva y desactiva el código
+  /// consumido, por lo que el usuario también deja de aparecer en el panel
+  /// del tutor. Vuelve al formulario de ingreso de código.
+  Future<void> _unlinkTutor(String tutorId, String tutorName) async {
+    // Capturamos el messenger antes de los awaits para no usar el
+    // BuildContext a través de un async gap.
+    final messenger = ScaffoldMessenger.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Desvincular tutor'),
+        content: Text(
+          '¿Estás seguro de que deseas desvincularte de $tutorName? '
+          'Dejará de ver tu progreso y tus tareas.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Desvincular'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await AuthService.removeTutorLink(tutorId);
+      if (mounted) {
+        setState(() {
+          _isLinked = false;          // Vuelve al formulario de código
+          _validationResult = null;   // Limpia la validación previa
+          _codeController.clear();
+        });
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Te has desvinculado de tu tutor'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        messenger.showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
     _codeController.dispose();
@@ -256,6 +312,24 @@ class _VinculacionTutorScreenState extends State<VinculacionTutorScreen> {
                     Text(
                       tutorEmail,
                       style: const TextStyle(fontSize: 14, color: Colors.white70),
+                    ),
+                    const SizedBox(height: 24),
+                    // El usuario también puede terminar la vinculación desde
+                    // su lado, sin depender de que el tutor lo desvincule.
+                    OutlinedButton.icon(
+                      onPressed: () => _unlinkTutor(
+                        tutor['id'] as String,
+                        tutorName,
+                      ),
+                      icon: const Icon(Icons.link_off, color: Colors.white),
+                      label: const Text('Desvincularme de este tutor'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Colors.white70),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 12,
+                        ),
+                      ),
                     ),
                   ],
                 ),

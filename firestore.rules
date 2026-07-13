@@ -210,6 +210,8 @@ service cloud.firestore {
 
       // El tutor puede actualizar su propio código.
       // El usuario puede marcarlo como 'used' si está activo y el usedBy coincide.
+      // El usuario que consumió el código puede desactivarlo (desvinculación
+      // iniciada por el propio usuario, no solo por el tutor).
       // `resource.data` lee el estado actual sin un get() extra, lo que
       // funciona correctamente dentro de transacciones y batch writes.
       allow update: if isAuthenticated() && (
@@ -218,6 +220,10 @@ service cloud.firestore {
         (resource.data.status == 'active' &&
          request.resource.data.status == 'used' &&
          request.resource.data.usedBy == request.auth.uid)
+        ||
+        (resource.data.status == 'used' &&
+         resource.data.usedBy == request.auth.uid &&
+         request.resource.data.status == 'deactivated')
       );
 
       allow delete: if isAuthenticated() &&

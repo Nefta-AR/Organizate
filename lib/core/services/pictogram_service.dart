@@ -226,6 +226,57 @@ class PictogramService {
     await _settingsRefFor(userId).doc(pictoId).set(updates, SetOptions(merge: true));
   }
 
+  // ─── Edición de pictogramas personalizados ─────────────────────────────
+
+  /// Actualiza parcialmente un pictograma personalizado de [userId].
+  ///
+  /// Solo escribe los campos que llegan no-nulos, igual que
+  /// [updatePictogramSettingFor]. La etiqueta se normaliza a MAYÚSCULAS
+  /// con la misma regla que [createPictogram], para mantener la
+  /// consistencia visual del tablero.
+  ///
+  /// En comunicación aumentativa un error de escritura no es cosmético:
+  /// el texto es el mensaje. Por eso el pictograma debe poder corregirse
+  /// sin obligar a eliminarlo y volver a crearlo (perdiendo la foto).
+  static Future<void> updatePictogramFor({
+    required String userId,
+    required String pictogramId,
+    String? etiqueta,
+    String? textoTts,
+    String? categoria,
+  }) async {
+    final updates = <String, dynamic>{};
+    if (etiqueta  != null && etiqueta.trim().isNotEmpty) {
+      updates['etiqueta'] = etiqueta.trim().toUpperCase();
+    }
+    if (textoTts  != null && textoTts.trim().isNotEmpty) {
+      updates['textoTts'] = textoTts.trim();
+    }
+    if (categoria != null) updates['categoria'] = categoria;
+
+    if (updates.isEmpty) return;
+
+    await _pictogramsRefFor(userId).doc(pictogramId).update(updates);
+  }
+
+  /// Actualiza un pictograma del usuario autenticado actual.
+  ///
+  /// Equivalente a [updatePictogramFor] usando el UID actual.
+  static Future<void> updatePictogram({
+    required String pictogramId,
+    String? etiqueta,
+    String? textoTts,
+    String? categoria,
+  }) {
+    return updatePictogramFor(
+      userId:      _userId,
+      pictogramId: pictogramId,
+      etiqueta:    etiqueta,
+      textoTts:    textoTts,
+      categoria:   categoria,
+    );
+  }
+
   // ─── Eliminación ──────────────────────────────────────────────────────
 
   /// Elimina un pictograma del usuario [userId]: primero borra la imagen

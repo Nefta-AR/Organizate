@@ -512,6 +512,7 @@ class _PictogramManagerScreenState extends State<PictogramManagerScreen> {
           isVisible:         _visible(e.id),
           onCategoryTap:     () => _showCategoryPicker(e), // Abre el picker de categoría
           onToggleVisible:   () => _toggleVisible(e.id),   // Alterna visibilidad
+          onEdit:            e.esPersonalizado ? () => _editCustomPictogram(e) : null,
           onDelete:          e.esPersonalizado ? () => _deleteCustomPictogram(e) : null,
         );
       },
@@ -602,6 +603,77 @@ class _PictogramManagerScreenState extends State<PictogramManagerScreen> {
     await PictogramService.deletePictogramFor(widget.userId, firestoreId);
   }
 
+  // ─── Editar pictograma personalizado ─────────────────────────────────────
+
+  /// Edita nombre visible y texto de voz de un pictograma personalizado,
+  /// conservando la imagen. Un error de escritura en comunicación
+  /// aumentativa debe poder corregirse sin eliminar el pictograma.
+  Future<void> _editCustomPictogram(PictoEntry entry) async {
+    final firestoreId = entry.id.replaceFirst('custom_', '');
+    // El PictoEntry no lleva textoTts; lo buscamos en la lista de customs.
+    final custom = _customs.where((p) => p.id == firestoreId).firstOrNull;
+    if (custom == null) return;
+
+    final etiquetaController = TextEditingController(text: custom.etiqueta);
+    final ttsController      = TextEditingController(text: custom.textoTts);
+
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Editar pictograma'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: etiquetaController,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'Nombre visible',
+                hintText: 'Ej: LAVAR MANOS',
+              ),
+              textCapitalization: TextCapitalization.characters,
+              maxLength: 30,
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: ttsController,
+              decoration: const InputDecoration(
+                labelText: 'Texto de voz',
+                hintText: 'Lo que dirá al tocarlo',
+              ),
+              textCapitalization: TextCapitalization.sentences,
+              onSubmitted: (_) => Navigator.of(ctx).pop(true),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+
+    final newEtiqueta = etiquetaController.text.trim();
+    final newTts      = ttsController.text.trim();
+    etiquetaController.dispose();
+    ttsController.dispose();
+    if (saved != true || newEtiqueta.isEmpty || !mounted) return;
+
+    await PictogramService.updatePictogramFor(
+      userId:      widget.userId,
+      pictogramId: firestoreId,
+      etiqueta:    newEtiqueta,
+      textoTts:    newTts.isEmpty ? custom.textoTts : newTts,
+    );
+  }
+
   // ─── Restablecer toda la configuración ───────────────────────────────────
 
   /// Revierte todos los overrides de categoría y visibilidad al estado original.
@@ -681,6 +753,7 @@ class _PictoManagerCard extends StatelessWidget {
   final bool isVisible;             // Si el pictograma es visible en el tablero
   final VoidCallback onCategoryTap; // Callback al tocar el chip de categoría
   final VoidCallback onToggleVisible; // Callback al tocar el botón de visibilidad
+  final VoidCallback? onEdit;       // Solo para personalizados; null = no editable
   final VoidCallback? onDelete;     // Solo para personalizados; null = no se puede eliminar
 
   const _PictoManagerCard({
@@ -690,6 +763,7 @@ class _PictoManagerCard extends StatelessWidget {
     required this.isVisible,
     required this.onCategoryTap,
     required this.onToggleVisible,
+    this.onEdit,
     this.onDelete,
   });
 
@@ -722,6 +796,15 @@ class _PictoManagerCard extends StatelessWidget {
               ),
             ),
             const Divider(),
+            if (onEdit != null)
+              ListTile(
+                leading: const Icon(Icons.edit_rounded, color: Colors.blueGrey),
+                title: const Text('Editar nombre y voz'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  onEdit?.call();
+                },
+              ),
             ListTile(
               leading: const Icon(Icons.delete_rounded, color: Colors.red),
               title: const Text(

@@ -422,45 +422,72 @@ class _PantallaUsuarioTEAState extends State<PantallaUsuarioTEA>
   Future<void> _editarTexto(PictogramaDisplay picto) async {
     final currentText = _localOverrides[picto.id] ?? picto.textoTts;
     final controller = TextEditingController(text: currentText);
+    // Solo los personalizados permiten corregir la etiqueta visible:
+    // los del banco predefinido tienen su nombre fijo en el código.
+    final etiquetaController =
+        picto.esPersonalizado ? TextEditingController(text: picto.etiqueta) : null;
 
-    final newText = await showDialog<String>(
+    final saved = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('¿Qué dirá este pictograma?'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(hintText: 'Escribe lo que dirá'),
-          textCapitalization: TextCapitalization.sentences,
-          onSubmitted: (v) => Navigator.of(ctx).pop(v.trim()),
+        title: Text(picto.esPersonalizado
+            ? 'Editar pictograma'
+            : '¿Qué dirá este pictograma?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (etiquetaController != null) ...[
+              TextField(
+                controller: etiquetaController,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  labelText: 'Nombre visible',
+                  hintText: 'Ej: LAVAR MANOS',
+                ),
+                textCapitalization: TextCapitalization.characters,
+                maxLength: 30,
+              ),
+              const SizedBox(height: 8),
+            ],
+            TextField(
+              controller: controller,
+              autofocus: etiquetaController == null,
+              decoration: const InputDecoration(
+                labelText: 'Texto de voz',
+                hintText: 'Escribe lo que dirá',
+              ),
+              textCapitalization: TextCapitalization.sentences,
+              onSubmitted: (_) => Navigator.of(ctx).pop(true),
+            ),
+          ],
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(null),
+            onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
+            onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Guardar'),
           ),
         ],
       ),
     );
 
+    final newText = controller.text.trim();
+    final newEtiqueta = etiquetaController?.text.trim();
     controller.dispose();
-    if (newText == null || newText.isEmpty || !mounted) return;
+    etiquetaController?.dispose();
+    if (saved != true || newText.isEmpty || !mounted) return;
 
     if (picto.esPersonalizado) {
-      final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid == null) return;
       final firestoreId = picto.id.replaceFirst('custom_', '');
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection('pictograms')
-          .doc(firestoreId)
-          .update({'textoTts': newText});
+      await PictogramService.updatePictogram(
+        pictogramId: firestoreId,
+        etiqueta:    newEtiqueta,
+        textoTts:    newText,
+      );
     } else {
       if (mounted) setState(() => _localOverrides[picto.id] = newText);
     }
@@ -500,7 +527,10 @@ class _PantallaUsuarioTEAState extends State<PantallaUsuarioTEA>
             const Divider(),
             ListTile(
               leading: const Icon(Icons.record_voice_over_rounded),
-              title: const Text('Cambiar texto de voz'),
+              // Personalizados: edita nombre visible + voz. Predefinidos: solo voz.
+              title: Text(picto.esPersonalizado
+                  ? 'Editar nombre y voz'
+                  : 'Cambiar texto de voz'),
               onTap: () {
                 Navigator.pop(ctx);
                 _editarTexto(picto);

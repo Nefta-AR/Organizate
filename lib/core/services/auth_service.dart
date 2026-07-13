@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -301,21 +303,35 @@ class AuthService {
       throw Exception('Solo los tutores pueden generar códigos de invitación.');
     }
 
-    final code = _generateRandomCode();
     final tutorName = user.displayName ?? 'Tutor';
 
-    await _firestore.collection(_codesCollection).doc(code).set({
-      'code': code,
-      'tutorId': user.uid,
-      'tutorName': tutorName,
-      'createdAt': FieldValue.serverTimestamp(),
-      'status': 'active',
-      'usedBy': null,
-      'usedAt': null,
-      'expiresAt': Timestamp.fromDate(DateTime.now().add(const Duration(days: 7))),
-    });
+    // Verifica que el código generado no exista ya en Firestore antes de
+    // escribirlo. Un set() sobre un doc existente lo sobrescribiría por
+    // completo: si el código pertenecía a otro tutor las reglas lo rechazan
+    // (permission-denied), y si era propio destruiría el registro de una
+    // vinculación ya consumada. Con Random.secure() una colisión es
+    // extremadamente improbable; el reintento cubre el caso residual.
+    const maxAttempts = 5;
+    for (var attempt = 0; attempt < maxAttempts; attempt++) {
+      final code = _generateRandomCode();
+      final existing = await _firestore.collection(_codesCollection).doc(code).get();
+      if (existing.exists) continue;
 
-    return code;
+      await _firestore.collection(_codesCollection).doc(code).set({
+        'code': code,
+        'tutorId': user.uid,
+        'tutorName': tutorName,
+        'createdAt': FieldValue.serverTimestamp(),
+        'status': 'active',
+        'usedBy': null,
+        'usedAt': null,
+        'expiresAt': Timestamp.fromDate(DateTime.now().add(const Duration(days: 7))),
+      });
+
+      return code;
+    }
+
+    throw Exception('No se pudo generar un código único. Intenta de nuevo.');
   }
 
   /// Valida un código sin consumirlo. Retorna null si el documento no existe,
@@ -445,6 +461,40 @@ class AuthService {
     await batch.commit();
   }
 
+  /// Desvinculación iniciada por el propio usuario (no por el tutor).
+  ///
+  /// Marca la entrada en su subcolección `linkedTutors` como `inactive`
+  /// (fuente de verdad de las reglas de seguridad) y desactiva los códigos
+  /// que consumió con ese tutor, para que el usuario también desaparezca
+  /// de la lista "Usuarios vinculados" del panel del tutor.
+  static Future<void> removeTutorLink(String tutorId) async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception('No hay usuario autenticado.');
+
+    final batch = _firestore.batch();
+
+    batch.set(
+      _firestore.collection(_usersCollection).doc(user.uid).collection('linkedTutors').doc(tutorId),
+      {'status': 'inactive'},
+      SetOptions(merge: true),
+    );
+
+    // Los códigos usados por este usuario con este tutor alimentan la lista
+    // del panel del tutor (getLinkedPatientsStream); hay que desactivarlos.
+    final codesSnap = await _firestore
+        .collection(_codesCollection)
+        .where('tutorId', isEqualTo: tutorId)
+        .where('usedBy', isEqualTo: user.uid)
+        .where('status', isEqualTo: 'used')
+        .get();
+
+    for (final doc in codesSnap.docs) {
+      batch.update(doc.reference, {'status': 'deactivated'});
+    }
+
+    await batch.commit();
+  }
+
   // ─────────────────────────────────────────────────────────────
   // CONSULTAS DE VINCULACIÓN
   // ─────────────────────────────────────────────────────────────
@@ -529,19 +579,15 @@ class AuthService {
     await _auth.sendPasswordResetEmail(email: email.trim());
   }
 
-  /// Genera un código de 6 caracteres usando el timestamp actual como semilla.
+  /// Genera un código de 6 caracteres con aleatoriedad criptográfica.
   ///
   /// El alfabeto excluye caracteres ambiguos (0/O, 1/I/l) para facilitar
   /// la transcripción manual del código desde una pantalla compartida.
-  /// No usa `Random.secure()` porque la entropía del timestamp es suficiente
-  /// para un código de uso único con TTL de 7 días.
+  /// Usa `Random.secure()`: cada posición es independiente, lo que da
+  /// 32^6 (~1.070 millones) de combinaciones posibles.
   static String _generateRandomCode() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    final random = DateTime.now().millisecondsSinceEpoch;
-    final code = List.generate(6, (index) {
-      final idx = (random + index * 7919) % chars.length;
-      return chars[idx];
-    }).join();
-    return code;
+    final random = Random.secure();
+    return List.generate(6, (_) => chars[random.nextInt(chars.length)]).join();
   }
 }
