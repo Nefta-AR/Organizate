@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Actualización del Informe Técnico — Mejoras y Correcciones (Julio 2026)</title>
+<style>
+  body { font-family: Calibri, sans-serif; font-size: 11pt; line-height: 1.45; margin: 2.5cm; color: #1a1a1a; }
+  h1 { font-size: 20pt; color: #2c3e50; border-bottom: 3px solid #4a90e2; padding-bottom: 6px; }
+  h2 { font-size: 15pt; color: #2c3e50; margin-top: 28px; border-bottom: 1px solid #cfd8e3; padding-bottom: 4px; }
+  h3 { font-size: 12.5pt; color: #34495e; margin-top: 20px; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 10pt; }
+  th { background: #dce6f1; border: 1px solid #9db3c8; padding: 6px 8px; text-align: left; }
+  td { border: 1px solid #b8c6d4; padding: 6px 8px; vertical-align: top; }
+  code { font-family: Consolas, monospace; font-size: 9.5pt; background: #f0f3f7; padding: 1px 4px; }
+  pre { font-family: Consolas, monospace; font-size: 9pt; background: #f4f6f9; border: 1px solid #d5dde5; padding: 10px; white-space: pre-wrap; }
+  .instruccion { background: #fff8e1; border-left: 4px solid #f0a500; padding: 8px 12px; margin: 10px 0; font-size: 10pt; }
+  .nueva { color: #1e7e34; font-weight: bold; }
+  .portada { text-align: center; margin-top: 120px; margin-bottom: 120px; }
+  .figura { font-style: italic; font-size: 9.5pt; text-align: center; color: #555; }
+</style>
+</head>
+<body>
+
+<div class="portada">
+  <h1 style="border:none;">Simple — Prótesis Cognitiva para Usuarios Neurodivergentes</h1>
+  <p style="font-size:14pt;"><b>Actualización del Informe Técnico para Defensa de Título</b></p>
+  <p style="font-size:12pt;">Mejoras de funcionalidad y correcciones de defectos — Sprint de estabilización</p>
+  <p>Julio 2026 · Complementa la versión revisada del informe (defensa 28/07/2026)</p>
+</div>
+
+<h1>Guía de inserción</h1>
+<p>Este documento contiene <b>únicamente el contenido nuevo o modificado</b> respecto de la versión revisada
+del Informe Técnico. Cada bloque indica la sección de destino y la acción a realizar (insertar o reemplazar).
+Los diagramas nuevos se entregan como código Mermaid (mismo flujo de trabajo del Anexo D: renderizar en
+<i>Mermaid Live Editor</i> y pegar la imagen resultante).</p>
+
+<table>
+  <tr><th>Bloque</th><th>Sección del informe</th><th>Acción</th></tr>
+  <tr><td>A</td><td>5.3 Alcance del proyecto</td><td>Agregar 1 viñeta a la lista de módulos</td></tr>
+  <tr><td>B</td><td>10.1 Requerimientos funcionales (Tabla 4)</td><td>Agregar filas RF-16 a RF-20</td></tr>
+  <tr><td>C</td><td>11.4 Estructura de la base de datos</td><td>Agregar 2 viñetas de colecciones</td></tr>
+  <tr><td>D</td><td>12.2 Módulo 2: Pictogramas</td><td>Agregar párrafo final</td></tr>
+  <tr><td>E</td><td>12.3 Módulo 3: Gestión de Tareas</td><td>Agregar párrafo final</td></tr>
+  <tr><td>F</td><td>12.5 Módulo 5: Vinculación</td><td><b>Reemplazar la sección completa</b></td></tr>
+  <tr><td>G</td><td>12.9 (nueva) Módulo 8: Notificaciones Push Remotas</td><td>Insertar sección nueva + Figuras 8, 9 y 10</td></tr>
+  <tr><td>H</td><td>12.8 Dificultades y soluciones (Tabla 7)</td><td>Agregar 7 filas</td></tr>
+  <tr><td>I</td><td>13.1 Tipos de pruebas aplicadas</td><td>Agregar subsección "Pruebas de diagnóstico en producción"</td></tr>
+  <tr><td>J</td><td>13.2 Validación de requerimientos (Tabla 8)</td><td>Agregar filas RF-16 a RF-20</td></tr>
+  <tr><td>K</td><td>14.2 Limitaciones identificadas</td><td>Agregar 1 viñeta</td></tr>
+  <tr><td>L</td><td>16.1 Trabajo futuro</td><td>Agregar 5 viñetas</td></tr>
+  <tr><td>M</td><td>18. Anexo D</td><td>Referenciar diagramas nuevos D7 y D8</td></tr>
+</table>
+
+<h1>Bloque A — Sección 5.3: Alcance del proyecto</h1>
+<div class="instruccion">Agregar esta viñeta a la lista de módulos, después de "Módulo de historial de actividad":</div>
+<ul>
+  <li><b>Módulo de notificaciones push remotas</b> (Firebase Cloud Messaging + Cloud Functions):
+  avisos inmediatos de asignación y completado de tareas entre tutor y usuario, y recordatorios
+  programados procesados en servidor mediante una cola en Firestore.</li>
+</ul>
+
+<h1>Bloque B — Tabla 4: Requerimientos funcionales (filas nuevas)</h1>
+<table>
+  <tr><th>ID</th><th>Requerimiento</th><th>Prioridad</th><th>Módulo</th></tr>
+  <tr><td>RF-16</td><td>Enviar notificación push inmediata al usuario cuando el tutor le asigna una tarea, y al tutor cuando el usuario completa una tarea</td><td>Alta</td><td>Notificaciones</td></tr>
+  <tr><td>RF-17</td><td>Programar recordatorios remotos de tareas mediante cola en Firestore (<code>notificationQueue</code>) procesada por Cloud Functions, operativos aunque la app esté cerrada</td><td>Media</td><td>Notificaciones</td></tr>
+  <tr><td>RF-18</td><td>Permitir la desvinculación bidireccional: tanto el tutor como el usuario pueden terminar el vínculo desde su propia pantalla, con confirmación</td><td>Media</td><td>Vinculación</td></tr>
+  <tr><td>RF-19</td><td>Editar pictogramas personalizados (nombre visible y texto de voz) conservando la imagen, desde el tablero del usuario y desde el gestor del tutor</td><td>Media</td><td>Pictogramas</td></tr>
+  <tr><td>RF-20</td><td>Regenerar automáticamente las tareas recurrentes (diaria/semanal/mensual) al completarse, creando la siguiente ocurrencia con su recordatorio</td><td>Media</td><td>Tareas</td></tr>
+</table>
+
+<h1>Bloque C — Sección 11.4: Estructura de la base de datos</h1>
+<div class="instruccion">Agregar estas viñetas a la lista de colecciones:</div>
+<ul>
+  <li><b>users/{userId}/notificationQueue/{taskId}</b>: cola de recordatorios remotos con
+  <code>runAt, scheduledAt, status (pending/sent/error), type, dueDate, reminderMinutes</code>.
+  Es procesada por las Cloud Functions <code>processDueNotifications</code> (programada) y
+  <code>processNotificationQueueOnWrite</code> (reactiva).</li>
+  <li><b>users/{userId}/legalConsents/{policyVersion}</b>: respaldo inmutable de la aceptación de la
+  Política de Privacidad (reglas: el usuario solo puede crear su propia aceptación; nunca modificarla ni borrarla).</li>
+</ul>
+
+<h1>Bloque D — Sección 12.2: Pictogramas (párrafo adicional)</h1>
+<div class="instruccion">Agregar al final de la sección 12.2:</div>
+<p><b>Edición sin pérdida de la imagen:</b> en comunicación aumentativa un error de escritura no es
+cosmético: el texto <i>es</i> el mensaje. Por ello se implementó
+<code>PictogramService.updatePictogramFor()</code>, que actualiza parcialmente <code>etiqueta</code>
+(normalizada a mayúsculas con la misma regla de la creación) y <code>textoTts</code> sin tocar la
+imagen de Storage. La acción está disponible en ambos roles mediante pulsación larga
+("Editar nombre y voz"): en el tablero del usuario y en el gestor de pictogramas del tutor, que
+comparten la misma pantalla de gestión. Adicionalmente, el selector de categorías se convirtió en
+una lista desplazable con altura máxima del 75% de la pantalla, resolviendo el corte de las últimas
+opciones en dispositivos con barra de navegación de 3 botones.</p>
+
+<h1>Bloque E — Sección 12.3: Gestión de Tareas (párrafo adicional)</h1>
+<div class="instruccion">Agregar al final de la sección 12.3:</div>
+<p><b>Tareas recurrentes server-side:</b> las tareas con campo <code>recurrence</code>
+(daily/weekly/monthly) se regeneran en el servidor mediante la Cloud Function
+<code>recreateRecurringTask</code>: al detectar la transición <code>done: false → true</code>, calcula
+la próxima fecha de vencimiento, crea la nueva ocurrencia (trazable vía
+<code>generatedFromTaskId</code> y visible desde <code>availableFrom</code>) y encola su recordatorio en
+<code>notificationQueue</code>. Ejecutar esta lógica en servidor garantiza la regeneración aunque el
+usuario cierre la app inmediatamente después de completar la tarea.</p>
+
+<h1>Bloque F — Sección 12.5: Vinculación Tutor-Usuario (REEMPLAZO COMPLETO)</h1>
+<div class="instruccion">Reemplazar el texto completo de la sección 12.5 por el siguiente:</div>
+<p>Sistema de códigos de invitación de 6 caracteres alfanuméricos (alfabeto de 32 símbolos que
+excluye 0/O, 1/I/l para evitar confusión visual). La generación usa
+<code>Random.secure()</code> —aleatoriedad de grado criptográfico provista por el sistema
+operativo—, lo que produce un espacio de 32<sup>6</sup> ≈ 1.073 millones de combinaciones. Antes de
+persistir, el servicio verifica que el código no exista en Firestore y reintenta ante la
+improbable colisión: un <code>set()</code> sobre un documento existente constituye una
+<i>actualización</i> para las reglas de seguridad, por lo que sin esta verificación una colisión
+podía ser rechazada (<code>permission-denied</code>, si el código pertenecía a otro tutor) o
+sobrescribir silenciosamente una vinculación ya consumada (si era propio). Esta corrección se
+detalla en la Tabla 7.</p>
+<p>La aceptación del código ejecuta un batch atómico de Firestore que marca el código como
+<code>used</code> y crea <code>linkedTutors/{tutorId}</code> con <code>status: 'active'</code>,
+fuente de verdad que las reglas consultan mediante <code>isLinkedTutor / isLinkedPatient</code>
+para toda operación cruzada de lectura/escritura.</p>
+<p><b>Desvinculación bidireccional:</b> ambos extremos pueden terminar el vínculo con
+confirmación previa. El tutor invoca <code>removePatientLink()</code> (autorizado porque el ID del
+documento en <code>linkedTutors</code> es su propio UID); el usuario invoca la nueva
+<code>removeTutorLink()</code>, que marca la vinculación como <code>inactive</code> y desactiva el
+código consumido. Para esto último se agregó una cláusula a las reglas de
+<code>invitationCodes</code> que autoriza al usuario que consumió un código
+(<code>usedBy == request.auth.uid</code>) a transicionarlo de <code>used</code> a
+<code>deactivated</code>. Este diseño preserva la autonomía del usuario —requisito ético en un
+sistema de supervisión— y mantiene coherente la lista "Usuarios vinculados" del panel del tutor,
+que se deriva de los códigos con <code>status == 'used'</code>. Ver Figura 11 (Anexo D.8).</p>
+
+<h1>Bloque G — Sección 12.9 (NUEVA): Módulo 8 — Notificaciones Push Remotas</h1>
+<div class="instruccion">Insertar como sección nueva después de 12.7 (IA) y antes de 12.8 (Dificultades). Las Figuras 8, 9 y 10 corresponden a los diagramas del Anexo D.7 (código Mermaid listo para renderizar).</div>
+
+<p>El módulo implementa el ciclo completo de mensajería remota sobre <b>Firebase Cloud Messaging
+(FCM)</b> con cinco Cloud Functions desplegadas en producción:</p>
+
+<table>
+  <tr><th>Función</th><th>Disparador</th><th>Responsabilidad</th></tr>
+  <tr><td><code>notifyUserOnTutorTask</code></td><td>Firestore <code>onCreate</code> en <code>tasks</code></td><td>Push inmediata al usuario cuando el tutor crea una tarea (<code>addedByTutor: true</code>)</td></tr>
+  <tr><td><code>notifyTutorOnTaskComplete</code></td><td>Firestore <code>onUpdate</code> en <code>tasks</code></td><td>Push a todos los tutores vinculados en la transición <code>done: false → true</code></td></tr>
+  <tr><td><code>recreateRecurringTask</code></td><td>Firestore <code>onUpdate</code> en <code>tasks</code></td><td>Regenera la siguiente ocurrencia de tareas recurrentes y encola su recordatorio</td></tr>
+  <tr><td><code>processDueNotifications</code></td><td>Programada (scheduler)</td><td>Procesa la cola <code>notificationQueue</code> y envía los recordatorios vencidos</td></tr>
+  <tr><td><code>processNotificationQueueOnWrite</code></td><td>Firestore <code>onWrite</code> en la cola</td><td>Procesamiento reactivo de entradas nuevas o reprogramadas</td></tr>
+</table>
+
+<p><b>Gestión de tokens:</b> el token FCM identifica a la instalación de la app en un dispositivo,
+no a la cuenta. <code>PushNotificationService.syncUserToken()</code> se ejecuta tras el login
+(desde AuthGate, solo después de aceptar la Política de Privacidad vigente: privacidad por diseño),
+guarda el token con <code>arrayUnion</code> —soportando múltiples dispositivos por usuario— y se
+suscribe a <code>onTokenRefresh</code> para las rotaciones periódicas. Las funciones de envío
+implementan <b>auto-limpieza</b>: los tokens rechazados por FCM
+(<code>registration-token-not-registered</code>, etc.) se eliminan del documento del usuario en la
+misma ejecución.</p>
+
+<p><b>Entrega en primer plano:</b> Android no muestra automáticamente las notificaciones FCM cuando
+la app está abierta; el listener <code>onMessage</code> las convierte en notificaciones locales
+mediante <code>NotificationService</code> sobre el canal <code>tareas_channel</code> (importancia
+máxima, sonido y vibración), garantizando percepción multisensorial consistente con los principios
+de accesibilidad del proyecto.</p>
+
+<p class="figura">Figura 8: Secuencia — asignación de tarea por el tutor con push al usuario (Anexo D.7.1)<br>
+Figura 9: Secuencia — completado de tarea con push al tutor y regeneración de recurrencia (Anexo D.7.2)<br>
+Figura 10: Flujo — ciclo de vida del token FCM y corrección del respaldo automático (Anexo D.7.3)</p>
+
+<h1>Bloque H — Tabla 7: Dificultades y soluciones técnicas (filas nuevas)</h1>
+<table>
+  <tr><th>Dificultad</th><th>Solución técnica</th><th>Impacto</th></tr>
+  <tr>
+    <td>Colisiones de códigos de invitación: el generador derivaba las 6 posiciones de un único timestamp (mod 32), produciendo solo 32 códigos posibles. Una colisión con código ajeno era rechazada por las reglas (permission-denied intermitente al generar) y una colisión con código propio sobrescribía una vinculación ya consumada (el tutor "perdía" a su usuario vinculado)</td>
+    <td>Generador con <code>Random.secure()</code> (32<sup>6</sup> combinaciones, posiciones independientes) + verificación de existencia del documento antes de escribir, con reintento acotado</td>
+    <td>Vinculación determinista y sin pérdida de vínculos; eliminado el error intermitente al generar códigos</td>
+  </tr>
+  <tr>
+    <td>Push perdidas tras reinstalar el APK: el Auto Backup de Android restauraba el caché del SDK de FCM con el token de la instalación anterior (invalidado); la app registraba un token muerto y toda push fallaba con <code>NotRegistered</code>, re-registrándolo en cada arranque</td>
+    <td><code>android:allowBackup="false"</code> + <code>fullBackupContent="false"</code> en el AndroidManifest; limpieza de tokens muertos en Firestore. Diagnóstico verificado con envío directo a la API HTTP v1 de FCM</td>
+    <td>Cada instalación registra un token nuevo y válido; pipeline de push confiable tras reinstalaciones</td>
+  </tr>
+  <tr>
+    <td>Crash en release por R8: la minificación eliminaba metadatos genéricos (<code>TypeToken</code>) usados por flutter_local_notifications</td>
+    <td>Deshabilitar R8/minificación en el build de release para el MVP</td>
+    <td>Notificaciones locales estables en el APK de producción</td>
+  </tr>
+  <tr>
+    <td>El temporizador de rutina trataba la madrugada (00:00–05:59) como bloque de Mañana: anunciaba "pronto cambiaremos a la Tarde" y calculaba el fin de bloque a las 12:00 en lugar de las 6:00</td>
+    <td>Tramo explícito <code>h &lt; 6</code> en las tres funciones de bloque horario (<code>_siguienteActividad</code>, <code>_minutosRestantes</code>, <code>_progreso</code>): la noche inicia a las 18:00 de ayer y termina a las 6:00 de hoy</td>
+    <td>Rutina Mañana/Tarde/Noche coherente las 24 horas</td>
+  </tr>
+  <tr>
+    <td>Bottom sheets tapados por la barra de navegación del sistema (3 botones): el botón "Guardar Pictograma" y las últimas categorías del selector quedaban ocultos y sin scroll</td>
+    <td>Padding inferior dinámico con <code>MediaQuery.viewPadding.bottom</code> + selector de categorías desplazable (Flexible + SingleChildScrollView) con altura máxima del 75%</td>
+    <td>UI utilizable en cualquier modo de navegación de Android</td>
+  </tr>
+  <tr>
+    <td>Etiqueta "Pictogramas" de la barra de navegación del tutor se partía en dos líneas cuando el teléfono tenía la fuente del sistema agrandada (accesibilidad)</td>
+    <td>Tipografía de 11pt en el tema del NavigationBar + <code>MediaQuery.withClampedTextScaling(maxScaleFactor: 1.0)</code> acotado a la barra (el resto de la app respeta la fuente del usuario)</td>
+    <td>Cinco pestañas alineadas en una sola línea en todos los dispositivos</td>
+  </tr>
+  <tr>
+    <td>Cambio de cuenta de Google devolvía error: la cuenta cacheada de la sesión anterior impedía seleccionar una cuenta distinta</td>
+    <td><code>GoogleSignIn.signOut()</code> previo a <code>signIn()</code> para forzar siempre el selector de cuentas</td>
+    <td>Alternancia fluida entre cuentas de prueba y de usuarios reales</td>
+  </tr>
+</table>
+
+<h1>Bloque I — Sección 13.1: Pruebas (subsección nueva)</h1>
+<div class="instruccion">Agregar después de "Pruebas de usabilidad":</div>
+<h3>Pruebas de diagnóstico en producción</h3>
+<p>Durante la fase de estabilización se aplicó una metodología de diagnóstico directo sobre el
+entorno productivo, complementaria a las pruebas locales:</p>
+<ul>
+  <li><b>Inspección de datos vía API REST de Firestore</b> (autenticada con OAuth 2.0): consulta de
+  documentos y <code>runQuery</code> estructuradas para reconstruir la línea de tiempo de una
+  incidencia (p. ej., el código de invitación sobrescrito y los tokens FCM huérfanos), y parches
+  quirúrgicos con <code>updateMask</code> para reparar datos sin tocar la app.</li>
+  <li><b>Aislamiento del pipeline de push</b>: envío de un mensaje de prueba directamente a la API
+  HTTP v1 de FCM contra el token registrado del dispositivo. La respuesta
+  <code>404 NotRegistered</code> permitió descartar la app y las Cloud Functions, y atribuir la
+  falla al token restaurado por el Auto Backup de Android.</li>
+  <li><b>Lectura de logs de Cloud Functions</b> (<code>firebase functions:log</code>) para verificar
+  disparo, duración y resultado de cada función ante eventos reales.</li>
+  <li><b>Pruebas de regresión</b> añadidas a los casos unitarios: unicidad estadística del generador
+  de códigos (Random.secure) y límites de los bloques horarios de rutina, incluyendo la franja de
+  madrugada (00:00–05:59).</li>
+</ul>
+
+<h1>Bloque J — Tabla 8: Validación de requerimientos (filas nuevas)</h1>
+<table>
+  <tr><th>Requerimiento</th><th>Estado</th><th>Evidencia</th></tr>
+  <tr><td>RF-16: Push asignación/completado</td><td>✓ Cumplido</td><td>Cloud Functions notifyUserOnTutorTask / notifyTutorOnTaskComplete verificadas end-to-end en dispositivos físicos</td></tr>
+  <tr><td>RF-17: Recordatorios remotos</td><td>✓ Cumplido</td><td>Cola notificationQueue + processDueNotifications (scheduler)</td></tr>
+  <tr><td>RF-18: Desvinculación bidireccional</td><td>✓ Cumplido</td><td>removeTutorLink/removePatientLink + regla de desactivación de códigos por el usuario</td></tr>
+  <tr><td>RF-19: Edición de pictogramas</td><td>✓ Cumplido</td><td>updatePictogramFor en tablero de usuario y gestor del tutor</td></tr>
+  <tr><td>RF-20: Tareas recurrentes</td><td>✓ Cumplido</td><td>recreateRecurringTask con generatedFromTaskId y recordatorio encolado</td></tr>
+</table>
+
+<h1>Bloque K — Sección 14.2: Limitaciones identificadas (viñeta nueva)</h1>
+<ul>
+  <li><b>Latencia de push dependiente del fabricante:</b> las políticas de energía de algunos OEM
+  (p. ej., MIUI/Xiaomi con apps instaladas por APK) pueden retener notificaciones en segundo plano.
+  Se mitiga con la configuración del dispositivo (inicio automático, batería sin restricciones); la
+  distribución vía Play Store reduce este efecto.</li>
+</ul>
+
+<h1>Bloque L — Sección 16.1: Trabajo futuro (viñetas nuevas)</h1>
+<ul>
+  <li><b>Vinculación por código QR:</b> el QR transporta el mismo código de 6 caracteres, por lo que
+  ambas modalidades coexisten sin cambios de backend (<code>qr_flutter</code> para mostrar,
+  <code>mobile_scanner</code> para leer). Mejora de accesibilidad: escanear exige menos demanda
+  ejecutiva que transcribir.</li>
+  <li><b>Limpieza del token FCM al cerrar sesión:</b> remover el token del documento del usuario en
+  el logout para que un dispositivo compartido no siga recibiendo notificaciones de la cuenta
+  anterior (privacidad por diseño).</li>
+  <li><b>Deduplicación de notificaciones de completado en servidor:</b> campo
+  <code>completionNotifiedAt</code> en la tarea para notificar al tutor solo la primera vez,
+  haciendo inocuo el des-marcado/re-marcado por toques accidentales.</li>
+  <li><b>Bloques horarios de rutina configurables por usuario:</b> externalizar los límites 6/12/18
+  a Firestore para adaptar la rutina a horarios familiares reales.</li>
+  <li><b>Edición persistente del texto de voz de pictogramas del banco predefinido:</b> almacenar el
+  override de <code>textoTts</code> en <code>pictogramSettings</code> (hoy el ajuste del banco es
+  local y volátil; los personalizados ya persisten).</li>
+</ul>
+
+<h1>Bloque M — Anexo D: diagramas nuevos</h1>
+<div class="instruccion">Agregar a la lista del Anexo D:</div>
+<ul>
+  <li><b>D.7 — Secuencias de Notificaciones Push Remotas</b> (Figuras 8, 9 y 10): asignación de tarea
+  con push al usuario; completado con push al tutor y regeneración de recurrencia; ciclo de vida del
+  token FCM y corrección del Auto Backup. Archivo: <code>docs/anexo_d/D7_Secuencia_Notificaciones_Push.md</code>.</li>
+  <li><b>D.8 — Secuencia de Desvinculación Bidireccional</b> (Figura 11): flujos iniciados por el
+  usuario y por el tutor, con el extracto de la regla de seguridad agregada. Archivo:
+  <code>docs/anexo_d/D8_Secuencia_Desvinculacion.md</code>.</li>
+</ul>
+
+<h2>Código Mermaid de las figuras (para renderizar en mermaid.live)</h2>
+
+<h3>Figura 8 — Asignación de tarea con push al usuario</h3>
+<pre>
+sequenceDiagram
+    autonumber
+    actor T as Tutor (App Flutter)
+    participant FS as Cloud Firestore
+    participant CF as Cloud Function&lt;br/&gt;notifyUserOnTutorTask
+    participant FCM as Firebase Cloud&lt;br/&gt;Messaging
+    participant D as Dispositivo del Usuario
+
+    T-&gt;&gt;FS: add users/{uid}/tasks&lt;br/&gt;{text, addedByTutor: true, ...}
+    FS--&gt;&gt;CF: Trigger onCreate
+    CF-&gt;&gt;CF: ¿addedByTutor == true?&lt;br/&gt;(si no, termina)
+    CF-&gt;&gt;FS: get users/{uid}/linkedTutors (nombre del tutor)
+    CF-&gt;&gt;FS: get users/{uid}.fcmTokens
+    CF-&gt;&gt;FCM: sendEachForMulticast&lt;br/&gt;(prioridad HIGH, canal tareas_channel)
+    FCM--&gt;&gt;D: Push: "«Tutor» te asignó una tarea"
+    alt Token inválido (UNREGISTERED)
+        FCM--&gt;&gt;CF: error registration-token-not-registered
+        CF-&gt;&gt;FS: arrayRemove(token inválido)&lt;br/&gt;en users/{uid}.fcmTokens
+    end
+    Note over D: En primer plano, la app convierte el&lt;br/&gt;mensaje FCM en notificación local&lt;br/&gt;(onMessage → NotificationService)
+</pre>
+
+<h3>Figura 9 — Completado de tarea con push al tutor y recurrencia</h3>
+<pre>
+sequenceDiagram
+    autonumber
+    actor U as Usuario (App Flutter)
+    participant FS as Cloud Firestore
+    participant CF1 as Cloud Function&lt;br/&gt;notifyTutorOnTaskComplete
+    participant CF2 as Cloud Function&lt;br/&gt;recreateRecurringTask
+    participant FCM as Firebase Cloud&lt;br/&gt;Messaging
+    participant DT as Dispositivo del Tutor
+
+    U-&gt;&gt;FS: update tasks/{taskId}&lt;br/&gt;{done: true, completedAt}
+    FS--&gt;&gt;CF1: Trigger onUpdate
+    FS--&gt;&gt;CF2: Trigger onUpdate
+    CF1-&gt;&gt;CF1: ¿done pasó de false a true?&lt;br/&gt;(si no, termina)
+    CF1-&gt;&gt;FS: get linkedTutors del usuario
+    loop Por cada tutor vinculado
+        CF1-&gt;&gt;FS: get users/{tutorId}.fcmTokens
+        CF1-&gt;&gt;FCM: sendEachForMulticast&lt;br/&gt;"✅ «Usuario» completó una tarea"
+        FCM--&gt;&gt;DT: Push al tutor
+    end
+    CF2-&gt;&gt;CF2: ¿Tiene recurrence y dueDate?
+    CF2-&gt;&gt;FS: add tasks (próxima ocurrencia,&lt;br/&gt;generatedFromTaskId)
+    CF2-&gt;&gt;FS: set notificationQueue/{newTaskId}&lt;br/&gt;(recordatorio programado)
+</pre>
+
+<h3>Figura 10 — Ciclo de vida del token FCM y corrección del Auto Backup</h3>
+<pre>
+flowchart TD
+    A[Instalación del APK] --&gt; B{¿Auto Backup de Android&lt;br/&gt;restaura datos previos?}
+    B -- "Sí (allowBackup=true,&lt;br/&gt;comportamiento por defecto)" --&gt; C[El caché del SDK de FCM&lt;br/&gt;vuelve con el TOKEN VIEJO&lt;br/&gt;invalidado al desinstalar]
+    C --&gt; D[getToken devuelve&lt;br/&gt;el token muerto]
+    D --&gt; E[La app lo registra en&lt;br/&gt;users/uid.fcmTokens]
+    E --&gt; F[FCM responde UNREGISTERED:&lt;br/&gt;ninguna push llega al dispositivo]
+    F --&gt; G[La Cloud Function limpia el token,&lt;br/&gt;pero la app lo re-registra&lt;br/&gt;en cada arranque: círculo vicioso]
+    B -- "No (allowBackup=false,&lt;br/&gt;corrección aplicada)" --&gt; H[Instalación limpia:&lt;br/&gt;FCM genera un token NUEVO y válido]
+    H --&gt; I[syncUserToken lo guarda con arrayUnion&lt;br/&gt;y se suscribe a onTokenRefresh]
+    I --&gt; J[Las push llegan con normalidad]
+
+    style F fill:#fdd,stroke:#c00
+    style G fill:#fdd,stroke:#c00
+    style J fill:#dfd,stroke:#080
+</pre>
+
+<h3>Figura 11 — Desvinculación iniciada por el usuario</h3>
+<pre>
+sequenceDiagram
+    autonumber
+    actor U as Usuario (App Flutter)
+    participant AS as AuthService.removeTutorLink()
+    participant FS as Cloud Firestore
+    participant PT as Panel del Tutor (stream)
+
+    U-&gt;&gt;U: Botón "Desvincularme de este tutor"&lt;br/&gt;+ diálogo de confirmación
+    U-&gt;&gt;AS: removeTutorLink(tutorId)
+    AS-&gt;&gt;FS: batch.set linkedTutors/{tutorId}&lt;br/&gt;{status: 'inactive'}
+    Note right of FS: Permitido: isOwner(userId)
+    AS-&gt;&gt;FS: query invitationCodes&lt;br/&gt;where tutorId == tutor&lt;br/&gt;and usedBy == uid and status == 'used'
+    AS-&gt;&gt;FS: batch.update {status: 'deactivated'}
+    Note right of FS: Permitido por la regla nueva:&lt;br/&gt;usedBy == request.auth.uid&lt;br/&gt;&amp;&amp; status 'used' → 'deactivated'
+    AS-&gt;&gt;FS: batch.commit() (atómico)
+    FS--&gt;&gt;PT: snapshot: el código deja de estar 'used'
+    PT-&gt;&gt;PT: El usuario desaparece de&lt;br/&gt;"Usuarios vinculados"
+    FS--&gt;&gt;U: getLinkedTutorStream emite null&lt;br/&gt;→ vuelve al formulario de código
+</pre>
+
+</body>
+</html>
