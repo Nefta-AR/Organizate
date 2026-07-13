@@ -724,6 +724,8 @@ class _PantallaUsuarioTEAState extends State<PantallaUsuarioTEA>
 
   String get _siguienteActividad {
     final h = DateTime.now().hour;
+    // La madrugada (0-6) sigue siendo bloque de Noche: lo siguiente es la Mañana.
+    if (h < 6) return 'la Mañana';
     if (h < 12) return 'la Tarde';
     if (h < 18) return 'la Noche';
     return 'la Mañana';
@@ -1122,7 +1124,10 @@ class _ContadorTransicionState extends State<ContadorTransicion>
     final h = ahora.hour;
 
     DateTime finBloque;
-    if (h < 12) {
+    if (h < 6) {
+      // Madrugada: el bloque de Noche termina a las 6:00 de HOY.
+      finBloque = DateTime(ahora.year, ahora.month, ahora.day, 6, 0, 0);
+    } else if (h < 12) {
       finBloque = DateTime(ahora.year, ahora.month, ahora.day, 12, 0, 0);
     } else if (h < 18) {
       finBloque = DateTime(ahora.year, ahora.month, ahora.day, 18, 0, 0);
@@ -1141,7 +1146,11 @@ class _ContadorTransicionState extends State<ContadorTransicion>
     DateTime inicioBloque;
     DateTime finBloque;
 
-    if (h < 12) {
+    if (h < 6) {
+      // Madrugada: bloque de Noche iniciado AYER a las 18:00, termina hoy 6:00.
+      inicioBloque = DateTime(ahora.year, ahora.month, ahora.day - 1, 18, 0, 0);
+      finBloque = DateTime(ahora.year, ahora.month, ahora.day, 6, 0, 0);
+    } else if (h < 12) {
       inicioBloque = DateTime(ahora.year, ahora.month, ahora.day, 6, 0, 0);
       finBloque = DateTime(ahora.year, ahora.month, ahora.day, 12, 0, 0);
     } else if (h < 18) {

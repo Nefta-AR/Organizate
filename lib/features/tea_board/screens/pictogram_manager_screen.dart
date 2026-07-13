@@ -521,76 +521,101 @@ class _PictogramManagerScreenState extends State<PictogramManagerScreen> {
 
   // ─── Bottom sheet: selector de categoría ─────────────────────────────────
 
-  /// Muestra un bottom sheet con las 6 opciones de categoría.
+  /// Muestra un bottom sheet con las opciones de categoría.
   /// La categoría actual aparece marcada con un check verde.
+  ///
+  /// La lista de opciones es desplazable (Flexible + SingleChildScrollView)
+  /// y el sheet se limita al 75% de la pantalla: con 8 categorías las
+  /// últimas quedaban cortadas bajo la barra de navegación y sin scroll.
   void _showCategoryPicker(PictoEntry entry) {
     final current = _efectiva(entry.id, entry.defaultCategoria);
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true, // Necesario para controlar la altura máxima
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min, // El sheet solo ocupa lo necesario
-          children: [
-            const SizedBox(height: 12),
+      builder: (ctx) {
+        // Alto de la barra de navegación del sistema (3 botones o gestos).
+        final navBarInset = MediaQuery.of(ctx).viewPadding.bottom;
 
-            // Handle visual del sheet (barra gris redondeada)
-            Container(
-              width: 36, height: 4,
-              decoration: BoxDecoration(
-                color:        Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
+        return ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(ctx).size.height * 0.75,
+          ),
+          child: Padding(
+            padding: EdgeInsets.only(bottom: navBarInset),
+            child: Column(
+              mainAxisSize: MainAxisSize.min, // El sheet solo ocupa lo necesario
+              children: [
+                const SizedBox(height: 12),
 
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-              child: Row(
-                children: [
-                  // Título con la etiqueta del pictograma que se está configurando
-                  Text(
-                    'Sección para "${entry.etiqueta}"',
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
-
-            const Divider(),
-
-            // Opciones de categoría: una por cada entrada de kCategoriasAsignables
-            ...kCategoriasAsignables.map((opt) {
-              final isSelected = opt.label == current; // ¿Es la categoría actual?
-              return ListTile(
-                leading: CircleAvatar(
-                  radius:          18,
-                  backgroundColor: opt.color.withValues(alpha: 0.12),
-                  child: Icon(opt.icon, color: opt.color, size: 18),
-                ),
-                title: Text(
-                  opt.label,
-                  style: TextStyle(
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                // Handle visual del sheet (barra gris redondeada)
+                Container(
+                  width: 36, height: 4,
+                  decoration: BoxDecoration(
+                    color:        Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                // Marca de verificación solo en la opción seleccionada
-                trailing: isSelected
-                    ? const Icon(Icons.check, color: Colors.green)
-                    : null,
-                onTap: () async {
-                  Navigator.pop(ctx); // Cerramos el sheet antes de mutar
-                  await _setCategoria(entry.id, opt.label); // Persistimos el cambio
-                },
-              );
-            }),
 
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                  child: Row(
+                    children: [
+                      // Título con la etiqueta del pictograma que se está configurando
+                      Text(
+                        'Sección para "${entry.etiqueta}"',
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const Divider(),
+
+                // Opciones desplazables: Flexible deja que la lista use el
+                // espacio restante del sheet y haga scroll si no cabe entera.
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        ...kCategoriasAsignables.map((opt) {
+                          final isSelected = opt.label == current; // ¿Es la actual?
+                          return ListTile(
+                            leading: CircleAvatar(
+                              radius:          18,
+                              backgroundColor: opt.color.withValues(alpha: 0.12),
+                              child: Icon(opt.icon, color: opt.color, size: 18),
+                            ),
+                            title: Text(
+                              opt.label,
+                              style: TextStyle(
+                                fontWeight:
+                                    isSelected ? FontWeight.w600 : FontWeight.normal,
+                              ),
+                            ),
+                            // Marca de verificación solo en la opción seleccionada
+                            trailing: isSelected
+                                ? const Icon(Icons.check, color: Colors.green)
+                                : null,
+                            onTap: () async {
+                              Navigator.pop(ctx); // Cerramos el sheet antes de mutar
+                              await _setCategoria(entry.id, opt.label);
+                            },
+                          );
+                        }),
+                        const SizedBox(height: 8),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
