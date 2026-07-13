@@ -361,17 +361,19 @@ class AppTheme {
           }
           return const IconThemeData(color: mutedText, size: 24); // Apagado cuando inactivo
         }),
-        // Etiqueta del ítem activo vs inactivo
+        // Etiqueta del ítem activo vs inactivo.
+        // 11pt (no 12) para que la etiqueta más larga ("Pictogramas") quepa
+        // en una sola línea con 5 destinos en pantallas de 360dp.
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return GoogleFonts.nunito(
-              fontSize:   12,
+              fontSize:   11,
               fontWeight: FontWeight.w700, // Bold al seleccionar
               color:      softBlueDark,
             );
           }
           return GoogleFonts.nunito(
-            fontSize:   12,
+            fontSize:   11,
             fontWeight: FontWeight.w400, // Regular cuando inactivo
             color:      mutedText,
           );

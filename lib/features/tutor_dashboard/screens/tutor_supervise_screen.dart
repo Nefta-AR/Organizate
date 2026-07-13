@@ -411,7 +411,12 @@ class _TutorSupervisarScreenState extends State<TutorSupervisarScreen> {
       ),
       bottomNavigationBar: KeyedSubtree(
         key: _navTourKey,
-        child: NavigationBar(
+        // Limita el escalado de fuente del sistema dentro de la barra:
+        // con la fuente del teléfono agrandada (accesibilidad), la etiqueta
+        // "Pictogramas" se partía en dos líneas y desalineaba los 5 tabs.
+        child: MediaQuery.withClampedTextScaling(
+          maxScaleFactor: 1.0,
+          child: NavigationBar(
           selectedIndex: _currentIndex,
           onDestinationSelected: (i) => setState(() => _currentIndex = i),
           destinations: const [
@@ -440,6 +445,7 @@ class _TutorSupervisarScreenState extends State<TutorSupervisarScreen> {
               label: 'Ajustes',
             ),
           ],
+          ),
         ),
       ),
     );
